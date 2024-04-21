@@ -1,12 +1,11 @@
+mod curve;
 mod err;
-
-use spl_math::uint::*;
+mod fees;
 
 use anchor_lang::prelude::*;
 
-use crate::err::acc;
 use anchor_spl::token::spl_token::instruction::AuthorityType::MintTokens;
-use anchor_spl::token::{self, Mint, SetAuthority, Token, TokenAccount};
+use anchor_spl::token::{self, Mint, SetAuthority, Token, TokenAccount, Transfer};
 
 declare_id!("Bos3FKqnNf725J46YBRvxCribD22RLkCreJvjB9WLdgq");
 
@@ -20,8 +19,11 @@ pub mod memechan_sol {
 }
 
 const TOKEN_DECIMALS: u64 = 1_000_000;
-const MAX_TICKET_TOKENS: u64 = 900_000_000 * TOKEN_DECIMALS;
-const MAX_MEME_TOKENS: u64 = 1_125_000_000 * TOKEN_DECIMALS;
+const WSOL_DECIMALS: u64 = 1_000_000_000;
+const MAX_TICKET_TOKENS: u64 = 900_000_000;
+const MAX_MEME_TOKENS: u64 = 1_125_000_000;
+
+const MAX_WSOL: u64 = 300;
 
 const PRECISION: u128 = 1_000_000;
 const FEE: u128 = 1_000_000;
@@ -35,8 +37,11 @@ pub fn new_handler(ctx: Context<New>) -> Result<()> {
         return Err(error!(err::acc("")));
     }
 
-    let res = token::mint_to(accs.mint_ticket_tokens(), MAX_TICKET_TOKENS);
-    let res = token::mint_to(accs.mint_meme_tokens(), MAX_MEME_TOKENS);
+    let res = token::mint_to(
+        accs.mint_ticket_tokens(),
+        MAX_TICKET_TOKENS * TOKEN_DECIMALS,
+    );
+    let res = token::mint_to(accs.mint_meme_tokens(), MAX_MEME_TOKENS * TOKEN_DECIMALS);
 
     let res = token::set_authority(accs.set_mint_authority(&accs.meme_mint), MintTokens, None);
     let res = token::set_authority(accs.set_mint_authority(&accs.ticket_mint), MintTokens, None);
@@ -63,16 +68,17 @@ pub fn new_handler(ctx: Context<New>) -> Result<()> {
     Ok(())
 }
 
-pub fn swap_x_handler(ctx: Context<SwapCoinX>, coin_y_min_value: u64) -> Result<()> {
-    assert!(token::value(&coin_x) != 0, "no_zero_coin");
-
+pub fn swap_x_handler(
+    ctx: Context<SwapCoinX>,
+    coin_in_amount: u64,
+    coin_y_min_value: u64,
+) -> Result<()> {
     let accs = ctx.accounts;
 
-    let pool_address = object::uid_to_address(&pool.id);
+    assert_ne!(coin_in_amount, 0, "no_zero_coin");
+
     let pool_state = &accs.pool;
     assert!(!pool_state.locked, "pool_is_locked");
-
-    let coin_in_amount = token::value(&coin_x);
 
     let swap_amount = swap_amounts(pool_state, coin_in_amount, coin_y_min_value, true);
 
@@ -84,7 +90,7 @@ pub fn swap_x_handler(ctx: Context<SwapCoinX>, coin_y_min_value: u64) -> Result<
         );
     };
 
-    if (swap_amount.admin_fee_out != 0) {
+    if swap_amount.admin_fee_out != 0 {
         //balance::join(&mut pool_state.admin_balance_y, balance::split(&mut pool_state.balance_y, swap_amount.admin_fee_out));
         let res = token::transfer(
             accs.send_admin_fee(&accs.sol_coin_vault, &accs.admin_sol_coin),
@@ -103,7 +109,7 @@ pub fn swap_x_handler(ctx: Context<SwapCoinX>, coin_y_min_value: u64) -> Result<
     let res = token::transfer(accs.send_tokens_to_user(), swap_amount.amount_out);
 
     // We keep track of how much each address ownes of coin_x
-    subtract_from_token_acc(pool, coin_in_amount, sender(ctx));
+    //subtract_from_token_acc(pool, coin_in_amount, sender(ctx));
 
     Ok(())
 }
@@ -229,7 +235,7 @@ impl<'info> SwapCoinX<'info> {
         let cpi_accounts = token::Transfer {
             from: self.meme_coin.to_account_info(),
             to: self.meme_coin_vault.to_account_info(),
-            authority: signer,
+            authority: self.signer.to_account_info(),
         };
 
         let cpi_program = self.token_program.to_account_info();
@@ -262,7 +268,7 @@ fn swap_amounts(
 ) -> SwapAmount {
     let balance_x = pool_state.meme.tokens;
     let balance_y = pool_state.sol.tokens;
-    let prev_k = bound::invariant_(balance_x, balance_y);
+    let prev_k = curve::invariant(balance_x, balance_y);
 
     let admin_fee_in = fees::get_fee_in_amount(&pool_state.fees, coin_in_amount);
 
@@ -270,17 +276,17 @@ fn swap_amounts(
         if is_x {
             math::min(
                 coin_in_amount - admin_fee_in,
-                (MAX_X * DECIMALS_X as u64) - balance_x,
+                (MAX_TICKET_TOKENS * TOKEN_DECIMALS as u64) - balance_x,
             )
         } else {
             math::min(
                 coin_in_amount - admin_fee_in,
-                (MAX_Y * DECIMALS_Y as u64) - balance_y,
+                (MAX_WSOL * WSOL_DECIMALS as u64) - balance_y,
             )
         }
     };
 
-    let amount_out = bound::get_amount_out(coin_in_amount, balance_x, balance_y, is_x);
+    let amount_out = curve::get_amount_out(coin_in_amount, balance_x, balance_y, is_x);
 
     let admin_fee_out = fees::get_fee_out_amount(&pool_state.fees, amount_out);
 
@@ -290,12 +296,12 @@ fn swap_amounts(
 
     let new_k = {
         if is_x {
-            bound::invariant_(
+            bound::invariant(
                 balance_x + coin_in_amount + admin_fee_in,
                 balance_y - amount_out,
             )
         } else {
-            bound::invariant_(
+            bound::invariant(
                 balance_x - amount_out,
                 balance_y + coin_in_amount + admin_fee_in,
             )

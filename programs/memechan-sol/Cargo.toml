@@ -19,4 +19,4 @@ idl-build = ["anchor-lang/idl-build"]
 [dependencies]
 anchor-lang = "0.30.0"
 anchor-spl = "0.30.0"
-spl-math = "0.2.0"
+anchor-safe-math = "0.4.0"
