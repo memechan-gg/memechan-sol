@@ -11,6 +11,8 @@ const PAD_DECIMALS: u128 = 100;
 use crate::err::AmmError;
 use anchor_lang::error;
 use anchor_lang::prelude::*;
+use anchor_safe_math::SafeMath;
+use num_integer::*;
 
 pub fn invariant(x: u64, y: u64) -> Result<u128> {
     let res_y = MAX_Y - (y as u128);
@@ -30,13 +32,14 @@ pub fn get_amount_out(
         return Err(error!(AmmError::ZeroMemeVault));
     }
     let is_balance_sufficient = if is_x {
-        (balance_x - coin_in_amount as u128) >= 0
+        balance_x.safe_sub(coin_in_amount).unwrap() >= 0
     } else {
         balance_y >= coin_in_amount
     };
     if !is_balance_sufficient {
         return Err(error!(AmmError::InsufficientBalance));
     }
+
     let (coin_in_amount, balance_x, balance_y) = (
         ((coin_in_amount as u128) * PRECISION)
             / if is_x {
@@ -44,8 +47,8 @@ pub fn get_amount_out(
             } else {
                 DECIMALS_Y / PAD_DECIMALS
             },
-        ((balance_x as u128) * PRECISION) / DECIMALS_X,
-        ((balance_y * PAD_DECIMALS) * PRECISION) / DECIMALS_Y,
+        (balance_x as u128 * PRECISION) / DECIMALS_X,
+        ((balance_y as u128 * PAD_DECIMALS) * PRECISION) / DECIMALS_Y,
     );
 
     let res_y = MAX_Y - balance_y;
@@ -54,7 +57,7 @@ pub fn get_amount_out(
     let res = if is_x {
         let new_balance_x = res_x + coin_in_amount;
 
-        sqrt_down(new_balance_x) - sqrt_down(res_x)
+        u128::sqrt(&new_balance_x) - &res_x.sqrt()
     } else {
         let new_balance_y = res_y - coin_in_amount;
 
@@ -71,6 +74,7 @@ pub fn get_amount_out(
     Ok(nres as u64)
 }
 
+#[allow(dead_code)]
 pub fn get_amount_in(
     coin_out_amount: u64,
     balance_x: u64,
@@ -84,7 +88,7 @@ pub fn get_amount_in(
         return Err(error!(AmmError::ZeroMemeVault));
     }
     let is_balance_sufficient = if is_x {
-        (balance_y + coin_out_amount as u128) <= MAX_Y
+        (balance_y + coin_out_amount) as u128 <= MAX_Y
     } else {
         balance_x >= coin_out_amount
     };
@@ -99,8 +103,8 @@ pub fn get_amount_in(
             } else {
                 DECIMALS_Y / PAD_DECIMALS
             },
-        ((balance_x as u128) * PRECISION) / DECIMALS_X,
-        ((balance_y * PAD_DECIMALS) * PRECISION) / DECIMALS_Y,
+        (balance_x as u128 * PRECISION) / DECIMALS_X,
+        ((balance_y as u128 * PAD_DECIMALS) * PRECISION) / DECIMALS_Y,
     );
 
     let res_y = MAX_Y - balance_y;
@@ -109,7 +113,7 @@ pub fn get_amount_in(
     let res = if is_x {
         let new_balance_x = res_x - coin_out_amount;
 
-        res_y - sqrt_down(new_balance_x)
+        res_y - new_balance_x.sqrt()
     } else {
         let new_balance_y = res_y + coin_out_amount;
 

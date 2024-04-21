@@ -20,3 +20,4 @@ idl-build = ["anchor-lang/idl-build"]
 anchor-lang = "0.30.0"
 anchor-spl = "0.30.0"
 anchor-safe-math = "0.4.0"
+num-integer = "0.1.46"

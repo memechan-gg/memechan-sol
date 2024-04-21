@@ -1423,6 +1423,7 @@ dependencies = [
  "anchor-lang 0.30.0",
  "anchor-safe-math",
  "anchor-spl",
+ "num-integer",
 ]
 
 [[package]]

@@ -24,14 +24,23 @@ pub enum AmmError {
     /// wrong token mints
     #[msg("Provided mints are not available on the pool")]
     InvalidTokenMints,
+    MulDivOverflow,
+    DivideByZero,
+    ZeroInAmt,
+    ZeroMemeVault,
+    InsufficientBalance,
+    PoolIsLocked,
+    NoZeroTokens,
 }
 
+#[allow(dead_code)]
 pub fn acc(msg: impl Display) -> AmmError {
     msg!("[InvalidAccountInput] {}", msg);
 
     AmmError::InvalidAccountInput
 }
 
+#[allow(dead_code)]
 pub fn arg(msg: impl Display) -> AmmError {
     msg!("[InvalidArg] {}", msg);
 
