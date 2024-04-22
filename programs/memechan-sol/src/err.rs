@@ -31,6 +31,7 @@ pub enum AmmError {
     InsufficientBalance,
     PoolIsLocked,
     NoZeroTokens,
+    NoTokensToWithdraw,
 }
 
 #[allow(dead_code)]
