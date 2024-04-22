@@ -1,7 +1,11 @@
 mod curve;
 mod err;
+mod fee_distribution;
 mod fees;
+mod init;
 mod staked_lp;
+mod staking;
+mod vesting;
 
 use anchor_lang::prelude::*;
 use std::cmp::min;
@@ -142,7 +146,6 @@ pub fn swap_y_handler(
 ) -> Result<()> {
     let accs = ctx.accounts;
 
-    //let pool_state = &mut accs.pool;
     let user_wsol = &mut accs.user_wsol;
 
     if user_wsol.amount == 0 {
@@ -170,13 +173,8 @@ pub fn swap_y_handler(
         )
         .unwrap();
     };
-    // balance::join(&mut pool_state.admin_balance_y, coin::into_balance(coin::split(coin_y, swap_amount.admin_fee_in, ctx)));
-    // };
-    // balance::join(&mut pool_state.admin_balance_x, balance::split(&mut pool_state.balance_x, swap_amount.admin_fee_out));
-    // };
 
     token::transfer(accs.send_user_tokens(), swap_amount.amount_in).unwrap();
-    //balance::join(&mut pool_state.balance_y, coin::into_balance(coin::split(coin_y, swap_amount.amount_in, ctx)));
 
     //events::swap<CoinY, CoinX, SwapAmount>(pool_address, coin_in_amount,swap_amount);
 
