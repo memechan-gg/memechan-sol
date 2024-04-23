@@ -1,4 +1,4 @@
-use crate::fee_distribution::FeeState;
+use crate::staking::FeeState;
 use crate::PoolState;
 use anchor_lang::prelude::*;
 
@@ -8,23 +8,23 @@ const SUI_THRESHOLD: u64 = 30_000;
 const BPS: u64 = 10_000;
 const LOCKED: u64 = 8_000;
 
-const A: u256 = 400_000;
-const GAMMA: u256 = 145_000_000_000_000;
+const A: u128 = 400_000;
+const GAMMA: u128 = 145_000_000_000_000;
 
-const ALLOWED_EXTRA_PROFIT: u256 = 2000000000000; // 18 decimals
-const ADJUSTMENT_STEP: u256 = 146000000000000; // 18 decimals
-const MA_TIME: u256 = 600_000; // 10 minutes
+const ALLOWED_EXTRA_PROFIT: u128 = 2000000000000; // 18 decimals
+const ADJUSTMENT_STEP: u128 = 146000000000000; // 18 decimals
+const MA_TIME: u128 = 600_000; // 10 minutes
 
-const MID_FEE: u256 = 260_000_000_000_000_000; // (0.26%) swap fee when the pool is balanced
-const OUT_FEE: u256 = 450_000_000_000_000_000; // (0.45%) swap fee when the pool is out balance
-const GAMMA_FEE: u256 = 200_000_000_000_000; //  (0.0002%) speed rate that fee increases mid_fee => out_fee
+const MID_FEE: u128 = 260_000_000_000_000_000; // (0.26%) swap fee when the pool is balanced
+const OUT_FEE: u128 = 450_000_000_000_000_000; // (0.45%) swap fee when the pool is out balance
+const GAMMA_FEE: u128 = 200_000_000_000_000; //  (0.0002%) speed rate that fee increases mid_fee => out_fee
 
 /// The amount of Mist per Sui token based on the fact that mist is
 /// 10^-9 of a Sui token
 const MIST_PER_SUI: u64 = 1_000_000_000;
 
-const LAUNCH_FEE: u256 = 50_000_000_000_000_000; // 5%
-const PRECISION: u256 = 1_000_000_000_000_000_000;
+const LAUNCH_FEE: u128 = 50_000_000_000_000_000; // 5%
+const PRECISION: u128 = 1_000_000_000_000_000_000;
 
 pub fn sui(mist: u64) -> u64 {
     MIST_PER_SUI * mist
@@ -36,7 +36,7 @@ struct InitSecondaryMarket<'info> {
     fee_state: Account<'info, FeeState>,
 }
 
-pub fn init_secondary_market(ctx: Context<InitSecondaryMarket>) {
+pub fn init_secondary_market(ctx: Context<InitSecondaryMarket>) -> Result<()> {
     let accs = ctx.accounts;
 
     // let (
@@ -85,7 +85,7 @@ pub fn init_secondary_market(ctx: Context<InitSecondaryMarket>) {
     // coin::treasury_into_supply(treasury_cap),
     // vector[A, GAMMA],
     // vector[ALLOWED_EXTRA_PROFIT, ADJUSTMENT_STEP, MA_TIME],
-    // 100, // price todo
+    // 100, // price
     // vector[MID_FEE, OUT_FEE, GAMMA_FEE],
     // ctx
     // );
@@ -107,4 +107,6 @@ pub fn init_secondary_market(ctx: Context<InitSecondaryMarket>) {
     // coin_decimals::destroy_decimals(coin_decimals::remove<Meme>(&mut decimals));
     //
     // coin_decimals::destroy_coin_decimals(decimals);
+
+    Ok(())
 }

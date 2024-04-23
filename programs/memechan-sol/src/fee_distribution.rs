@@ -1,5 +1,6 @@
-use crate::err::StakingError;
+use crate::err::AmmError;
 use crate::staked_lp::StakedLP;
+use crate::staking::FeeState;
 use anchor_lang::prelude::*;
 use anchor_spl::token::{transfer, Token, TokenAccount, Transfer};
 
@@ -35,8 +36,9 @@ impl<'info> AddFees<'info> {
 
 pub fn add_fees(ctx: Context<AddFees>) {
     let accs = ctx.accounts;
-    state.fees_x_total = state.fees_x_total + accs.meme_fees.amount;
-    state.fees_y_total = state.fees_y_total + accs.wsol_fees.amount;
+    let state = &mut accs.fee_state;
+    state.fees_x_total += accs.meme_fees.amount;
+    state.fees_y_total += accs.wsol_fees.amount;
 
     transfer(
         accs.send_fees(&accs.meme_fees, &accs.meme_vault),
@@ -50,17 +52,19 @@ pub fn add_fees(ctx: Context<AddFees>) {
     .unwrap();
 }
 
-struct Withdrawal {
-    max_withdrawal_meme: u64,
-    max_withdrawal_wsol: u64,
+pub struct Withdrawal {
+    pub max_withdrawal_meme: u64,
+    pub max_withdrawal_wsol: u64,
 }
 
 pub fn calc_withdraw(
     fee_state: &Account<FeeState>,
-    user_stake: u64,
-    user_withdrawals_meme: u64,
-    user_withdrawals_wsol: u64,
+    lp_ticket: &Account<StakedLP>,
 ) -> Result<Withdrawal> {
+    let user_stake: u64 = lp_ticket.amount;
+    let user_withdrawals_meme = lp_ticket.withdraws_meme;
+    let user_withdrawals_wsol = lp_ticket.withdraws_wsol;
+
     let max_withdrawal_meme = get_max_withdraw(
         user_withdrawals_meme,
         fee_state.fees_x_total,
@@ -84,18 +88,12 @@ pub fn calc_withdraw(
 }
 
 pub fn update_stake(
-    state: &Account<FeeState>,
+    state: &mut Account<FeeState>,
     lp_ticket: &mut Account<StakedLP>,
     user_old_stake: u64,
     user_stake_diff: u64,
 ) -> Result<Withdrawal> {
-    let withdrawal = calc_withdraw(
-        state,
-        user_old_stake,
-        lp_ticket.withdraws_meme,
-        lp_ticket.withdraws_wsol,
-    )
-    .unwrap();
+    let withdrawal = calc_withdraw(state, lp_ticket).unwrap();
 
     let stake_diff = ((user_stake_diff as u128) * PRECISION) / (user_old_stake as u128);
 
@@ -107,7 +105,7 @@ pub fn update_stake(
     let withdraw_diff_y = get_withdraw_diff(*user_withdrawals_y, stake_diff);
     *user_withdrawals_y = withdraw_diff_y;
 
-    state.stakes_total = state.stakes_total - user_stake_diff;
+    state.stakes_total -= user_stake_diff;
 
     Ok(withdrawal)
 }
@@ -128,7 +126,7 @@ fn get_max_withdraw(
     let max_user_withdrawal = fees_total * ((user_stake * PRECISION) / stakes_total);
 
     if max_user_withdrawal <= user_withdrawals_total * PRECISION {
-        return Err(error!(StakingError::NoTokensToWithdraw));
+        return Err(error!(AmmError::NoTokensToWithdraw));
     }
 
     let allowed_withdrawal = max_user_withdrawal - user_withdrawals_total;

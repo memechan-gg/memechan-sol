@@ -1,4 +1,5 @@
 use anchor_lang::prelude::*;
+use crate::vesting::VestingData;
 
 pub const LOCK_TIME: i64 = 4 * 3600;
 
