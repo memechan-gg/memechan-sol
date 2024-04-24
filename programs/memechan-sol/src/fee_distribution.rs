@@ -1,6 +1,6 @@
 use crate::err::AmmError;
 use crate::staked_lp::StakedLP;
-use crate::staking::FeeState;
+use crate::staking::StakingPool;
 use anchor_lang::prelude::*;
 use anchor_spl::token::{transfer, Token, TokenAccount, Transfer};
 
@@ -8,12 +8,12 @@ const PRECISION: u128 = 1_000_000_000_000_000;
 
 #[derive(Accounts)]
 struct AddFees<'info> {
-    fee_state: Account<'info, FeeState>,
+    fee_state: Account<'info, StakingPool>,
     meme_vault: Account<'info, TokenAccount>,
     wsol_vault: Account<'info, TokenAccount>,
     meme_fees: Account<'info, TokenAccount>,
     wsol_fees: Account<'info, TokenAccount>,
-    signer: AccountInfo<'info>,
+    signer: Signer<'info>,
     token_program: Program<'info, Token>,
 }
 
@@ -58,7 +58,7 @@ pub struct Withdrawal {
 }
 
 pub fn calc_withdraw(
-    fee_state: &Account<FeeState>,
+    fee_state: &Account<StakingPool>,
     lp_ticket: &Account<StakedLP>,
 ) -> Result<Withdrawal> {
     let user_stake: u64 = lp_ticket.amount;
@@ -88,7 +88,7 @@ pub fn calc_withdraw(
 }
 
 pub fn update_stake(
-    state: &mut Account<FeeState>,
+    state: &mut Account<StakingPool>,
     lp_ticket: &mut Account<StakedLP>,
     user_old_stake: u64,
     user_stake_diff: u64,

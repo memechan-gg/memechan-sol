@@ -1,6 +1,8 @@
-use crate::staking::FeeState;
+use crate::staking::StakingPool;
 use crate::PoolState;
 use anchor_lang::prelude::*;
+use anchor_spl::token;
+use anchor_spl::token::{Token, TokenAccount, Transfer};
 
 //const ADMIN_ADDR: address = @0xfff; // TODO
 
@@ -31,13 +33,55 @@ pub fn sui(mist: u64) -> u64 {
 }
 
 #[derive(Accounts)]
-struct InitSecondaryMarket<'info> {
-    pool_state: Account<'info, PoolState>,
-    fee_state: Account<'info, FeeState>,
+pub struct GoLive<'info> {
+    pub pool: Account<'info, PoolState>,
+    pub fee_state: Account<'info, StakingPool>,
+    pub ticket_vault: Account<'info, TokenAccount>,
+    pub sol_vault: Account<'info, TokenAccount>,
+    pub admin_ticket_vault: Account<'info, TokenAccount>,
+    pub admin_sol_vault: Account<'info, TokenAccount>,
+    /// CHECK: pda signer
+    #[account(seeds = [PoolState::SIGNER_PDA_PREFIX, pool.key().as_ref()], bump)]
+    pub pool_signer_pda: AccountInfo<'info>,
+    pub token_program: Program<'info, Token>,
 }
 
-pub fn init_secondary_market(ctx: Context<InitSecondaryMarket>) -> Result<()> {
+impl<'info> GoLive<'info> {
+    fn send_admin_fee_ticket(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+        let cpi_accounts = Transfer {
+            from: self.ticket_vault.to_account_info(),
+            to: self.admin_ticket_vault.to_account_info(),
+            authority: self.pool_signer_pda.to_account_info(),
+        };
+
+        let cpi_program = self.token_program.to_account_info();
+        CpiContext::new(cpi_program, cpi_accounts)
+    }
+
+    fn send_admin_fee_sol(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+        let cpi_accounts = Transfer {
+            from: self.sol_vault.to_account_info(),
+            to: self.sol_vault.to_account_info(),
+            authority: self.pool_signer_pda.to_account_info(),
+        };
+
+        let cpi_program = self.token_program.to_account_info();
+        CpiContext::new(cpi_program, cpi_accounts)
+    }
+}
+
+pub fn go_live_handler(ctx: Context<GoLive>) -> Result<()> {
     let accs = ctx.accounts;
+
+    if accs.pool.admin_fees_ticket != 0 {
+        //balance::join(&mut pool_state.admin_balance_x, token_ir::into_balance(policy, token::split(&mut coin_x, swap_amount.admin_fee_in, ctx), ctx));
+        token::transfer(accs.send_admin_fee_ticket(), accs.pool.admin_fees_ticket).unwrap();
+    };
+
+    if accs.pool.admin_fees_sol != 0 {
+        //balance::join(&mut pool_state.admin_balance_y, balance::split(&mut pool_state.balance_y, swap_amount.admin_fee_out));
+        token::transfer(accs.send_admin_fee_sol(), accs.pool.admin_fees_sol).unwrap();
+    };
 
     // let (
     // xmeme_balance,

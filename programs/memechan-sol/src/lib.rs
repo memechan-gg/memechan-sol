@@ -11,11 +11,23 @@ use anchor_lang::prelude::*;
 use std::cmp::min;
 
 use crate::err::AmmError;
-use crate::staked_lp::StakedLP;
+use crate::fees::*;
+use crate::init::*;
+use crate::staked_lp::*;
+use crate::staking::*;
+use anchor_lang::solana_program::program_option::COption;
 use anchor_spl::token::spl_token::instruction::AuthorityType::MintTokens;
+use anchor_spl::token::spl_token::native_mint;
 use anchor_spl::token::{self, Mint, SetAuthority, Token, TokenAccount, Transfer};
+use std::mem;
 
 declare_id!("Bos3FKqnNf725J46YBRvxCribD22RLkCreJvjB9WLdgq");
+
+pub mod admin {
+    use anchor_lang::prelude::declare_id;
+    #[cfg(not(feature = "devnet"))]
+    declare_id!("Bos3FKqnNf725J46YBRvxCribD22RLkCreJvjB9WLdgq");
+}
 
 #[program]
 pub mod memechan_sol {
@@ -40,6 +52,22 @@ pub mod memechan_sol {
     ) -> Result<()> {
         swap_y_handler(ctx, coin_in_amount, coin_x_min_value)
     }
+
+    pub fn go_live(ctx: Context<GoLive>) -> Result<()> {
+        go_live_handler(ctx)
+    }
+
+    pub fn add_fees(ctx: Context<AddFees>) -> Result<()> {
+        add_fees_handler(ctx)
+    }
+
+    pub fn unstake(ctx: Context<Unstake>) -> Result<()> {
+        unstake_handler(ctx)
+    }
+
+    pub fn withdraw_fees(ctx: Context<WithdrawFees>) -> Result<()> {
+        withdraw_fees_handler(ctx)
+    }
 }
 
 const TOKEN_DECIMALS: u64 = 1_000_000;
@@ -50,6 +78,146 @@ const MAX_MEME_TOKENS: u64 = 1_125_000_000;
 const MAX_WSOL: u64 = 300;
 
 const FEE: u128 = 1_000_000;
+
+#[account]
+pub struct PoolState {
+    pub meme_vault: Reserve,
+    pub sol_vault: Reserve,
+    pub admin_fees_ticket: u64,
+    pub admin_fees_sol: u64,
+    pub admin_vault_ticket: Pubkey,
+    pub admin_vault_sol: Pubkey,
+    pub launch_token_vault: Pubkey,
+    pub fees: Fees,
+    pub locked: bool,
+}
+
+impl PoolState {
+    pub const SIGNER_PDA_PREFIX: &'static [u8; 6] = b"signer";
+
+    pub fn space() -> usize {
+        let discriminant = 8;
+        let meme = mem::size_of::<Reserve>();
+        let sol = mem::size_of::<Reserve>();
+        let admin_vault_ticket = 32;
+        let admin_vault_sol = 32;
+        let launch_token_vault = 32;
+        let fees = mem::size_of::<Fees>();
+        let locked = mem::size_of::<bool>();
+
+        discriminant
+            + meme
+            + sol
+            + admin_vault_ticket
+            + admin_vault_sol
+            + launch_token_vault
+            + fees
+            + locked
+    }
+}
+#[derive(Accounts)]
+pub struct New<'info> {
+    #[account(mut)]
+    pub sender: Signer<'info>,
+    #[account(init, payer = sender, space = PoolState::space())]
+    pub pool: Account<'info, PoolState>,
+    #[account(
+    constraint = ticket_vault.mint == ticket_mint.key()
+    @ err::acc("ticket vault must be of ticket mint"),
+    constraint = ticket_vault.owner == pool_signer_pda.key()
+    @ err::acc("ticket vault authority must match pool pda"),
+    )]
+    pub ticket_vault: Account<'info, TokenAccount>,
+    #[account(
+    constraint = ticket_mint.mint_authority == COption::Some(pool_signer_pda.key())
+    @ err::acc("ticket mint authority must be the pool signer"),
+    constraint = ticket_mint.freeze_authority == COption::None
+    @ err::acc("ticket mint mustn't have a freeze authority"),
+    )]
+    pub ticket_mint: Account<'info, Mint>,
+    #[account(
+    constraint = meme_mint.mint_authority == COption::Some(pool_signer_pda.key())
+    @ err::acc("meme mint authority must be the pool signer"),
+    constraint = meme_mint.freeze_authority == COption::None
+    @ err::acc("meme mint mustn't have a freeze authority"),
+    )]
+    pub meme_mint: Account<'info, Mint>,
+    #[account(
+    constraint = sol_vault.mint == sol_mint.key()
+    @ err::acc("ticket vault must be of ticket mint"),
+    constraint = sol_vault.owner == pool_signer_pda.key()
+    @ err::acc("ticket vault authority must match pool pda"),
+    )]
+    pub sol_vault: Account<'info, TokenAccount>,
+    #[account(
+    constraint = sol_mint.key() == native_mint::id()
+    @ err::acc("sol mint should be native WSOL mint")
+    )]
+    pub sol_mint: Account<'info, Mint>,
+    #[account(
+    constraint = admin_ticket_vault.mint == ticket_mint.key()
+    @ err::acc("admin ticket vault must be of ticket mint"),
+    constraint = admin_ticket_vault.owner == crate::admin::id()
+    @ err::acc("admin ticket vault authority must match admin"),
+    )]
+    pub admin_ticket_vault: Account<'info, TokenAccount>,
+    #[account(
+    constraint = admin_sol_vault.mint == sol_mint.key()
+    @ err::acc("admin sol vault must be of ticket mint"),
+    constraint = admin_sol_vault.owner == crate::admin::id()
+    @ err::acc("admin sol vault authority must match admin"),
+    )]
+    pub admin_sol_vault: Account<'info, TokenAccount>,
+    #[account(
+    constraint = launch_vault.mint == meme_mint.key()
+    @ err::acc("admin ticket vault must be of ticket mint"),
+    constraint = launch_vault.owner == pool_signer_pda.key()
+    @ err::acc("launch vault authority must match admin"),
+    )]
+    pub launch_vault: Account<'info, TokenAccount>,
+    /// CHECK: pda signer
+    #[account(seeds = [PoolState::SIGNER_PDA_PREFIX, pool.key().as_ref()], bump)]
+    pub pool_signer_pda: AccountInfo<'info>,
+    pub system_program: Program<'info, System>,
+    pub token_program: Program<'info, Token>,
+}
+
+impl<'info> New<'info> {
+    fn mint_ticket_tokens(&self) -> CpiContext<'_, '_, '_, 'info, token::MintTo<'info>> {
+        let cpi_accounts = token::MintTo {
+            mint: self.ticket_mint.to_account_info(),
+            to: self.ticket_vault.to_account_info(),
+            authority: self.pool_signer_pda.to_account_info(),
+        };
+
+        let cpi_program = self.token_program.to_account_info();
+        CpiContext::new(cpi_program, cpi_accounts)
+    }
+
+    fn mint_meme_tokens(&self) -> CpiContext<'_, '_, '_, 'info, token::MintTo<'info>> {
+        let cpi_accounts = token::MintTo {
+            mint: self.meme_mint.to_account_info(),
+            to: self.launch_vault.to_account_info(),
+            authority: self.pool_signer_pda.to_account_info(),
+        };
+
+        let cpi_program = self.token_program.to_account_info();
+        CpiContext::new(cpi_program, cpi_accounts)
+    }
+
+    fn set_mint_authority(
+        &self,
+        mint: &Account<'info, Mint>,
+    ) -> CpiContext<'_, '_, '_, 'info, SetAuthority<'info>> {
+        let cpi_accounts = SetAuthority {
+            current_authority: self.pool_signer_pda.to_account_info(),
+            account_or_mint: mint.to_account_info(),
+        };
+
+        let cpi_program = self.token_program.to_account_info();
+        CpiContext::new(cpi_program, cpi_accounts)
+    }
+}
 
 pub fn new_handler(ctx: Context<New>) -> Result<()> {
     let accs = ctx.accounts;
@@ -71,12 +239,12 @@ pub fn new_handler(ctx: Context<New>) -> Result<()> {
     let pool = &mut accs.pool;
     pool.admin_vault_ticket = accs.admin_ticket_vault.key();
     pool.admin_vault_sol = accs.admin_sol_vault.key();
-    pool.meme = Reserve {
+    pool.meme_vault = Reserve {
         tokens: accs.ticket_vault.amount,
         mint: accs.ticket_mint.key(),
         vault: accs.ticket_vault.key(),
     };
-    pool.sol = Reserve {
+    pool.sol_vault = Reserve {
         tokens: 0,
         mint: accs.sol_mint.key(),
         vault: accs.sol_vault.key(),
@@ -85,10 +253,17 @@ pub fn new_handler(ctx: Context<New>) -> Result<()> {
         fee_in_percent: FEE,
         fee_out_percent: FEE,
     };
-    pool.launch_token_vault = accs.meme_launch_vault.key();
+    pool.launch_token_vault = accs.launch_vault.key();
     pool.locked = false;
 
     Ok(())
+}
+
+#[derive(AnchorDeserialize, AnchorSerialize, Copy, Clone, Debug, Eq, PartialEq, Default)]
+pub struct Reserve {
+    pub tokens: u64,
+    pub mint: Pubkey,
+    pub vault: Pubkey,
 }
 
 pub fn swap_x_handler(
@@ -100,28 +275,13 @@ pub fn swap_x_handler(
 
     assert_ne!(coin_in_amount, 0, "no_zero_coin");
 
-    let pool_state = &accs.pool;
+    let pool_state = &mut accs.pool;
     assert!(!pool_state.locked, "pool_is_locked");
 
     let swap_amount = swap_amounts(pool_state, coin_in_amount, coin_y_min_value, true);
 
-    if swap_amount.admin_fee_in != 0 {
-        //balance::join(&mut pool_state.admin_balance_x, token_ir::into_balance(policy, token::split(&mut coin_x, swap_amount.admin_fee_in, ctx), ctx));
-        token::transfer(
-            accs.send_admin_fee(&accs.meme_coin, &accs.admin_meme_coin),
-            swap_amount.admin_fee_in,
-        )
-        .unwrap();
-    };
-
-    if swap_amount.admin_fee_out != 0 {
-        //balance::join(&mut pool_state.admin_balance_y, balance::split(&mut pool_state.balance_y, swap_amount.admin_fee_out));
-        token::transfer(
-            accs.send_admin_fee(&accs.sol_coin_vault, &accs.admin_sol_coin),
-            swap_amount.admin_fee_out,
-        )
-        .unwrap();
-    };
+    pool_state.admin_fees_sol += swap_amount.admin_fee_out;
+    pool_state.admin_fees_ticket += swap_amount.admin_fee_in;
 
     token::transfer(accs.send_user_tokens(), swap_amount.amount_in).unwrap();
 
@@ -145,6 +305,7 @@ pub fn swap_y_handler(
     coin_x_min_value: u64,
 ) -> Result<()> {
     let accs = ctx.accounts;
+    let pool = &mut accs.pool;
 
     let user_wsol = &mut accs.user_wsol;
 
@@ -152,27 +313,14 @@ pub fn swap_y_handler(
         return Err(error!(AmmError::NoZeroTokens));
     }
 
-    if accs.pool.locked {
+    if pool.locked {
         return Err(error!(AmmError::PoolIsLocked));
     }
 
-    let swap_amount = swap_amounts(&accs.pool, coin_in_amount, coin_x_min_value, false);
+    let swap_amount = swap_amounts(pool, coin_in_amount, coin_x_min_value, false);
 
-    if swap_amount.admin_fee_in != 0 {
-        token::transfer(
-            accs.send_admin_fee(&accs.meme_vault, &accs.admin_meme_coin),
-            swap_amount.admin_fee_in,
-        )
-        .unwrap();
-    };
-
-    if swap_amount.admin_fee_out != 0 {
-        token::transfer(
-            accs.send_admin_fee(&accs.wsol_vault, &accs.admin_sol_coin),
-            swap_amount.admin_fee_out,
-        )
-        .unwrap();
-    };
+    pool.admin_fees_sol += swap_amount.admin_fee_in;
+    pool.admin_fees_ticket += swap_amount.admin_fee_out;
 
     token::transfer(accs.send_user_tokens(), swap_amount.amount_in).unwrap();
 
@@ -196,27 +344,6 @@ pub fn swap_y_handler(
     return Ok(());
 }
 
-#[derive(Accounts)]
-pub struct Initialize {}
-
-#[account]
-pub struct PoolState {
-    pub meme: Reserve,
-    pub sol: Reserve,
-    pub admin_vault_ticket: Pubkey,
-    pub admin_vault_sol: Pubkey,
-    pub launch_token_vault: Pubkey,
-    pub fees: fees::Fees,
-    pub locked: bool,
-}
-
-#[derive(AnchorDeserialize, AnchorSerialize, Copy, Clone, Debug, Eq, PartialEq, Default)]
-pub struct Reserve {
-    pub tokens: u64,
-    pub mint: Pubkey,
-    pub vault: Pubkey,
-}
-
 pub struct SwapAmount {
     amount_in: u64,
     amount_out: u64,
@@ -225,92 +352,24 @@ pub struct SwapAmount {
 }
 
 #[derive(Accounts)]
-pub struct New<'info> {
-    pub pool: Account<'info, PoolState>,
-    pub ticket_vault: Account<'info, TokenAccount>,
-    pub ticket_mint: Account<'info, Mint>,
-    pub meme_mint: Account<'info, Mint>,
-    pub sol_vault: Account<'info, TokenAccount>,
-    pub sol_mint: Account<'info, Mint>,
-    pub admin_ticket_vault: Account<'info, TokenAccount>,
-    pub admin_sol_vault: Account<'info, TokenAccount>,
-    pub meme_launch_vault: Account<'info, TokenAccount>,
-    pub pool_signer_pda: AccountInfo<'info>,
-    pub token_program: Program<'info, Token>,
-}
-
-impl<'info> New<'info> {
-    fn mint_ticket_tokens(&self) -> CpiContext<'_, '_, '_, 'info, token::MintTo<'info>> {
-        let cpi_accounts = token::MintTo {
-            mint: self.ticket_mint.to_account_info(),
-            to: self.ticket_vault.to_account_info(),
-            authority: self.pool_signer_pda.to_account_info(),
-        };
-
-        let cpi_program = self.token_program.to_account_info();
-        CpiContext::new(cpi_program, cpi_accounts)
-    }
-
-    fn mint_meme_tokens(&self) -> CpiContext<'_, '_, '_, 'info, token::MintTo<'info>> {
-        let cpi_accounts = token::MintTo {
-            mint: self.meme_mint.to_account_info(),
-            to: self.meme_launch_vault.to_account_info(),
-            authority: self.pool_signer_pda.to_account_info(),
-        };
-
-        let cpi_program = self.token_program.to_account_info();
-        CpiContext::new(cpi_program, cpi_accounts)
-    }
-
-    fn set_mint_authority(
-        &self,
-        mint: &Account<'info, Mint>,
-    ) -> CpiContext<'_, '_, '_, 'info, SetAuthority<'info>> {
-        let cpi_accounts = SetAuthority {
-            current_authority: self.pool_signer_pda.to_account_info(),
-            account_or_mint: mint.to_account_info(),
-        };
-
-        let cpi_program = self.token_program.to_account_info();
-        CpiContext::new(cpi_program, cpi_accounts)
-    }
-}
-
-// === Private Functions ===
-
-#[derive(Accounts)]
 pub struct SwapCoinX<'info> {
     pub pool: Account<'info, PoolState>,
-    pub meme_coin: Account<'info, TokenAccount>,
+    #[account()]
+    pub user_meme: Account<'info, TokenAccount>,
     pub meme_coin_vault: Account<'info, TokenAccount>,
-    pub sol_coin: Account<'info, TokenAccount>,
+    pub user_sol: Account<'info, TokenAccount>,
     pub sol_coin_vault: Account<'info, TokenAccount>,
-    pub admin_meme_coin: Account<'info, TokenAccount>,
-    pub admin_sol_coin: Account<'info, TokenAccount>,
-    pub signer: AccountInfo<'info>,
+    pub signer: Signer<'info>,
+    /// CHECK: pda signer
+    #[account(seeds = [PoolState::SIGNER_PDA_PREFIX, pool.key().as_ref()], bump)]
     pub pool_signer_pda: AccountInfo<'info>,
     pub token_program: Program<'info, Token>,
 }
 
 impl<'info> SwapCoinX<'info> {
-    fn send_admin_fee(
-        &self,
-        from: &Account<'info, TokenAccount>,
-        to: &Account<'info, TokenAccount>,
-    ) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
-        let cpi_accounts = Transfer {
-            from: from.to_account_info(),
-            to: to.to_account_info(),
-            authority: self.pool_signer_pda.to_account_info(),
-        };
-
-        let cpi_program = self.token_program.to_account_info();
-        CpiContext::new(cpi_program, cpi_accounts)
-    }
-
     fn send_user_tokens(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
-            from: self.meme_coin.to_account_info(),
+            from: self.user_meme.to_account_info(),
             to: self.meme_coin_vault.to_account_info(),
             authority: self.signer.to_account_info(),
         };
@@ -322,7 +381,7 @@ impl<'info> SwapCoinX<'info> {
     fn send_tokens_to_user(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
             from: self.sol_coin_vault.to_account_info(),
-            to: self.sol_coin.to_account_info(),
+            to: self.user_sol.to_account_info(),
             authority: self.pool_signer_pda.to_account_info(),
         };
 
@@ -340,7 +399,9 @@ pub struct SwapCoinY<'info> {
     admin_meme_coin: Account<'info, TokenAccount>,
     admin_sol_coin: Account<'info, TokenAccount>,
     staked_lp: Account<'info, StakedLP>,
-    signer: AccountInfo<'info>,
+    signer: Signer<'info>,
+    /// CHECK: pda signer
+    #[account(seeds = [PoolState::SIGNER_PDA_PREFIX, pool.key().as_ref()], bump)]
     pool_signer_pda: AccountInfo<'info>,
     token_program: Program<'info, Token>,
 }
@@ -379,8 +440,8 @@ fn swap_amounts(
     coin_out_min_value: u64,
     is_x: bool,
 ) -> SwapAmount {
-    let balance_x = pool_state.meme.tokens;
-    let balance_y = pool_state.sol.tokens;
+    let balance_x = pool_state.meme_vault.tokens;
+    let balance_y = pool_state.sol_vault.tokens;
     let prev_k = curve::invariant(balance_x, balance_y).unwrap();
 
     let admin_fee_in = fees::get_fee_in_amount(&pool_state.fees, coin_in_amount).unwrap();

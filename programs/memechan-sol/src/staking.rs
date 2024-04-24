@@ -7,7 +7,7 @@ use anchor_spl::token;
 use anchor_spl::token::{Token, TokenAccount, Transfer};
 
 #[account]
-pub struct FeeState {
+pub struct StakingPool {
     pub meme_vault: Pubkey,
     pub wsol_vault: Pubkey,
     pub vesting_config: VestingConfig,
@@ -16,9 +16,13 @@ pub struct FeeState {
     pub fees_y_total: u64,
 }
 
+impl StakingPool {
+    pub const SIGNER_PDA_PREFIX: &'static [u8; 7] = b"staking";
+}
+
 #[derive(Accounts)]
 struct InitFeeState<'info> {
-    fee_state: Account<'info, FeeState>,
+    fee_state: Account<'info, StakingPool>,
     meme_vault: Account<'info, TokenAccount>,
     wsol_vault: Account<'info, TokenAccount>,
 }
@@ -38,17 +42,17 @@ pub fn init_fee_state(ctx: Context<InitFeeState>) -> Result<()> {
 }
 
 #[derive(Accounts)]
-struct Unstake<'info> {
-    fee_state: Account<'info, FeeState>,
+pub struct Unstake<'info> {
+    fee_state: Account<'info, StakingPool>,
     lp_ticket: Account<'info, StakedLP>,
     user_meme_acc: Account<'info, TokenAccount>,
     user_wsol_acc: Account<'info, TokenAccount>,
     meme_vault: Account<'info, TokenAccount>,
     wsol_vault: Account<'info, TokenAccount>,
-    signer: AccountInfo<'info>,
+    signer: Signer<'info>,
 }
 
-pub fn unstake(ctx: Context<Unstake>) -> Result<()> {
+pub fn unstake_handler(ctx: Context<Unstake>) -> Result<()> {
     let vesting_data = ctx.accounts.lp_ticket.vesting;
     let vesting_config = &ctx.accounts.fee_state.vesting_config;
 
@@ -78,13 +82,15 @@ pub fn unstake(ctx: Context<Unstake>) -> Result<()> {
 }
 
 #[derive(Accounts)]
-struct WithdrawFees<'info> {
-    fee_state: Account<'info, FeeState>,
+pub struct WithdrawFees<'info> {
+    fee_state: Account<'info, StakingPool>,
     lp_ticket: Account<'info, StakedLP>,
     user_meme_acc: Account<'info, TokenAccount>,
     user_wsol_acc: Account<'info, TokenAccount>,
     meme_vault: Account<'info, TokenAccount>,
     wsol_vault: Account<'info, TokenAccount>,
+    /// CHECK: pda signer
+    #[account(seeds = [StakingPool::SIGNER_PDA_PREFIX, fee_state.key().as_ref()], bump)]
     pool_signer_pda: AccountInfo<'info>,
     token_program: Program<'info, Token>,
 }
@@ -113,7 +119,7 @@ impl<'info> WithdrawFees<'info> {
     }
 }
 
-pub fn withdraw_fees(ctx: Context<WithdrawFees>) -> Result<()> {
+pub fn withdraw_fees_handler(ctx: Context<WithdrawFees>) -> Result<()> {
     let accs = ctx.accounts;
     let fee_state = &mut accs.fee_state;
     let lp_ticket = &mut accs.lp_ticket;
@@ -142,10 +148,10 @@ pub fn withdraw_fees(ctx: Context<WithdrawFees>) -> Result<()> {
 }
 
 #[derive(Accounts)]
-struct AddFees<'info> {
-    fee_state: Account<'info, FeeState>,
+pub struct AddFees<'info> {
+    fee_state: Account<'info, StakingPool>,
 }
 
-pub fn add_fees(ctx: Context<AddFees>) -> Result<()> {
+pub fn add_fees_handler(ctx: Context<AddFees>) -> Result<()> {
     Ok(())
 }
