@@ -16,18 +16,8 @@
           "isSigner": true
         },
         {
-          "name": "ticketVault",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "ticketMint",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
           "name": "memeMint",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -41,18 +31,13 @@
           "isSigner": false
         },
         {
-          "name": "adminTicketVault",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
           "name": "adminSolVault",
           "isMut": false,
           "isSigner": false
         },
         {
           "name": "launchVault",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -78,31 +63,26 @@
       "accounts": [
         {
           "name": "pool",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
-          "name": "userMeme",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "memeCoinVault",
-          "isMut": false,
+          "name": "userMemeTicket",
+          "isMut": true,
           "isSigner": false
         },
         {
           "name": "userSol",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
-          "name": "solCoinVault",
-          "isMut": false,
+          "name": "solVault",
+          "isMut": true,
           "isSigner": false
         },
         {
-          "name": "signer",
+          "name": "owner",
           "isMut": false,
           "isSigner": true
         },
@@ -133,42 +113,27 @@
       "accounts": [
         {
           "name": "pool",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
-          "name": "memeVault",
-          "isMut": false,
+          "name": "solVault",
+          "isMut": true,
           "isSigner": false
         },
         {
-          "name": "wsolVault",
-          "isMut": false,
+          "name": "userSol",
+          "isMut": true,
           "isSigner": false
         },
         {
-          "name": "userWsol",
-          "isMut": false,
-          "isSigner": false
+          "name": "memeTicket",
+          "isMut": true,
+          "isSigner": true
         },
         {
-          "name": "adminMemeCoin",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "adminSolCoin",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "stakedLp",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "signer",
-          "isMut": false,
+          "name": "owner",
+          "isMut": true,
           "isSigner": true
         },
         {
@@ -178,6 +143,11 @@
         },
         {
           "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
           "isMut": false,
           "isSigner": false
         }
@@ -227,7 +197,7 @@
           "isSigner": false
         },
         {
-          "name": "poolSignerPda",
+          "name": "boundPoolSignerPda",
           "isMut": false,
           "isSigner": false
         },
@@ -254,12 +224,12 @@
       "name": "unstake",
       "accounts": [
         {
-          "name": "feeState",
+          "name": "staking",
           "isMut": false,
           "isSigner": false
         },
         {
-          "name": "lpTicket",
+          "name": "memeTicket",
           "isMut": false,
           "isSigner": false
         },
@@ -289,13 +259,18 @@
           "isSigner": true
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "releaseAmount",
+          "type": "u64"
+        }
+      ]
     },
     {
       "name": "withdrawFees",
       "accounts": [
         {
-          "name": "feeState",
+          "name": "staking",
           "isMut": false,
           "isSigner": false
         },
@@ -336,16 +311,46 @@
         }
       ],
       "args": []
+    },
+    {
+      "name": "mergeTickets",
+      "accounts": [
+        {
+          "name": "staking",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "ticketInto",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "ticketFrom",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
+        }
+      ],
+      "args": []
     }
   ],
   "accounts": [
     {
-      "name": "StakedLP",
+      "name": "MemeTicket",
       "type": {
         "kind": "struct",
         "fields": [
           {
             "name": "owner",
+            "type": "publicKey"
+          },
+          {
+            "name": "pool",
             "type": "publicKey"
           },
           {
@@ -379,6 +384,10 @@
         "kind": "struct",
         "fields": [
           {
+            "name": "pool",
+            "type": "publicKey"
+          },
+          {
             "name": "memeVault",
             "type": "publicKey"
           },
@@ -408,33 +417,27 @@
       }
     },
     {
-      "name": "PoolState",
+      "name": "BoundPool",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "memeVault",
+            "name": "memeAmt",
+            "type": "u64"
+          },
+          {
+            "name": "solReserve",
             "type": {
               "defined": "Reserve"
             }
           },
           {
-            "name": "solVault",
-            "type": {
-              "defined": "Reserve"
-            }
-          },
-          {
-            "name": "adminFeesTicket",
+            "name": "adminFeesMeme",
             "type": "u64"
           },
           {
             "name": "adminFeesSol",
             "type": "u64"
-          },
-          {
-            "name": "adminVaultTicket",
-            "type": "publicKey"
           },
           {
             "name": "adminVaultSol",
@@ -580,15 +583,37 @@
     },
     {
       "code": 6010,
-      "name": "PoolIsLocked"
+      "name": "PoolIsLocked",
+      "msg": "Pool can't be interacted with until going into live phase"
     },
     {
       "code": 6011,
-      "name": "NoZeroTokens"
+      "name": "NoZeroTokens",
+      "msg": "Shouldn't provide zero tokens in"
     },
     {
       "code": 6012,
       "name": "NoTokensToWithdraw"
+    },
+    {
+      "code": 6013,
+      "name": "NotEnoughTicketTokens",
+      "msg": "Amount of tokens in ticket is lower than needed to swap"
+    },
+    {
+      "code": 6014,
+      "name": "TicketTokensLocked",
+      "msg": "Not enough time passed to unlock tokens bound to the ticket"
+    },
+    {
+      "code": 6015,
+      "name": "NonZeroAmountTicket",
+      "msg": "Can't close ticket with non-zero bound token amount"
+    },
+    {
+      "code": 6016,
+      "name": "NotEnoughTokensToRelease",
+      "msg": "Can't unstake the required amount of tokens"
     }
   ]
 }

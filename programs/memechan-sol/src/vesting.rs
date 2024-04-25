@@ -1,5 +1,4 @@
 use anchor_lang::prelude::*;
-use anchor_lang::solana_program::clock;
 
 const DEFAULT_CLIFF: i64 = 172800000; // 48 hours; TODO: test
 const DEFAULT_LINEAR: i64 = 1209600000; // 14 days; TODO: test
@@ -18,7 +17,7 @@ pub struct VestingData {
 }
 
 pub fn default_config() -> VestingConfig {
-    let current_ts = clock::Clock::get().unwrap().unix_timestamp;
+    let current_ts = Clock::get().unwrap().unix_timestamp;
 
     VestingConfig {
         start_ts: current_ts,

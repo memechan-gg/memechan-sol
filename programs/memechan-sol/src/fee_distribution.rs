@@ -1,56 +1,9 @@
 use crate::err::AmmError;
-use crate::staked_lp::StakedLP;
+use crate::staked_lp::MemeTicket;
 use crate::staking::StakingPool;
 use anchor_lang::prelude::*;
-use anchor_spl::token::{transfer, Token, TokenAccount, Transfer};
 
 const PRECISION: u128 = 1_000_000_000_000_000;
-
-#[derive(Accounts)]
-struct AddFees<'info> {
-    fee_state: Account<'info, StakingPool>,
-    meme_vault: Account<'info, TokenAccount>,
-    wsol_vault: Account<'info, TokenAccount>,
-    meme_fees: Account<'info, TokenAccount>,
-    wsol_fees: Account<'info, TokenAccount>,
-    signer: Signer<'info>,
-    token_program: Program<'info, Token>,
-}
-
-impl<'info> AddFees<'info> {
-    fn send_fees(
-        &self,
-        from: &Account<'info, TokenAccount>,
-        to: &Account<'info, TokenAccount>,
-    ) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
-        let cpi_accounts = Transfer {
-            from: from.to_account_info(),
-            to: to.to_account_info(),
-            authority: self.signer.to_account_info(),
-        };
-
-        let cpi_program = self.token_program.to_account_info();
-        CpiContext::new(cpi_program, cpi_accounts)
-    }
-}
-
-pub fn add_fees(ctx: Context<AddFees>) {
-    let accs = ctx.accounts;
-    let state = &mut accs.fee_state;
-    state.fees_x_total += accs.meme_fees.amount;
-    state.fees_y_total += accs.wsol_fees.amount;
-
-    transfer(
-        accs.send_fees(&accs.meme_fees, &accs.meme_vault),
-        accs.meme_fees.amount,
-    )
-    .unwrap();
-    transfer(
-        accs.send_fees(&accs.wsol_fees, &accs.wsol_vault),
-        accs.meme_fees.amount,
-    )
-    .unwrap();
-}
 
 pub struct Withdrawal {
     pub max_withdrawal_meme: u64,
@@ -59,9 +12,9 @@ pub struct Withdrawal {
 
 pub fn calc_withdraw(
     fee_state: &Account<StakingPool>,
-    lp_ticket: &Account<StakedLP>,
+    lp_ticket: &Account<MemeTicket>,
 ) -> Result<Withdrawal> {
-    let user_stake: u64 = lp_ticket.amount;
+    let user_stake: u64 = lp_ticket.vesting.current_stake();
     let user_withdrawals_meme = lp_ticket.withdraws_meme;
     let user_withdrawals_wsol = lp_ticket.withdraws_wsol;
 
@@ -70,16 +23,14 @@ pub fn calc_withdraw(
         fee_state.fees_x_total,
         user_stake,
         fee_state.stakes_total,
-    )
-    .unwrap();
+    )?;
 
     let max_withdrawal_wsol = get_max_withdraw(
         user_withdrawals_wsol,
         fee_state.fees_y_total,
         user_stake,
         fee_state.stakes_total,
-    )
-    .unwrap();
+    )?;
 
     Ok(Withdrawal {
         max_withdrawal_meme,
@@ -89,7 +40,7 @@ pub fn calc_withdraw(
 
 pub fn update_stake(
     state: &mut Account<StakingPool>,
-    lp_ticket: &mut Account<StakedLP>,
+    lp_ticket: &mut Account<MemeTicket>,
     user_old_stake: u64,
     user_stake_diff: u64,
 ) -> Result<Withdrawal> {

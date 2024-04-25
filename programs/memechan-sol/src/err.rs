@@ -29,9 +29,19 @@ pub enum AmmError {
     ZeroInAmt,
     ZeroMemeVault,
     InsufficientBalance,
+    #[msg("Pool can't be interacted with until going into live phase")]
     PoolIsLocked,
+    #[msg("Shouldn't provide zero tokens in")]
     NoZeroTokens,
     NoTokensToWithdraw,
+    #[msg("Amount of tokens in ticket is lower than needed to swap")]
+    NotEnoughTicketTokens,
+    #[msg("Not enough time passed to unlock tokens bound to the ticket")]
+    TicketTokensLocked,
+    #[msg("Can't close ticket with non-zero bound token amount")]
+    NonZeroAmountTicket,
+    #[msg("Can't unstake the required amount of tokens")]
+    NotEnoughTokensToRelease,
 }
 
 #[allow(dead_code)]
