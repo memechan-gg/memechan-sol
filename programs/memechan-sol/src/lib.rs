@@ -106,22 +106,20 @@ impl BoundPool {
 
     pub fn space() -> usize {
         let discriminant = 8;
-        let meme = mem::size_of::<Reserve>();
-        let sol = mem::size_of::<Reserve>();
-        let admin_fees_ticket = 8;
+        let meme_amt = 8;
+        let sol_reserve = mem::size_of::<Reserve>();
+        let admin_fees_meme = 8;
         let admin_fees_sol = 8;
-        let admin_vault_ticket = 32;
         let admin_vault_sol = 32;
         let launch_token_vault = 32;
         let fees = mem::size_of::<Fees>();
         let locked = mem::size_of::<bool>();
 
         discriminant
-            + meme
-            + sol
-            + admin_fees_ticket
+            + meme_amt
+            + sol_reserve
+            + admin_fees_meme
             + admin_fees_sol
-            + admin_vault_ticket
             + admin_vault_sol
             + launch_token_vault
             + fees

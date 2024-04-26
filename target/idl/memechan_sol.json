@@ -168,33 +168,38 @@
       "accounts": [
         {
           "name": "pool",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "staking",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "launchTokenVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "poolWsolVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "adminVaultSol",
           "isMut": false,
           "isSigner": false
         },
         {
-          "name": "feeState",
+          "name": "stakingMemeVault",
           "isMut": false,
           "isSigner": false
         },
         {
-          "name": "ticketVault",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "solVault",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "adminTicketVault",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "adminSolVault",
-          "isMut": false,
-          "isSigner": false
+          "name": "memeTicket",
+          "isMut": true,
+          "isSigner": true
         },
         {
           "name": "boundPoolSignerPda",
@@ -202,7 +207,67 @@
           "isSigner": false
         },
         {
+          "name": "stakingPoolSignerPda",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "memeMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "solMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "aldrinPoolAcc",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "aldrinPoolSigner",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "aldrinProgramToll",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "aldrinProgramTollWallet",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "aldrinLpMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "lpTokenWallet",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "signer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "aldrinAmmProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
           "isMut": false,
           "isSigner": false
         }
@@ -213,33 +278,7 @@
       "name": "addFees",
       "accounts": [
         {
-          "name": "feeState",
-          "isMut": false,
-          "isSigner": false
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "unstake",
-      "accounts": [
-        {
           "name": "staking",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "memeTicket",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "userMemeAcc",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "userWsolAcc",
           "isMut": false,
           "isSigner": false
         },
@@ -254,9 +293,75 @@
           "isSigner": false
         },
         {
+          "name": "memeFees",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "wsolFees",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "signer",
           "isMut": false,
           "isSigner": true
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "unstake",
+      "accounts": [
+        {
+          "name": "staking",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "memeTicket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userMeme",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userWsol",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "memeVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "wsolVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "signer",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "poolSignerPda",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": [
@@ -469,11 +574,11 @@
         "fields": [
           {
             "name": "feeInPercent",
-            "type": "u128"
+            "type": "u64"
           },
           {
             "name": "feeOutPercent",
-            "type": "u128"
+            "type": "u64"
           }
         ]
       }

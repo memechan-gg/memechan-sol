@@ -44,13 +44,27 @@ impl StakingPool {
 
 #[derive(Accounts)]
 pub struct Unstake<'info> {
+    #[account(
+        mut,
+        has_one = meme_vault,
+        has_one = wsol_vault,
+    )]
     staking: Account<'info, StakingPool>,
+    #[account(
+        mut,
+        constraint = meme_ticket.pool == staking.pool
+    )]
     meme_ticket: Account<'info, MemeTicket>,
+    #[account(mut)]
     user_meme: Account<'info, TokenAccount>,
+    #[account(mut)]
     user_wsol: Account<'info, TokenAccount>,
+    #[account(mut)]
     meme_vault: Account<'info, TokenAccount>,
+    #[account(mut)]
     wsol_vault: Account<'info, TokenAccount>,
     signer: Signer<'info>,
+    /// CHECK: checked by AMM
     #[account(seeds = [StakingPool::SIGNER_PDA_PREFIX, staking.key().as_ref()], bump)]
     pool_signer_pda: AccountInfo<'info>,
     token_program: Program<'info, Token>,

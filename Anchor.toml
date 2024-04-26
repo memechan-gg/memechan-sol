@@ -1,10 +1,11 @@
 [toolchain]
 
 [features]
-resolution = true
+seeds = false
 skip-lint = false
 
 [programs.localnet]
+amm = "Bos3FKqnNf725J46YBRvxCribD22RLkCreJvjB9WLdgq"
 memechan_sol = "Bos3FKqnNf725J46YBRvxCribD22RLkCreJvjB9WLdgq"
 
 [registry]
