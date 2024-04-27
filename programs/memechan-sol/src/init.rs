@@ -217,13 +217,13 @@ pub fn go_live_handler(ctx: Context<GoLive>) -> Result<()> {
 
     let max_amt_tokens = vec![
         TokenLimit {
-            mint: accs.aldrin_lp_mint.key(),
+            mint: accs.meme_mint.key(),
             tokens: TokenAmount {
                 amount: amm_meme_balance,
             },
         },
         TokenLimit {
-            mint: Default::default(),
+            mint: accs.sol_mint.key(),
             tokens: TokenAmount {
                 amount: sol_supply - live_fee_amt,
             },

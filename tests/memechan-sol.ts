@@ -1,16 +1,9 @@
-import * as anchor from "@coral-xyz/anchor";
-import { Program } from "@coral-xyz/anchor";
+import * as anchor from "@project-serum/anchor";
+import { Program } from "@project-serum/anchor";
 import { MemechanSol } from "../target/types/memechan_sol";
+import * as newPool from "./endpoints/new"
+
 
 describe("memechan-sol", () => {
-  // Configure the client to use the local cluster.
-  anchor.setProvider(anchor.AnchorProvider.env());
-
-  const program = anchor.workspace.MemechanSol as Program<MemechanSol>;
-
-  it("Is initialized!", async () => {
-    // Add your test here.
-    const tx = await program.methods.initialize().rpc();
-    console.log("Your transaction signature", tx);
-  });
+  newPool.test();
 });

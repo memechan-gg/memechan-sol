@@ -22,12 +22,11 @@ use core as core_;
 use std::cmp::min;
 use std::mem;
 
-declare_id!("Bos3FKqnNf725J46YBRvxCribD22RLkCreJvjB9WLdgq");
+declare_id!("3LpdC7WHSrw2d6mWm3Enfvpzy1u5zoHkysyH1WxdmpPB");
 
 pub mod admin {
     use anchor_lang::prelude::declare_id;
-    #[cfg(not(feature = "devnet"))]
-    declare_id!("Bos3FKqnNf725J46YBRvxCribD22RLkCreJvjB9WLdgq");
+    declare_id!("8vBA2MzaQdt3UWimSkx1J4m2zMgp8A2iwtRKzXVurXP2");
 }
 
 #[program]
@@ -113,7 +112,7 @@ impl BoundPool {
         let admin_vault_sol = 32;
         let launch_token_vault = 32;
         let fees = mem::size_of::<Fees>();
-        let locked = mem::size_of::<bool>();
+        let locked = 1;
 
         discriminant
             + meme_amt
@@ -130,11 +129,18 @@ impl BoundPool {
 pub struct New<'info> {
     #[account(mut)]
     pub sender: Signer<'info>,
-    #[account(init, payer = sender, space = BoundPool::space())]
+    #[account(
+        init,
+        payer = sender,
+        space = BoundPool::space(),
+
+    )]
+    // seeds = [BoundPool::SIGNER_PDA_PREFIX, pool_signer.key().as_ref()],
+    // bump,
     pub pool: Account<'info, BoundPool>,
     #[account(
         mut,
-        constraint = meme_mint.mint_authority == COption::Some(pool_signer_pda.key())
+        constraint = meme_mint.mint_authority == COption::Some(pool_signer.key())
             @ err::acc("meme mint authority must be the pool signer"),
         constraint = meme_mint.freeze_authority == COption::None
             @ err::acc("meme mint mustn't have a freeze authority"),
@@ -143,7 +149,7 @@ pub struct New<'info> {
     #[account(
         constraint = sol_vault.mint == sol_mint.key()
             @ err::acc("ticket vault must be of ticket mint"),
-        constraint = sol_vault.owner == pool_signer_pda.key()
+        constraint = sol_vault.owner == pool_signer.key()
             @ err::acc("ticket vault authority must match pool pda"),
     )]
     pub sol_vault: Account<'info, TokenAccount>,
@@ -163,13 +169,15 @@ pub struct New<'info> {
         mut,
         constraint = launch_vault.mint == meme_mint.key()
             @ err::acc("admin ticket vault must be of ticket mint"),
-        constraint = launch_vault.owner == pool_signer_pda.key()
+        constraint = launch_vault.owner == pool_signer.key()
             @ err::acc("launch vault authority must match admin"),
     )]
     pub launch_vault: Account<'info, TokenAccount>,
-    /// CHECK: pda signer
-    #[account(seeds = [BoundPool::SIGNER_PDA_PREFIX, pool.key().as_ref()], bump)]
-    pub pool_signer_pda: AccountInfo<'info>,
+    /// CHECK: _pda_
+    //#[account(seeds = [BoundPool::SIGNER_PDA_PREFIX, pool.key().as_ref()], bump)]
+    //#[account(constraint = pool_signer.key() == pool.key())]
+    #[account(mut)]
+    pub pool_signer: AccountInfo<'info>,
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
 }
@@ -179,7 +187,7 @@ impl<'info> New<'info> {
         let cpi_accounts = token::MintTo {
             mint: self.meme_mint.to_account_info(),
             to: self.launch_vault.to_account_info(),
-            authority: self.pool_signer_pda.to_account_info(),
+            authority: self.pool_signer.to_account_info(),
         };
 
         let cpi_program = self.token_program.to_account_info();
@@ -191,7 +199,7 @@ impl<'info> New<'info> {
         mint: &Account<'info, Mint>,
     ) -> CpiContext<'_, '_, '_, 'info, SetAuthority<'info>> {
         let cpi_accounts = SetAuthority {
-            current_authority: self.pool_signer_pda.to_account_info(),
+            current_authority: self.pool_signer.to_account_info(),
             account_or_mint: mint.to_account_info(),
         };
 

@@ -41,8 +41,8 @@
           "isSigner": false
         },
         {
-          "name": "poolSignerPda",
-          "isMut": false,
+          "name": "poolSigner",
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -720,5 +720,8 @@
       "name": "NotEnoughTokensToRelease",
       "msg": "Can't unstake the required amount of tokens"
     }
-  ]
+  ],
+  "metadata": {
+    "address": "3LpdC7WHSrw2d6mWm3Enfvpzy1u5zoHkysyH1WxdmpPB"
+  }
 }

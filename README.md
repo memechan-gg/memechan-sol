@@ -1,4 +1,5 @@
-#Memechan.gg Solana implementation
+# Memechan.gg Solana implementation
 
-#Mentions
+# Mentions
+
 Used math lib from Raydium, thanks for that.
