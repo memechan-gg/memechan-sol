@@ -42,7 +42,7 @@
         },
         {
           "name": "poolSigner",
-          "isMut": true,
+          "isMut": false,
           "isSigner": false
         },
         {

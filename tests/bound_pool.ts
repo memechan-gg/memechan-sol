@@ -73,13 +73,9 @@ export class BoundPool {
     //   await createProgramToll(tollAuthority);
     // }
 
-    const poolSigner = id.publicKey//BoundPool.signerFrom(id.publicKey);
-    const idFromMint = BoundPool.signerFrom(id.publicKey);
+    const poolSigner = BoundPool.signerFrom(id.publicKey);
 
     const adminAuthority = admin;
-    console.log(adminAuthority.toBase58())
-
-    console.log(2);
     
     const solMint = NATIVE_MINT;
 
@@ -91,14 +87,14 @@ export class BoundPool {
       AuthorityType.MintTokens,
       poolSigner
     );
-    console.log(3);
+    
     const adminSolVault = (await getOrCreateAssociatedTokenAccount(
       provider.connection,
       payer,
       solMint,
       adminAuthority
     )).address;
-    console.log(3.1);
+    
     const poolSolVaultid = Keypair.generate();
     const poolSolVault = await createAccount(
       provider.connection,
@@ -107,7 +103,7 @@ export class BoundPool {
       poolSigner,
       poolSolVaultid
     );
-    console.log(3.2);
+    
     const launchVaultid = Keypair.generate();
     const launchVault = await createAccount(
       provider.connection,
@@ -116,26 +112,7 @@ export class BoundPool {
       poolSigner,
       launchVaultid
     );
-    // const vaults = await Promise.all(
-    //   new Array(2).fill(undefined).map(async () => {
-    //     const mint = await createMint(
-    //       provider.connection,
-    //       payer,
-    //       id.publicKey,
-    //       null,
-    //       9
-    //     );
-    //     const kp = Keypair.generate();
-    //     await createAccount(provider.connection, payer, mint, poolSigner, kp);
-    //     return {
-    //       isSigner: false,
-    //       isWritable: false,
-    //       pubkey: kp.publicKey,
-    //     };
-    //   })
-    // );
-
-    console.log(4);
+   
     await memechan.methods
       .new()
       .accounts({
@@ -147,17 +124,10 @@ export class BoundPool {
         poolSigner: poolSigner,
         sender: signer.publicKey,
         solMint: solMint,
-        // admin: admin.publicKey,
-        // pool: id.publicKey,
-        // programToll: toll,
-        // poolSigner,
-        // programTollWallet,
-        // lpMint,
         
-         tokenProgram: TOKEN_PROGRAM_ID,
-         systemProgram: SystemProgram.programId,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        systemProgram: SystemProgram.programId,
       })
-      //.remainingAccounts(vaults)
       .signers([signer, id])
       .rpc();
 

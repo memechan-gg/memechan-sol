@@ -132,11 +132,8 @@ pub struct New<'info> {
     #[account(
         init,
         payer = sender,
-        space = BoundPool::space(),
-
+        space = BoundPool::space()
     )]
-    // seeds = [BoundPool::SIGNER_PDA_PREFIX, pool_signer.key().as_ref()],
-    // bump,
     pub pool: Account<'info, BoundPool>,
     #[account(
         mut,
@@ -173,10 +170,8 @@ pub struct New<'info> {
             @ err::acc("launch vault authority must match admin"),
     )]
     pub launch_vault: Account<'info, TokenAccount>,
-    /// CHECK: _pda_
-    //#[account(seeds = [BoundPool::SIGNER_PDA_PREFIX, pool.key().as_ref()], bump)]
-    //#[account(constraint = pool_signer.key() == pool.key())]
-    #[account(mut)]
+    /// CHECK: pool_pda
+    #[account(seeds = [BoundPool::SIGNER_PDA_PREFIX, pool.key().as_ref()], bump)]
     pub pool_signer: AccountInfo<'info>,
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
@@ -215,13 +210,27 @@ pub fn new_handler(ctx: Context<New>) -> Result<()> {
         return Err(error!(err::acc("")));
     }
 
+    let seeds = &[
+        BoundPool::SIGNER_PDA_PREFIX,
+        &accs.pool.key().to_bytes()[..],
+        &[ctx.bumps.pool_signer],
+    ];
+
+    let signer_seeds = &[&seeds[..]];
+
     token::mint_to(
-        accs.mint_meme_tokens(),
+        accs.mint_meme_tokens().with_signer(signer_seeds),
         MAX_MEME_TOKENS * MEME_TOKEN_DECIMALS,
     )
     .unwrap();
 
-    token::set_authority(accs.set_mint_authority(&accs.meme_mint), MintTokens, None).unwrap();
+    token::set_authority(
+        accs.set_mint_authority(&accs.meme_mint)
+            .with_signer(signer_seeds),
+        MintTokens,
+        None,
+    )
+    .unwrap();
 
     let pool = &mut accs.pool;
     pool.admin_vault_sol = accs.admin_sol_vault.key();
