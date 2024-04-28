@@ -2,7 +2,7 @@ use crate::vesting::VestingData;
 use anchor_lang::prelude::*;
 use std::mem;
 
-pub const LOCK_TIME: i64 = 4 * 3600;
+pub const LOCK_TIME: i64 = 4; // * 3600;
 
 #[account]
 pub struct MemeTicket {

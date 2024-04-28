@@ -1,7 +1,7 @@
-import { expect } from "chai";
+import { assert, expect } from "chai";
 import { BoundPool } from "../bound_pool";
 import { AccountMeta, Keypair, PublicKey } from "@solana/web3.js";
-import { createAccount, getAccount } from "@solana/spl-token";
+import { createAccount, createWrappedNativeAccount, getAccount } from "@solana/spl-token";
 import { memechan, payer, provider, sleep } from "../helpers";
 import { BN } from "@project-serum/anchor";
 
@@ -9,146 +9,111 @@ export function test() {
   describe("swap_y", () => {
     const user = Keypair.generate();
 
-    it("swaps sol->memecoin", async () => {
+    it("swaps full sol->memecoin in one go", async () => {
       const pool = await BoundPool.new();
-
-      const info = await pool.fetch();
-
-      const mint1 = info.memeMint;
-      const mint2 = info.solReserve.mint;
-
-      const userTokenWallet1 = await createAccount(
-        provider.connection,
-        payer,
-        mint1,
-        user.publicKey
-      );
-
-      const userTokenWallet2 = await createAccount(
-        provider.connection,
-        payer,
-        mint2,
-        user.publicKey
-      );
-
-      //BoundPool.airdropLiquidityTokens(mint1, userTokenWallet1, pool.id, 1_000_000);
-      //BoundPool.airdropLiquidityTokens(mint2, userTokenWallet2, pool.id, 1_000_000);
-
+      
       await sleep(1000);
 
-
-      // call to the depositLiquidity endpoint
+      // call to the swap endpoint
       const ticketId = await pool.swap_y({
-        maxAmountTokens: new BN(0),
+        memeTokensOut: new BN(1),
+        solAmountIn: new BN(303 * 1e9),
       });
 
       sleep(1000);
 
       const poolInfo = await pool.fetch();
-      console.log("--pool--")
-      console.log(poolInfo.adminFeesMeme.toString())
-      console.log(poolInfo.adminFeesSol.toString())
-      console.log(poolInfo.memeAmt.toString())
-      console.log(poolInfo.solReserve.tokens.toString())
-      console.log(poolInfo.locked)
 
+      assert(poolInfo.locked, "pool should be locked")
 
       const ticketInfo = await memechan.account.memeTicket.fetch(ticketId);
-      console.log(ticketInfo.amount.toString())
-      console.log(ticketInfo.owner.toString())
-      console.log(ticketInfo.pool.toString())
 
+      const memesTotal = ticketInfo.amount.add(poolInfo.adminFeesMeme);
+      assert(memesTotal.eq(new BN(9e14)), "total sum of memetokens with fees should amount to 9e14")
 
-      // const poolTokenVaultInfo1 = await getAccount(
-      //   provider.connection,
-      //   info.reserves[0].vault
-      // );
-      // const userTokenWalletInfo1 = await getAccount(
-      //   provider.connection,
-      //   userTokenWallet1
-      // );
+      const solAmt = poolInfo.solReserve.tokens;
+      assert(solAmt.eq(new BN(3e11)), "pool should have 300 sol")
 
-      // const poolTokenVaultInfo2 = await getAccount(
-      //   provider.connection,
-      //   info.reserves[1].vault
-      // );
-      // const userTokenWalletInfo2 = await getAccount(
-      //   provider.connection,
-      //   userTokenWallet2
-      // );
+      const solVault = await getAccount(
+        provider.connection, 
+        poolInfo.solReserve.vault,
+      )
 
-      // const lpTokenWalletAccountInfo = await getAccount(
-      //   provider.connection,
-      //   lpTokenWallet
-      // );
+      const totalAmt = solVault.amount - BigInt(poolInfo.adminFeesSol.toNumber());
+      assert(totalAmt === BigInt(3e11), "pool should have 300 sol without admin fees")
 
-      // const poolTokenVaultAmount1 = poolTokenVaultInfo1.amount;
-      // const userTokenWalletAmount1 = userTokenWalletInfo1.amount;
+    });
 
-      // const poolTokenVaultAmount2 = poolTokenVaultInfo2.amount;
-      // const userTokenWalletAmount2 = userTokenWalletInfo2.amount;
+    it("swaps full sol->memecoin in multiple swaps", async () => {
+      const pool = await BoundPool.new();
+      
+      await sleep(1000);
 
-      // const lpTokenAmount = lpTokenWalletAccountInfo.amount;
+      const tickets = [];
 
-      // expect(poolTokenVaultAmount1).to.be.eq(BigInt(100));
-      // expect(poolTokenVaultAmount2).to.be.eq(BigInt(10));
+      tickets.push(await pool.swap_y({
+        memeTokensOut: new BN(1),
+        solAmountIn: new BN(50.5 * 1e9),
+      }));
 
-      // expect(userTokenWalletAmount1).to.be.eq(BigInt(1_000_000 - 100));
-      // expect(userTokenWalletAmount2).to.be.eq(BigInt(1_000_000 - 10));
+      tickets.push(await pool.swap_y({
+        memeTokensOut: new BN(1),
+        solAmountIn: new BN(70.7 * 1e9),
+      }));
 
-      // // since this is the first deposit, we expect that the total amount
-      // // of lp tokens minted corresponds to the minimum value of deposited tokens
-      // expect(lpTokenAmount).to.be.eq(BigInt(10));
+      tickets.push( await pool.swap_y({
+        memeTokensOut: new BN(1),
+        solAmountIn: new BN(181.8 * 1e9),
+      }));
 
-      // // test that nothing else changed in the pool
-      // expect(info.reserves[0].tokens.amount.toNumber() + 100).to.be.deep.eq(
-      //   poolInfo.reserves[0].tokens.amount.toNumber()
-      // );
-      // expect(info.reserves[1].tokens.amount.toNumber() + 10).to.be.deep.eq(
-      //   poolInfo.reserves[1].tokens.amount.toNumber()
-      // );
+      sleep(1000);
 
-      // // nothing else changes in the pool
-      // delete info.reserves;
-      // delete poolInfo.reserves;
+      const poolInfo = await pool.fetch();
 
-      // expect(info).to.be.deep.eq(poolInfo);
+      assert(poolInfo.locked, "pool should be locked")
 
-      // await pool.depositLiquidity({
-      //   maxAmountTokens,
-      //   vaultsAndWallets,
-      //   lpTokenWallet,
-      //   user,
-      // });
+      let sum = new BN(0);
+      for (let i = 0; i < tickets.length; i++) {
+        const ticket1Id = tickets[i];
+        
+        const ticketInfo = await memechan.account.memeTicket.fetch(ticket1Id);
+        sum = sum.add(ticketInfo.amount)
+      }
 
-      // const newDepositVaultAmount1 = (
-      //   await getAccount(provider.connection, poolTokenVaultInfo1.address)
-      // ).amount;
+      assert(sum.add(poolInfo.adminFeesMeme).eq(new BN(9e14)), "total sum of memetokens with fees should amount to 9e14")
 
-      // const newDepositVaultAmount2 = (
-      //   await getAccount(provider.connection, poolTokenVaultInfo2.address)
-      // ).amount;
+      const solVault = await getAccount(
+        provider.connection, 
+        poolInfo.solReserve.vault,
+      )
 
-      // expect(newDepositVaultAmount1).to.be.deep.eq(BigInt(200));
-      // expect(newDepositVaultAmount2).to.be.deep.eq(BigInt(20));
+      const totalAmt = solVault.amount - BigInt(poolInfo.adminFeesSol.toNumber());
+      assert(totalAmt === BigInt(3e11), "pool should have 300 sol without admin fees")
+    });
 
-      // const newUserWalletAmount1 = (
-      //   await getAccount(provider.connection, userTokenWallet1)
-      // ).amount;
+    it("user swaps more than have", async () => {
+      const pool = await BoundPool.new();
+      
+      await sleep(1000);
 
-      // const newUserWalletAmount2 = (
-      //   await getAccount(provider.connection, userTokenWallet2)
-      // ).amount;
+      const user = new Keypair();
 
-      // expect(newUserWalletAmount1).to.be.deep.eq(BigInt(999800));
-      // expect(newUserWalletAmount2).to.be.deep.eq(BigInt(999980));
-
-      // const lpTokenWalletAmount = (
-      //   await getAccount(provider.connection, lpTokenWallet)
-      // ).amount;
-
-      // expect(lpTokenWalletAmount).to.be.deep.eq(BigInt(20));
+      try {
+        await pool.swap_y({
+          memeTokensOut: new BN(1),
+          user: user,
+          solAmountIn: new BN(50.5 * 1e9),
+          userSolAcc: await createWrappedNativeAccount(
+            provider.connection,
+            payer,
+            user.publicKey,
+            5 * 1e9
+          )
+        });
+        assert(false, "rpc should have failed")
+      } catch(e) {} 
     });
 
   });
+  
 }

@@ -23,7 +23,20 @@ export interface SwapYArgs {
   user: Keypair;
   pool: PublicKey;
   poolSignerPda: PublicKey;
-  maxAmountTokens: BN;
+  userSolAcc: PublicKey;
+  solAmountIn: BN;
+  memeTokensOut: BN;
+  vaultsAndWallets: AccountMeta[];
+}
+
+export interface SwapXArgs { 
+  user: Keypair;
+  pool: PublicKey;
+  poolSignerPda: PublicKey;
+  memeAmountIn: BN;
+  solTokensOut: BN;
+  userMemeTicket: PublicKey;
+  userSolAcc: PublicKey;
   vaultsAndWallets: AccountMeta[];
 }
 
@@ -47,13 +60,7 @@ export class BoundPool {
     provider.opts.skipPreflight = true
     const id = Keypair.generate();
 
-    const memeMint = await createMint(
-      provider.connection,
-      payer,
-      payer.publicKey,
-      null,
-      6
-    );
+    
 
     // let [id, _] = PublicKey.findProgramAddressSync(
     //   [Buffer.from("signer"), id.toBuffer()],
@@ -75,13 +82,12 @@ export class BoundPool {
 
     const adminAuthority = admin;
 
-    await setAuthority(
+    const memeMint = await createMint(
       provider.connection,
       payer,
-      memeMint,
-      payer,
-      AuthorityType.MintTokens,
-      poolSigner
+      poolSigner,
+      null,
+      6
     );
     
     const adminSolVault = (await getOrCreateAssociatedTokenAccount(
@@ -134,7 +140,6 @@ export class BoundPool {
   }
 
   public static signerFrom(publicKey: PublicKey): PublicKey {
-    console.log(memechan.programId.toBase58())
     return PublicKey.findProgramAddressSync(
       [Buffer.from("signer"), publicKey.toBytes()],
       memechan.programId
@@ -168,8 +173,10 @@ export class BoundPool {
 
     const pool = input.pool ?? this.id;
     const poolSignerPda = input.poolSignerPda ?? this.signerPda();
-    
-    const userSolAcc = await createWrappedNativeAccount(
+    const sol_in = input.solAmountIn ?? 1 * 1e9;
+    const meme_out = input.memeTokensOut ?? 1;
+
+    const userSolAcc = input.userSolAcc ?? await createWrappedNativeAccount(
       provider.connection,
       payer,
       user.publicKey,
@@ -177,7 +184,7 @@ export class BoundPool {
     );
 
     await memechan.methods
-      .swapY(new BN(200 * 1e9), new BN(1))
+      .swapY(new BN(sol_in), new BN(meme_out))
       .accounts({
         memeTicket:id.publicKey,
         owner: user.publicKey,
@@ -193,6 +200,35 @@ export class BoundPool {
 
       return id.publicKey
   }
+
+  public async swap_x(
+    input: Partial<SwapXArgs>
+  ): Promise<void> {
+    const user = input.user;
+
+    const pool = input.pool ?? this.id;
+    const poolSignerPda = input.poolSignerPda ?? this.signerPda();
+    const meme_in = input.memeAmountIn ?? 9e6 * 1e6;
+    const sol_out = input.solTokensOut ?? 1;
+
+    const userMemeTicket = input.userMemeTicket;
+    const userSolAcc = input.userSolAcc;
+
+    await memechan.methods
+      .swapX(new BN(meme_in), new BN(sol_out))
+      .accounts({
+        userMemeTicket,
+        owner: user.publicKey,
+        pool: pool,
+        poolSignerPda: poolSignerPda,
+        solVault: this.solVault,
+        userSol: userSolAcc,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .signers([user])
+      .rpc();
+  }
+
 
   // public async redeemLiquidity(
   //   input: Partial<RedeemLiquidityArgs>

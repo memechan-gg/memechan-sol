@@ -1,4 +1,3 @@
-mod curve;
 mod err;
 mod fee_distribution;
 mod fees;
@@ -19,7 +18,7 @@ use anchor_spl::token::spl_token::instruction::AuthorityType::MintTokens;
 use anchor_spl::token::spl_token::native_mint;
 use anchor_spl::token::{self, Mint, SetAuthority, Token, TokenAccount, Transfer};
 use core as core_;
-use num_integer::{sqrt, Roots};
+use num_integer::Roots;
 use std::cmp::min;
 use std::mem;
 
@@ -88,8 +87,6 @@ const DEFAULT_MAX_S: u128 = 300;
 const DECIMALS_ALPHA: u128 = 1_000_000; // consider increase
 const DECIMALS_BETA: u128 = 1_000_000; // consider increase
 const DECIMALS_S: u128 = 1_000_000_000;
-
-const MAX_WSOL: u64 = 300;
 
 #[account]
 pub struct BoundPool {
@@ -368,7 +365,7 @@ pub fn swap_x_handler(
     pool_state.admin_fees_meme += swap_amount.admin_fee_in;
     pool_state.admin_fees_sol += swap_amount.admin_fee_out;
 
-    pool_state.meme_amt += swap_amount.amount_in + swap_amount.admin_fee_in;
+    pool_state.meme_amt += swap_amount.amount_in;
     pool_state.sol_reserve.tokens -= swap_amount.amount_out;
 
     user_ticket.amount -= coin_in_amount;
@@ -441,7 +438,11 @@ pub fn swap_y_handler(
 
     let swap_amount = swap_amounts(&accs.pool, coin_in_amount, coin_x_min_value, true);
 
-    token::transfer(accs.send_user_tokens(), swap_amount.amount_in).unwrap();
+    token::transfer(
+        accs.send_user_tokens(),
+        swap_amount.amount_in + swap_amount.admin_fee_in,
+    )
+    .unwrap();
 
     let pool = &mut accs.pool;
 
@@ -451,13 +452,10 @@ pub fn swap_y_handler(
     pool.sol_reserve.tokens += swap_amount.amount_in;
     pool.meme_amt -= swap_amount.amount_out + swap_amount.admin_fee_out;
 
-    //events::swap<CoinY, CoinX, SwapAmount>(pool_address, coin_in_amount,swap_amount);
-
     if pool.meme_amt == 0 {
         pool.locked = true;
     };
 
-    //coin::take(&mut pool_state.balance_x, swap_amount.amount_out, ctx)
     let swap_amount = swap_amount.amount_out;
 
     let meme_ticket = &mut accs.meme_ticket;
