@@ -76,6 +76,10 @@ pub mod memechan_sol {
     pub fn staking_merge_tickets(ctx: Context<StakingMergeTickets>) -> Result<()> {
         staking_merge_tickets_handler(ctx)
     }
+
+    pub fn close_ticket(ctx: Context<CloseTicket>) -> Result<()> {
+        close_ticket_handler(ctx)
+    }
 }
 
 const MEME_TOKEN_DECIMALS: u64 = 1_000_000;
@@ -485,7 +489,6 @@ pub fn swap_y_handler(
 
 #[derive(Accounts)]
 pub struct CloseTicket<'info> {
-    pub staking: Account<'info, StakingPool>,
     #[account(
         mut,
         has_one = owner,

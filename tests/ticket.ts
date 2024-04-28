@@ -16,6 +16,10 @@ export interface StakingMerge {
   ticketToMerge: MemeTicket;
 }
 
+export interface CloseArgs {
+  user: Keypair;
+}
+
 export class MemeTicket {
 
   public constructor(public id: PublicKey) {
@@ -59,6 +63,23 @@ export class MemeTicket {
         staking: input.staking,
         ticketFrom: input.ticketToMerge.id,
         ticketInto: this.id
+      })
+      .signers([user])
+      .rpc();
+
+    return this;
+  }
+
+  public async close(
+    input: CloseArgs
+  ): Promise<MemeTicket> {
+
+    let user = input.user;
+
+    await memechan.methods.closeTicket()
+      .accounts({
+        owner: user.publicKey,
+        ticket: this.id
       })
       .signers([user])
       .rpc();

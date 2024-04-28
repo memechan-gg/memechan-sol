@@ -112,7 +112,39 @@ export function test() {
       })
     });
 
+    it("close ticket", async () => {
+      const user = Keypair.generate()
+      await airdrop(user.publicKey)
+      const pool = await BoundPool.new();
 
+      await sleep(1000);
+
+      const userSolAcc = await createWrappedNativeAccount(
+        provider.connection,
+        payer,
+        user.publicKey,
+        500 * 10e9
+      );
+
+      const ticket = await pool.swap_y({
+        user,
+        userSolAcc,
+        memeTokensOut: new BN(1),
+        solAmountIn: new BN(50.5 * 1e9),
+      });
+
+      const ticketInfo = await ticket.fetch();
+      await sleep(5000);
+
+      await pool.swap_x({
+        user,
+        userSolAcc,
+        memeAmountIn: ticketInfo.amount,
+        userMemeTicket: ticket,
+      });
+
+      ticket.close({ user })
+    });
   });
 
 

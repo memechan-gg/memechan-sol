@@ -68,7 +68,7 @@ pub struct Unstake<'info> {
     signer: Signer<'info>,
     /// CHECK: checked by AMM
     #[account(seeds = [StakingPool::SIGNER_PDA_PREFIX, staking.key().as_ref()], bump)]
-    pool_signer_pda: AccountInfo<'info>,
+    staking_signer_pda: AccountInfo<'info>,
     token_program: Program<'info, Token>,
 }
 
@@ -77,7 +77,7 @@ impl<'info> Unstake<'info> {
         let cpi_accounts = Transfer {
             from: self.wsol_vault.to_account_info(),
             to: self.user_wsol.to_account_info(),
-            authority: self.pool_signer_pda.to_account_info(),
+            authority: self.staking_signer_pda.to_account_info(),
         };
 
         let cpi_program = self.token_program.to_account_info();
@@ -88,7 +88,7 @@ impl<'info> Unstake<'info> {
         let cpi_accounts = Transfer {
             from: self.meme_vault.to_account_info(),
             to: self.user_meme.to_account_info(),
-            authority: self.pool_signer_pda.to_account_info(),
+            authority: self.staking_signer_pda.to_account_info(),
         };
 
         let cpi_program = self.token_program.to_account_info();
@@ -105,17 +105,9 @@ pub fn unstake_handler(ctx: Context<Unstake>, release_amount: u64) -> Result<()>
     let amount_available_to_release =
         vesting_data.to_release(&vesting_config, Clock::get()?.unix_timestamp);
 
-    // let release_amount = token::value(&coin_x);
-    // assert!(release_amount <= amount_available_to_release, 0);
     if release_amount > amount_available_to_release {
         return Err(error!(AmmError::NotEnoughTokensToRelease));
     }
-
-    // let vesting_data = table::borrow_mut(&mut staking_pool.vesting_data, sender(ctx));
-    //
-    // let vesting_old = vesting::current_stake(vesting_data);
-    //
-    // let (balance_meme, balance_sui) = fee_distribution::update_stake(vesting_old, release_amount, &mut staking_pool.fee_state, ctx);
 
     let withdrawal = update_stake(
         &mut accs.staking,
@@ -124,26 +116,25 @@ pub fn unstake_handler(ctx: Context<Unstake>, release_amount: u64) -> Result<()>
         release_amount,
     )?;
 
-    // vesting::release(vesting_data, release_amount);
-    //
-
     accs.meme_ticket.vesting.release(release_amount);
 
-    // balance::join(&mut staking_pool.balance_x, token_ir::into_balance(policy, coin_x, ctx));
-    //
-    // balance::join(&mut balance_meme, balance::split(&mut staking_pool.balance_meme, release_amount));
+    let staking_seeds = &[
+        StakingPool::SIGNER_PDA_PREFIX,
+        &accs.staking.key().to_bytes()[..],
+        &[ctx.bumps.staking_signer_pda],
+    ];
 
-    // (
-    // coin::from_balance(balance_meme, ctx),
-    // coin::from_balance(balance_sui, ctx)
-    // )
+    let staking_signer_seeds = &[&staking_seeds[..]];
 
     token::transfer(
-        accs.send_meme_to_user(),
+        accs.send_meme_to_user().with_signer(staking_signer_seeds),
         withdrawal.max_withdrawal_meme + release_amount,
     )?;
 
-    token::transfer(accs.send_wsol_to_user(), withdrawal.max_withdrawal_wsol)?;
+    token::transfer(
+        accs.send_wsol_to_user().with_signer(staking_signer_seeds),
+        withdrawal.max_withdrawal_wsol,
+    )?;
 
     Ok(())
 }
@@ -158,7 +149,7 @@ pub struct WithdrawFees<'info> {
     pub wsol_vault: Account<'info, TokenAccount>,
     /// CHECK: pda signer
     #[account(seeds = [StakingPool::SIGNER_PDA_PREFIX, staking.key().as_ref()], bump)]
-    pub pool_signer_pda: AccountInfo<'info>,
+    pub staking_signer_pda: AccountInfo<'info>,
     pub token_program: Program<'info, Token>,
 }
 
@@ -167,7 +158,7 @@ impl<'info> WithdrawFees<'info> {
         let cpi_accounts = Transfer {
             from: self.wsol_vault.to_account_info(),
             to: self.user_wsol_acc.to_account_info(),
-            authority: self.pool_signer_pda.to_account_info(),
+            authority: self.staking_signer_pda.to_account_info(),
         };
 
         let cpi_program = self.token_program.to_account_info();
@@ -178,7 +169,7 @@ impl<'info> WithdrawFees<'info> {
         let cpi_accounts = Transfer {
             from: self.meme_vault.to_account_info(),
             to: self.user_meme_acc.to_account_info(),
-            authority: self.pool_signer_pda.to_account_info(),
+            authority: self.staking_signer_pda.to_account_info(),
         };
 
         let cpi_program = self.token_program.to_account_info();
@@ -193,24 +184,29 @@ pub fn withdraw_fees_handler(ctx: Context<WithdrawFees>) -> Result<()> {
 
     let withdrawal = calc_withdraw(staking, lp_ticket).unwrap();
 
+    let staking_seeds = &[
+        StakingPool::SIGNER_PDA_PREFIX,
+        &accs.staking.key().to_bytes()[..],
+        &[ctx.bumps.staking_signer_pda],
+    ];
+
+    let staking_signer_seeds = &[&staking_seeds[..]];
+
     lp_ticket.withdraws_meme += withdrawal.max_withdrawal_meme;
     lp_ticket.withdraws_wsol += withdrawal.max_withdrawal_wsol;
 
     token::transfer(
-        accs.send_meme_fees_to_user(),
+        accs.send_meme_fees_to_user()
+            .with_signer(staking_signer_seeds),
         withdrawal.max_withdrawal_meme,
-    )
-    .unwrap();
+    )?;
 
     token::transfer(
-        accs.send_wsol_fees_to_user(),
+        accs.send_wsol_fees_to_user()
+            .with_signer(staking_signer_seeds),
         withdrawal.max_withdrawal_wsol,
-    )
-    .unwrap();
-    // (
-    // coin::from_balance(balance_meme, ctx),
-    // coin::from_balance(balance_sui, ctx)
-    // )
+    )?;
+
     Ok(())
 }
 
@@ -228,7 +224,7 @@ pub struct AddFees<'info> {
     pub wsol_vault: Account<'info, TokenAccount>,
     /// CHECK: pda
     #[account(seeds = [StakingPool::SIGNER_PDA_PREFIX, staking.key().as_ref()], bump)]
-    pub staking_pool_signer_pda: AccountInfo<'info>,
+    pub staking_signer_pda: AccountInfo<'info>,
     /// CHECK: done by inner call
     #[account(mut)]
     pub aldrin_pool_acc: AccountInfo<'info>,
@@ -250,7 +246,7 @@ impl<'info> AddFees<'info> {
     pub fn withdraw_fees_ctx(&self) -> CpiContext<'_, '_, '_, 'info, RedeemLiquidity<'info>> {
         let cpi_program = self.aldrin_amm_program.to_account_info();
         let cpi_accounts = RedeemLiquidity {
-            user: self.staking_pool_signer_pda.to_account_info(),
+            user: self.staking_signer_pda.to_account_info(),
             pool: self.aldrin_pool_acc.to_account_info(),
             pool_signer: self.aldrin_pool_signer.to_account_info(),
             lp_mint: self.aldrin_lp_mint.to_account_info(),
@@ -267,7 +263,7 @@ pub fn add_fees_handler<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) 
     let staking_seeds = &[
         StakingPool::SIGNER_PDA_PREFIX,
         &accs.staking.key().to_bytes()[..],
-        &[ctx.bumps.staking_pool_signer_pda],
+        &[ctx.bumps.staking_signer_pda],
     ];
 
     let staking_signer_seeds = &[&staking_seeds[..]];

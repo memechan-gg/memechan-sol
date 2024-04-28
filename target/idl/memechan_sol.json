@@ -288,7 +288,7 @@
           "isSigner": false
         },
         {
-          "name": "stakingPoolSignerPda",
+          "name": "stakingSignerPda",
           "isMut": false,
           "isSigner": false
         },
@@ -364,7 +364,7 @@
           "isSigner": true
         },
         {
-          "name": "poolSignerPda",
+          "name": "stakingSignerPda",
           "isMut": false,
           "isSigner": false
         },
@@ -415,7 +415,7 @@
           "isSigner": false
         },
         {
-          "name": "poolSignerPda",
+          "name": "stakingSignerPda",
           "isMut": false,
           "isSigner": false
         },
@@ -468,6 +468,22 @@
         },
         {
           "name": "ticketFrom",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "closeTicket",
+      "accounts": [
+        {
+          "name": "ticket",
           "isMut": true,
           "isSigner": false
         },
