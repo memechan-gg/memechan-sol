@@ -8,7 +8,7 @@ import * as goLive from "./endpoints/init"
 import * as fees from "./endpoints/fees"
 import * as tickets from "./endpoints/tickets"
 
-import {provider} from "./helpers"
+import { provider } from "./helpers"
 
 describe("memechan-sol", () => {
   provider.opts.skipPreflight = true

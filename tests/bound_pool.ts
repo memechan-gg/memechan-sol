@@ -29,7 +29,7 @@ import { AmmPool } from "./pool";
 import { Staking } from "./staking";
 import { MemeTicket } from "./ticket";
 
-export interface SwapYArgs { 
+export interface SwapYArgs {
   user: Keypair;
   pool: PublicKey;
   poolSignerPda: PublicKey;
@@ -38,7 +38,7 @@ export interface SwapYArgs {
   memeTokensOut: BN;
 }
 
-export interface SwapXArgs { 
+export interface SwapXArgs {
   user: Keypair;
   pool: PublicKey;
   poolSignerPda: PublicKey;
@@ -63,7 +63,7 @@ export class BoundPool {
   public static async new(): Promise<BoundPool> {
     const id = Keypair.generate();
 
-    
+
 
     // let [id, _] = PublicKey.findProgramAddressSync(
     //   [Buffer.from("signer"), id.toBuffer()],
@@ -92,14 +92,14 @@ export class BoundPool {
       null,
       6
     );
-    
+
     const adminSolVault = (await getOrCreateAssociatedTokenAccount(
       provider.connection,
       payer,
       solMint,
       adminAuthority
     )).address;
-    
+
     const poolSolVaultid = Keypair.generate();
     const poolSolVault = await createAccount(
       provider.connection,
@@ -108,7 +108,7 @@ export class BoundPool {
       poolSigner,
       poolSolVaultid
     );
-    
+
     const launchVaultid = Keypair.generate();
     const launchVault = await createAccount(
       provider.connection,
@@ -117,12 +117,12 @@ export class BoundPool {
       poolSigner,
       launchVaultid
     );
-   
+
     await memechan.methods
       .new()
       .accounts({
         adminSolVault: adminSolVault,
-        launchVault: launchVault, 
+        launchVault: launchVault,
         solVault: poolSolVault,
         memeMint: memeMint,
         pool: id.publicKey,
@@ -201,7 +201,7 @@ export class BoundPool {
       .signers([user, id])
       .rpc();
 
-      return new MemeTicket(id.publicKey)
+    return new MemeTicket(id.publicKey)
   }
 
   public async swap_x(
@@ -242,7 +242,7 @@ export class BoundPool {
     const pool = input.pool ?? this.id;
     const poolSigner = input.poolSignerPda ?? this.signerPda();
     const ammPoolSigner = AmmPool.signerFrom(ammId.publicKey);
-    
+
     const adminTicketId = Keypair.generate();
 
     const stakingId = Keypair.generate();
@@ -304,7 +304,7 @@ export class BoundPool {
       1e9,
       nkey
     );
-    
+
     await closeAccount(
       provider.connection,
       payer,
@@ -317,7 +317,7 @@ export class BoundPool {
 
     const vaults = await Promise.all(
       [poolInfo.memeMint, poolInfo.solReserve.mint].map(async (mint) => {
-        
+
         const kp = Keypair.generate();
         await createAccount(provider.connection, payer, mint, ammPoolSigner, kp);
         return {
@@ -327,7 +327,7 @@ export class BoundPool {
         };
       })
     );
-    
+
     await memechan.methods
       .goLive()
       .accounts({
@@ -357,12 +357,12 @@ export class BoundPool {
       .rpc();
 
 
-      return [new AmmPool(ammId.publicKey, tollAuthority), new Staking(stakingId.publicKey)]
+    return [new AmmPool(ammId.publicKey, tollAuthority), new Staking(stakingId.publicKey)]
   }
 
 
 
-  
+
 
 
 

@@ -9,10 +9,10 @@ import { Keypair } from "@solana/web3.js"
 export function test() {
   describe("merge tickets", () => {
     it("merge tickets presale", async () => {
-      const user = Keypair.generate()       
-      await airdrop(user.publicKey) 
+      const user = Keypair.generate()
+      await airdrop(user.publicKey)
       const pool = await BoundPool.new();
-            
+
       await sleep(1000);
 
       const userSolAcc = await createWrappedNativeAccount(
@@ -38,13 +38,13 @@ export function test() {
         solAmountIn: new BN(70.7 * 1e9),
       }));
 
-      tickets.push( await pool.swap_y({
+      tickets.push(await pool.swap_y({
         user,
         userSolAcc,
         memeTokensOut: new BN(1),
         solAmountIn: new BN(181.8 * 1e9),
       }));
-      
+
       await tickets[0].bound_merge({
         pool: pool.id,
         ticketToMerge: tickets[1],
@@ -60,10 +60,10 @@ export function test() {
     });
 
     it("merge tickets live", async () => {
-      const user = Keypair.generate()       
-      await airdrop(user.publicKey) 
+      const user = Keypair.generate()
+      await airdrop(user.publicKey)
       const pool = await BoundPool.new();
-            
+
       await sleep(1000);
 
       const userSolAcc = await createWrappedNativeAccount(
@@ -89,7 +89,7 @@ export function test() {
         solAmountIn: new BN(70.7 * 1e9),
       }));
 
-      tickets.push( await pool.swap_y({
+      tickets.push(await pool.swap_y({
         user,
         userSolAcc,
         memeTokensOut: new BN(1),
@@ -98,7 +98,7 @@ export function test() {
 
       const [_, staking] = await pool.go_live({})
       sleep(1000);
-      
+
       await tickets[0].staking_merge({
         staking: staking.id,
         ticketToMerge: tickets[1],

@@ -2,7 +2,7 @@ import {
   PublicKey,
   Keypair,
 } from "@solana/web3.js";
-import { amm, provider} from "./helpers";
+import { amm, provider } from "./helpers";
 import { getAccount } from "@solana/spl-token";
 import BN from "bn.js";
 import { discountAddress } from "./amm";

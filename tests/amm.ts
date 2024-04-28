@@ -86,7 +86,7 @@ export async function putDiscount(
   if (
     discountSettingsInfo &&
     discountSettingsInfo.authority.toBase58() !==
-      discountSettingsAuthority.publicKey.toBase58()
+    discountSettingsAuthority.publicKey.toBase58()
   ) {
     throw new Error("Discount settings authorities don't match");
   }
