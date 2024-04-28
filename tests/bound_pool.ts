@@ -27,6 +27,7 @@ import { createProgramToll, programTollAddress } from "./amm";
 import { BN } from "@project-serum/anchor";
 import { AmmPool } from "./pool";
 import { Staking } from "./staking";
+import { MemeTicket } from "./ticket";
 
 export interface SwapYArgs { 
   user: Keypair;
@@ -35,7 +36,6 @@ export interface SwapYArgs {
   userSolAcc: PublicKey;
   solAmountIn: BN;
   memeTokensOut: BN;
-  vaultsAndWallets: AccountMeta[];
 }
 
 export interface SwapXArgs { 
@@ -44,9 +44,8 @@ export interface SwapXArgs {
   poolSignerPda: PublicKey;
   memeAmountIn: BN;
   solTokensOut: BN;
-  userMemeTicket: PublicKey;
+  userMemeTicket: MemeTicket;
   userSolAcc: PublicKey;
-  vaultsAndWallets: AccountMeta[];
 }
 
 export interface GoLiveArgs {
@@ -62,7 +61,6 @@ export class BoundPool {
   }
 
   public static async new(): Promise<BoundPool> {
-    provider.opts.skipPreflight = true
     const id = Keypair.generate();
 
     
@@ -170,7 +168,7 @@ export class BoundPool {
 
   public async swap_y(
     input: Partial<SwapYArgs>
-  ): Promise<PublicKey> {
+  ): Promise<MemeTicket> {
     const user = input.user ?? Keypair.generate();
     await airdrop(user.publicKey);
 
@@ -207,7 +205,7 @@ export class BoundPool {
       .signers([user, id])
       .rpc();
 
-      return id.publicKey
+      return new MemeTicket(id.publicKey)
   }
 
   public async swap_x(
@@ -226,7 +224,7 @@ export class BoundPool {
     await memechan.methods
       .swapX(new BN(meme_in), new BN(sol_out))
       .accounts({
-        memeTicket,
+        memeTicket: memeTicket.id,
         owner: user.publicKey,
         pool: pool,
         poolSigner,
@@ -240,7 +238,7 @@ export class BoundPool {
 
   public async go_live(
     input: Partial<GoLiveArgs>
-  ): Promise<void> {
+  ): Promise<[AmmPool, Staking]> {
     const user = input.user ?? Keypair.generate();
     await airdrop(user.publicKey);
     const ammId = Keypair.generate();
@@ -264,7 +262,6 @@ export class BoundPool {
       9
     );
 
-    console.log("2");
     const lpTokenWalletId = Keypair.generate();
     const lpTokenWallet = await createAccount(
       provider.connection,
@@ -274,20 +271,17 @@ export class BoundPool {
       lpTokenWalletId
     );
 
-    console.log("3");
-    const toll = await programTollAddress();
-    console.log("3.1")
-    let tollAuthority = payer.publicKey;
+
+    let tollAuthority = stakingSigner;
+
+    const toll = await programTollAddress(tollAuthority);
     try {
       const info = await amm.account.programToll.fetch(toll);
       tollAuthority = info.authority;
-      console.log("3.1.1")
     } catch {
-      console.log("3.1.2")
       await createProgramToll(tollAuthority);
     }
 
-    console.log("4");
     const aldrinProgramTollWalletId = Keypair.generate()
     const aldrinProgramTollWallet = await createAccount(
       provider.connection,
@@ -297,7 +291,6 @@ export class BoundPool {
       aldrinProgramTollWalletId
     );
 
-    console.log("5");
     const stakingMemeVaultId = Keypair.generate()
     const stakingMemeVault = await createAccount(
       provider.connection,
@@ -307,7 +300,6 @@ export class BoundPool {
       stakingMemeVaultId
     );
 
-    console.log("6");
     const nkey = Keypair.generate();
     const userSolAcc = await createWrappedNativeAccount(
       provider.connection,
@@ -316,7 +308,7 @@ export class BoundPool {
       1e9,
       nkey
     );
-    console.log("7");
+    
     await closeAccount(
       provider.connection,
       payer,
@@ -327,7 +319,6 @@ export class BoundPool {
 
     await sleep(1000);
 
-    console.log("8");
     const vaults = await Promise.all(
       [poolInfo.memeMint, poolInfo.solReserve.mint].map(async (mint) => {
         
@@ -340,9 +331,7 @@ export class BoundPool {
         };
       })
     );
-
     
-    console.log("9");
     await memechan.methods
       .goLive()
       .accounts({
@@ -357,7 +346,6 @@ export class BoundPool {
         solMint: NATIVE_MINT,
         poolWsolVault: poolInfo.solReserve.vault,
         staking: stakingId.publicKey,
-        stakingMemeVault,
         stakingPoolSignerPda: stakingSigner,
         aldrinLpMint: lpMint,
         aldrinPoolAcc: ammId.publicKey,
@@ -371,6 +359,9 @@ export class BoundPool {
       .remainingAccounts(vaults)
       .signers([user, ammId, adminTicketId, stakingId])
       .rpc();
+
+
+      return [new AmmPool(ammId.publicKey, tollAuthority), new Staking(stakingId.publicKey)]
   }
 
 

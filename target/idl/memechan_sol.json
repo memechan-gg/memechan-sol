@@ -192,11 +192,6 @@
           "isSigner": false
         },
         {
-          "name": "stakingMemeVault",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
           "name": "memeTicket",
           "isMut": true,
           "isSigner": true
@@ -279,33 +274,48 @@
       "accounts": [
         {
           "name": "staking",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
           "name": "memeVault",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
           "name": "wsolVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stakingPoolSignerPda",
           "isMut": false,
           "isSigner": false
         },
         {
-          "name": "memeFees",
+          "name": "aldrinPoolAcc",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "aldrinLpMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "aldrinPoolSigner",
           "isMut": false,
           "isSigner": false
         },
         {
-          "name": "wsolFees",
-          "isMut": false,
+          "name": "aldrinPoolLpWallet",
+          "isMut": true,
           "isSigner": false
         },
         {
-          "name": "signer",
+          "name": "aldrinAmmProgram",
           "isMut": false,
-          "isSigner": true
+          "isSigner": false
         },
         {
           "name": "tokenProgram",

@@ -57,7 +57,7 @@ pub mod memechan_sol {
         go_live_handler(ctx)
     }
 
-    pub fn add_fees(ctx: Context<AddFees>) -> Result<()> {
+    pub fn add_fees<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<()> {
         add_fees_handler(ctx)
     }
 

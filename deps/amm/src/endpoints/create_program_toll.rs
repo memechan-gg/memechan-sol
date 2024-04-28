@@ -9,27 +9,16 @@ use crate::prelude::*;
 #[cfg(not(feature = "dev"))]
 #[derive(Accounts)]
 pub struct CreateProgramToll<'info> {
-    #[account(mut)]
-    pub program_authority: Signer<'info>,
-    #[account(
-        constraint = amm.programdata_address()? == Some(amm_metadata.key())
-            @ err::acc("AMM program metadata account mismatch"),
-    )]
-    pub amm: Program<'info, crate::program::Amm>,
-    #[account(
-        constraint = amm_metadata.upgrade_authority_address ==
-            Some(program_authority.key())
-            @ err::acc("Signer isn't program's authority"),
-    )]
-    pub amm_metadata: Account<'info, ProgramData>,
-    /// CHECK: authority over LP token vaults for the program toll
+    /// CHECK: not needed; it's the new owner
     pub program_toll_authority: AccountInfo<'info>,
+    #[account(mut)]
+    pub signer: Signer<'info>,
     #[account(
-        init,
-        payer = program_authority,
-        space = ProgramToll::space(),
-        seeds = [ProgramToll::PDA_SEED],
-        bump,
+    init,
+    payer = signer,
+    space = ProgramToll::space(),
+    seeds = [ProgramToll::PDA_SEED, program_toll_authority.key().as_ref()],
+    bump,
     )]
     pub program_toll: Account<'info, ProgramToll>,
     pub system_program: Program<'info, System>,
@@ -46,14 +35,16 @@ pub struct CreateProgramToll<'info> {
 #[cfg(feature = "dev")]
 #[derive(Accounts)]
 pub struct CreateProgramToll<'info> {
+    /// CHECK: not needed; it's the new owner
+    pub program_toll_authority: AccountInfo<'info>,
     #[account(mut)]
-    pub program_toll_authority: Signer<'info>,
+    pub signer: Signer<'info>,
     #[account(
-        init,
-        payer = program_toll_authority,
-        space = ProgramToll::space(),
-        seeds = [ProgramToll::PDA_SEED],
-        bump,
+    init,
+    payer = signer,
+    space = ProgramToll::space(),
+    seeds = [ProgramToll::PDA_SEED, program_toll_authority.key().as_ref()],
+    bump,
     )]
     pub program_toll: Account<'info, ProgramToll>,
     pub system_program: Program<'info, System>,

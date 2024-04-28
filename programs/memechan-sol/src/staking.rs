@@ -2,9 +2,11 @@ use crate::err::AmmError;
 use crate::fee_distribution::{calc_withdraw, update_stake};
 use crate::staked_lp::MemeTicket;
 use crate::vesting::VestingConfig;
+use amm::cpi::accounts::RedeemLiquidity;
+use amm::models::{TokenAmount, TokenLimit};
 use anchor_lang::prelude::*;
 use anchor_spl::token;
-use anchor_spl::token::{transfer, Token, TokenAccount, Transfer};
+use anchor_spl::token::{Mint, Token, TokenAccount, Transfer};
 use std::mem;
 
 #[account]
@@ -214,48 +216,96 @@ pub fn withdraw_fees_handler(ctx: Context<WithdrawFees>) -> Result<()> {
 
 #[derive(Accounts)]
 pub struct AddFees<'info> {
+    #[account(
+        mut,
+        has_one = meme_vault,
+        has_one = wsol_vault
+    )]
     pub staking: Account<'info, StakingPool>,
-    meme_vault: Account<'info, TokenAccount>,
-    wsol_vault: Account<'info, TokenAccount>,
-    meme_fees: Account<'info, TokenAccount>,
-    wsol_fees: Account<'info, TokenAccount>,
-    signer: Signer<'info>,
-    token_program: Program<'info, Token>,
+    #[account(mut)]
+    pub meme_vault: Account<'info, TokenAccount>,
+    #[account(mut)]
+    pub wsol_vault: Account<'info, TokenAccount>,
+    /// CHECK: pda
+    #[account(seeds = [StakingPool::SIGNER_PDA_PREFIX, staking.key().as_ref()], bump)]
+    pub staking_pool_signer_pda: AccountInfo<'info>,
+    /// CHECK: done by inner call
+    #[account(mut)]
+    pub aldrin_pool_acc: AccountInfo<'info>,
+    #[account(mut)]
+    pub aldrin_lp_mint: Account<'info, Mint>,
+    /// CHECK: done by inner call
+    pub aldrin_pool_signer: AccountInfo<'info>,
+    #[account(mut)]
+    pub aldrin_pool_lp_wallet: Account<'info, TokenAccount>,
+    /// CHECK: comparing with dep ID
+    #[account(
+        constraint = aldrin_amm_program.key() == amm::id()
+    )]
+    pub aldrin_amm_program: AccountInfo<'info>,
+    pub token_program: Program<'info, Token>,
 }
 
 impl<'info> AddFees<'info> {
-    fn send_fees(
-        &self,
-        from: &Account<'info, TokenAccount>,
-        to: &Account<'info, TokenAccount>,
-    ) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
-        let cpi_accounts = Transfer {
-            from: from.to_account_info(),
-            to: to.to_account_info(),
-            authority: self.signer.to_account_info(),
+    pub fn withdraw_fees_ctx(&self) -> CpiContext<'_, '_, '_, 'info, RedeemLiquidity<'info>> {
+        let cpi_program = self.aldrin_amm_program.to_account_info();
+        let cpi_accounts = RedeemLiquidity {
+            user: self.staking_pool_signer_pda.to_account_info(),
+            pool: self.aldrin_pool_acc.to_account_info(),
+            pool_signer: self.aldrin_pool_signer.to_account_info(),
+            lp_mint: self.aldrin_lp_mint.to_account_info(),
+            lp_token_wallet: self.aldrin_pool_lp_wallet.to_account_info(),
+            token_program: self.token_program.to_account_info(),
         };
-
-        let cpi_program = self.token_program.to_account_info();
         CpiContext::new(cpi_program, cpi_accounts)
     }
 }
 
-pub fn add_fees_handler(ctx: Context<AddFees>) -> Result<()> {
+pub fn add_fees_handler<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<()> {
     let accs = ctx.accounts;
-    let state = &mut accs.staking;
-    state.fees_x_total += accs.meme_fees.amount;
-    state.fees_y_total += accs.wsol_fees.amount;
 
-    transfer(
-        accs.send_fees(&accs.meme_fees, &accs.meme_vault),
-        accs.meme_fees.amount,
+    let staking_seeds = &[
+        StakingPool::SIGNER_PDA_PREFIX,
+        &accs.staking.key().to_bytes()[..],
+        &[ctx.bumps.staking_pool_signer_pda],
+    ];
+
+    let staking_signer_seeds = &[&staking_seeds[..]];
+
+    let meme_vault_initial_amt = accs.meme_vault.amount;
+    let wsol_vault_initial_amt = accs.wsol_vault.amount;
+
+    amm::cpi::redeem_liquidity(
+        accs.withdraw_fees_ctx()
+            .with_signer(staking_signer_seeds)
+            .with_remaining_accounts(vec![
+                ctx.remaining_accounts[0].to_account_info(),
+                accs.meme_vault.to_account_info(),
+                ctx.remaining_accounts[1].to_account_info(),
+                accs.wsol_vault.to_account_info(),
+            ]),
+        TokenAmount {
+            amount: accs.aldrin_pool_lp_wallet.amount,
+        },
+        vec![
+            TokenLimit {
+                mint: accs.meme_vault.mint,
+                tokens: TokenAmount { amount: 1 },
+            },
+            TokenLimit {
+                mint: accs.wsol_vault.mint,
+                tokens: TokenAmount { amount: 1 },
+            },
+        ],
     )
     .unwrap();
-    transfer(
-        accs.send_fees(&accs.wsol_fees, &accs.wsol_vault),
-        accs.meme_fees.amount,
-    )
-    .unwrap();
+
+    accs.meme_vault.reload().unwrap();
+    accs.wsol_vault.reload().unwrap();
+
+    let state = &mut accs.staking;
+    state.fees_x_total += accs.meme_vault.amount - meme_vault_initial_amt;
+    state.fees_y_total += accs.wsol_vault.amount - wsol_vault_initial_amt;
 
     Ok(())
 }

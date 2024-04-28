@@ -60,10 +60,6 @@ pub struct GoLive<'info> {
     pub pool_wsol_vault: Box<Account<'info, TokenAccount>>,
     #[account(mut)]
     pub admin_vault_sol: Box<Account<'info, TokenAccount>>,
-    #[account(
-        constraint = staking_meme_vault.mint == launch_token_vault.mint
-    )]
-    pub staking_meme_vault: Box<Account<'info, TokenAccount>>,
     #[account(init, payer = signer, space = MemeTicket::space())]
     pub meme_ticket: Box<Account<'info, MemeTicket>>,
     /// CHECK: bound-curve phase pda signer
@@ -127,7 +123,7 @@ impl<'info> GoLive<'info> {
     pub fn deposit_liquidity_ctx(&self) -> CpiContext<'_, '_, '_, 'info, DepositLiquidity<'info>> {
         let cpi_program = self.aldrin_amm_program.to_account_info();
         let cpi_accounts = DepositLiquidity {
-            user: self.bound_pool_signer_pda.to_account_info(),
+            user: self.staking_pool_signer_pda.to_account_info(),
             pool: self.aldrin_pool_acc.to_account_info(),
             pool_signer_pda: self.aldrin_pool_signer.to_account_info(),
             lp_mint: self.aldrin_lp_mint.to_account_info(),
@@ -146,9 +142,18 @@ impl<'info> GoLive<'info> {
         let cpi_program = self.token_program.to_account_info();
         CpiContext::new(cpi_program, cpi_accounts)
     }
-}
 
-impl<'info> GoLive<'info> {
+    fn set_vault_authority_ctx(
+        &self,
+        account: AccountInfo<'info>,
+    ) -> CpiContext<'_, '_, '_, 'info, SetAuthority<'info>> {
+        let cpi_accounts = SetAuthority {
+            current_authority: self.bound_pool_signer_pda.to_account_info(),
+            account_or_mint: account,
+        };
+        let cpi_program = self.token_program.to_account_info();
+        CpiContext::new(cpi_program, cpi_accounts)
+    }
     fn send_admin_fee_sol(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
             from: self.pool_wsol_vault.to_account_info(),
@@ -218,14 +223,29 @@ pub fn go_live_handler<'info>(ctx: Context<'_, '_, '_, 'info, GoLive<'info>>) ->
 
     let amm_meme_balance = meme_supply.checked_sub(meme_supply_80).unwrap();
 
-    // 4. Transfer
+    // 4. Transfer pool_wsol_vault
     msg!("4");
+
+    token::set_authority(
+        accs.set_vault_authority_ctx(accs.pool_wsol_vault.to_account_info())
+            .with_signer(bp_signer_seeds),
+        AuthorityType::AccountOwner,
+        Some(accs.staking_pool_signer_pda.key()),
+    )
+    .unwrap();
+    token::set_authority(
+        accs.set_vault_authority_ctx(accs.launch_token_vault.to_account_info())
+            .with_signer(bp_signer_seeds),
+        AuthorityType::AccountOwner,
+        Some(accs.staking_pool_signer_pda.key()),
+    )
+    .unwrap();
 
     // 5. Setup new staking account
     msg!("5");
     let staking = &mut accs.staking;
 
-    staking.meme_vault = accs.staking_meme_vault.key();
+    staking.meme_vault = accs.launch_token_vault.key();
     staking.wsol_vault = accs.pool_wsol_vault.key();
     staking.stakes_total = MAX_TICKET_TOKENS * MEME_TOKEN_DECIMALS;
     staking.vesting_config = vesting::default_config();
@@ -266,7 +286,7 @@ pub fn go_live_handler<'info>(ctx: Context<'_, '_, '_, 'info, GoLive<'info>>) ->
                 ctx.remaining_accounts[1].to_account_info(),
                 accs.pool_wsol_vault.to_account_info(),
             ])
-            .with_signer(bp_signer_seeds),
+            .with_signer(staking_signer_seeds),
         max_amt_tokens,
     )
     .unwrap();

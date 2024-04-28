@@ -10,16 +10,14 @@ import { BN } from "@project-serum/anchor";
 export async function createProgramToll(
   programTollAuthority: PublicKey = payer.publicKey
 ) {
-  const programToll = programTollAddress();
-  //const ammId = amm.programId;
+  const programToll = programTollAddress(programTollAuthority);
 
   await amm.methods
     .createProgramToll()
     .accounts({
+      signer: payer.publicKey,
       programTollAuthority,
       programToll,
-      // amm: ammId,
-      // ammMetadata: new PublicKey("G4cMt7UwqDmWKE7TD9wnzZqj2aK4RWAvkFnuLVWfVrEc")
     })
     .signers([payer])
     .rpc();
@@ -27,10 +25,9 @@ export async function createProgramToll(
   return programToll;
 }
 
-export function programTollAddress(): PublicKey {
-  console.log(amm.programId.toBase58())
+export function programTollAddress(admin: PublicKey): PublicKey {
   const [programToll, _bumpSeed] = PublicKey.findProgramAddressSync(
-    [Buffer.from("toll")],
+    [Buffer.from("toll"), admin.toBuffer()],
     amm.programId
   );
   return programToll;
