@@ -69,7 +69,11 @@ pub mod memechan_sol {
         withdraw_fees_handler(ctx)
     }
 
-    pub fn merge_tickets(ctx: Context<StakingMergeTickets>) -> Result<()> {
+    pub fn bound_merge_tickets(ctx: Context<BoundMergeTickets>) -> Result<()> {
+        bound_merge_tickets_handler(ctx)
+    }
+
+    pub fn staking_merge_tickets(ctx: Context<StakingMergeTickets>) -> Result<()> {
         staking_merge_tickets_handler(ctx)
     }
 }

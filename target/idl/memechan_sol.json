@@ -428,7 +428,33 @@
       "args": []
     },
     {
-      "name": "mergeTickets",
+      "name": "boundMergeTickets",
+      "accounts": [
+        {
+          "name": "pool",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "ticketInto",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "ticketFrom",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "stakingMergeTickets",
       "accounts": [
         {
           "name": "staking",
@@ -780,8 +806,5 @@
       "code": 6018,
       "name": "BondingCurveInterceptMustBePositive"
     }
-  ],
-  "metadata": {
-    "address": "3LpdC7WHSrw2d6mWm3Enfvpzy1u5zoHkysyH1WxdmpPB"
-  }
+  ]
 }

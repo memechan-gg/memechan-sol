@@ -179,10 +179,6 @@ export class BoundPool {
     const sol_in = input.solAmountIn ?? 1 * 1e9;
     const meme_out = input.memeTokensOut ?? 1;
 
-    const userSolAddr = getAssociatedTokenAddressSync(
-      NATIVE_MINT,
-      user.publicKey
-    );
     const userSolAcc = input.userSolAcc ?? await createWrappedNativeAccount(
       provider.connection,
       payer,

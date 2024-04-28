@@ -7,15 +7,13 @@
   export interface BoundMerge {
     pool: PublicKey;
     user: Keypair;
-    ticketOne: MemeTicket;
-    ticketTwo: MemeTicket;
-    poolSignerPda: PublicKey;
+    ticketToMerge: MemeTicket;
   }
 
   export interface StakingMerge {
     staking: PublicKey;
     user: Keypair;
-    stakingSignerPda: PublicKey;
+    ticketToMerge: MemeTicket;
   }
 
   export class MemeTicket {
@@ -28,18 +26,45 @@
       return memechan.account.memeTicket.fetch(this.id);
     }
 
-    // public async bound_merge(
-    //     input: BoundMerge
-    //   ): Promise<MemeTicket> {
     
-    //     const pool = input.pool;
-    //     const poolSignerPda = input.poolSignerPda;
+
+    public async bound_merge(
+      input: BoundMerge
+    ): Promise<MemeTicket> {
     
-    //     //memechan.methods.mergeTickets();
+      let user = input.user;
+
+      await memechan.methods.boundMergeTickets()
+        .accounts({
+          owner: user.publicKey,
+          pool: input.pool,
+          ticketFrom: input.ticketToMerge.id,
+          ticketInto: this.id
+        })
+        .signers([user])
+        .rpc();
         
-    //     return pool;
-    //   }
+      return this;
+    }
   
+    public async staking_merge(
+      input: StakingMerge
+    ): Promise<MemeTicket> {
+    
+      let user = input.user;
+
+      await memechan.methods.stakingMergeTickets()
+        .accounts({
+          owner: user.publicKey,
+          staking: input.staking,
+          ticketFrom: input.ticketToMerge.id,
+          ticketInto: this.id
+        })
+        .signers([user])
+        .rpc();
+        
+      return this;
+    }
 
   
 

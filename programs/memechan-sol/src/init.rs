@@ -251,6 +251,7 @@ pub fn go_live_handler<'info>(ctx: Context<'_, '_, '_, 'info, GoLive<'info>>) ->
     staking.vesting_config = vesting::default_config();
     staking.fees_x_total = 0;
     staking.fees_y_total = 0;
+    staking.pool = accs.pool.key();
     msg!("6");
     // 6. Initialize pool
 

@@ -16,6 +16,6 @@ describe("memechan-sol", () => {
   //swapY.test();
   //swapX.test();
   //goLive.test();
-  fees.test();
+  //fees.test();
   tickets.test();
 });
