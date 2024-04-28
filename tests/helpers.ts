@@ -4,6 +4,7 @@ import NodeWallet from "@project-serum/anchor/dist/cjs/nodewallet";
 import { expect } from "chai";
 import { Program, workspace } from "@project-serum/anchor";
 import { MemechanSol } from "../target/types/memechan_sol";
+import { NATIVE_MINT, createWrappedNativeAccount } from "@solana/spl-token";
 
 export const provider = AnchorProvider.local();
 setProvider(provider);
@@ -12,6 +13,8 @@ export const payer = (provider.wallet as NodeWallet).payer;
 export const memechan = workspace.MemechanSol as Program<MemechanSol>;
 
 export const admin = new PublicKey("8vBA2MzaQdt3UWimSkx1J4m2zMgp8A2iwtRKzXVurXP2");
+
+export const solMint = NATIVE_MINT;
 
 export async function errLogs(job: Promise<unknown>): Promise<string> {
   try {

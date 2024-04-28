@@ -531,6 +531,10 @@
             "type": "u64"
           },
           {
+            "name": "memeMint",
+            "type": "publicKey"
+          },
+          {
             "name": "solReserve",
             "type": {
               "defined": "Reserve"
@@ -556,6 +560,12 @@
             "name": "fees",
             "type": {
               "defined": "Fees"
+            }
+          },
+          {
+            "name": "config",
+            "type": {
+              "defined": "Config"
             }
           },
           {
@@ -614,6 +624,38 @@
           },
           {
             "name": "notional",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Config",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "alphaAbs",
+            "type": "u128"
+          },
+          {
+            "name": "beta",
+            "type": "u128"
+          },
+          {
+            "name": "priceFactor",
+            "type": "u64"
+          },
+          {
+            "name": "gammaS",
+            "type": "u64"
+          },
+          {
+            "name": "gammaM",
+            "type": "u64"
+          },
+          {
+            "name": "omegaM",
             "type": "u64"
           }
         ]
@@ -719,6 +761,14 @@
       "code": 6016,
       "name": "NotEnoughTokensToRelease",
       "msg": "Can't unstake the required amount of tokens"
+    },
+    {
+      "code": 6017,
+      "name": "BondingCurveMustBeNegativelySloped"
+    },
+    {
+      "code": 6018,
+      "name": "BondingCurveInterceptMustBePositive"
     }
   ],
   "metadata": {

@@ -42,6 +42,8 @@ pub enum AmmError {
     NonZeroAmountTicket,
     #[msg("Can't unstake the required amount of tokens")]
     NotEnoughTokensToRelease,
+    BondingCurveMustBeNegativelySloped,
+    BondingCurveInterceptMustBePositive,
 }
 
 #[allow(dead_code)]

@@ -1,4 +1,4 @@
-const PRECISION: u128 = 1_000_000_000_000_000_000;
+const PRECISION: u128 = 1_000_000_000;
 
 const MAX_X: u128 = 900_000_000 * PRECISION;
 const MAX_Y: u128 = 30_000 * PRECISION;
@@ -9,13 +9,14 @@ const DECIMALS_Y: u128 = 1_000_000_000;
 const PAD_DECIMALS: u128 = 100;
 
 use crate::err::AmmError;
+use crate::libraries::big_num::U256;
 use anchor_lang::error;
 use anchor_lang::prelude::*;
 use num_integer::*;
 
 pub fn invariant(x: u64, y: u64) -> Result<u128> {
-    let res_y = MAX_Y - (y as u128);
-    Ok((x as u128) - res_y * res_y)
+    let res_y = U256::from(MAX_Y - (y as u128));
+    Ok((U256::from(x) - res_y * res_y).as_u128())
 }
 
 pub fn get_amount_out(

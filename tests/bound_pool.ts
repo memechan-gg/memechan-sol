@@ -2,10 +2,10 @@ import {
   AuthorityType,
   createAccount,
   createMint,
+  createWrappedNativeAccount,
   getAccount,
   getOrCreateAssociatedTokenAccount,
   mintTo,
-  NATIVE_MINT,
   setAuthority,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
@@ -16,16 +16,14 @@ import {
   Signer,
   SystemProgram,
 } from "@solana/web3.js";
-import { airdrop, memechan, payer, provider, admin } from "./helpers";
+import { airdrop, memechan, payer, provider, admin, solMint } from "./helpers";
 import { BN } from "@project-serum/anchor";
 
-export interface DepositLiquidityArgs { 
+export interface SwapYArgs { 
   user: Keypair;
   pool: PublicKey;
   poolSignerPda: PublicKey;
-  lpMint: PublicKey;
-  lpTokenWallet: PublicKey;
-  maxAmountTokens: { mint: PublicKey; tokens: { amount: BN } }[];
+  maxAmountTokens: BN;
   vaultsAndWallets: AccountMeta[];
 }
 
@@ -41,7 +39,7 @@ export interface RedeemLiquidityArgs {
 }
 
 export class BoundPool {
-  private constructor(public id: PublicKey, public admin: Keypair) {
+  private constructor(public id: PublicKey, public admin: Keypair, public solVault: PublicKey) {
     //
   }
 
@@ -76,8 +74,6 @@ export class BoundPool {
     const poolSigner = BoundPool.signerFrom(id.publicKey);
 
     const adminAuthority = admin;
-    
-    const solMint = NATIVE_MINT;
 
     await setAuthority(
       provider.connection,
@@ -124,14 +120,13 @@ export class BoundPool {
         poolSigner: poolSigner,
         sender: signer.publicKey,
         solMint: solMint,
-        
         tokenProgram: TOKEN_PROGRAM_ID,
         systemProgram: SystemProgram.programId,
       })
       .signers([signer, id])
       .rpc();
 
-    return new BoundPool(id.publicKey, signer);
+    return new BoundPool(id.publicKey, signer, poolSolVault);
   }
 
   public async fetch() {
@@ -163,104 +158,41 @@ export class BoundPool {
     return mintTo(provider.connection, payer, mint, wallet, authority, amount);
   }
 
-  // public async depositLiquidity(
-  //   input: Partial<DepositLiquidityArgs>
-  // ): Promise<void> {
-  //   const user = input.user ?? Keypair.generate();
-  //   const pool = input.pool ?? this.id.publicKey;
-  //   const poolSignerPda = input.poolSignerPda ?? this.signerPda();
-  //   const lpMint = input.lpMint ?? (await this.fetch()).mint;
-  //   const lpTokenWallet =
-  //     input.lpTokenWallet ??
-  //     (await createAccount(provider.connection, payer, lpMint, user.publicKey));
+  public async swap_y(
+    input: Partial<SwapYArgs>
+  ): Promise<PublicKey> {
+    const user = input.user ?? Keypair.generate();
+    await airdrop(user.publicKey);
 
-  //   const defineMaxAmountTokens = async () => {
-  //     const fetchPool = await this.fetch();
-  //     const mint1 = fetchPool.reserves[0].mint;
-  //     const mint2 = fetchPool.reserves[1].mint;
+    const id = Keypair.generate();
 
-  //     const amountTokens: { mint: PublicKey; tokens: { amount: BN } }[] = [];
-  //     amountTokens.push({ mint: mint1, tokens: { amount: new BN(100) } });
-  //     amountTokens.push({ mint: mint2, tokens: { amount: new BN(10) } });
+    const pool = input.pool ?? this.id;
+    const poolSignerPda = input.poolSignerPda ?? this.signerPda();
+    
+    const userSolAcc = await createWrappedNativeAccount(
+      provider.connection,
+      payer,
+      user.publicKey,
+      500 * 10e9
+    );
 
-  //     return maxAmountTokens;
-  //   };
+    await memechan.methods
+      .swapY(new BN(200 * 1e9), new BN(1))
+      .accounts({
+        memeTicket:id.publicKey,
+        owner: user.publicKey,
+        pool: pool,
+        poolSignerPda: poolSignerPda,
+        solVault: this.solVault,
+        userSol:userSolAcc,
+        systemProgram: SystemProgram.programId,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .signers([user, id])
+      .rpc();
 
-  //   const maxAmountTokens =
-  //     input.maxAmountTokens ?? (await defineMaxAmountTokens());
-
-  //   const getVaultsAndWallets = async () => {
-  //     const fetchPool = await this.fetch();
-
-  //     const firstVault = fetchPool.reserves[0].vault;
-  //     const secondVault = fetchPool.reserves[1].vault;
-
-  //     const firstMint = fetchPool.reserves[0].mint;
-  //     const secondMint = fetchPool.reserves[1].mint;
-
-  //     const firstVaultAccount = await getAccount(
-  //       provider.connection,
-  //       firstVault
-  //     );
-  //     const secondVaultAccount = await getAccount(
-  //       provider.connection,
-  //       secondVault
-  //     );
-
-  //     const firstWalletAccount = await createAccount(
-  //       provider.connection,
-  //       payer,
-  //       firstMint,
-  //       user.publicKey
-  //     );
-  //     const secondWalletAccount = await createAccount(
-  //       provider.connection,
-  //       payer,
-  //       secondMint,
-  //       user.publicKey
-  //     );
-
-  //     return [
-  //       {
-  //         isSigner: false,
-  //         isWritable: true,
-  //         pubkey: firstVaultAccount.address,
-  //       },
-  //       {
-  //         isSigner: false,
-  //         isWritable: true,
-  //         pubkey: firstWalletAccount,
-  //       },
-  //       {
-  //         isSigner: false,
-  //         isWritable: true,
-  //         pubkey: secondVaultAccount.address,
-  //       },
-  //       {
-  //         isSigner: false,
-  //         isWritable: true,
-  //         pubkey: secondWalletAccount,
-  //       },
-  //     ];
-  //   };
-
-  //   const vaultsAndWallets =
-  //     input.vaultsAndWallets ?? (await getVaultsAndWallets());
-
-  //   await amm.methods
-  //     .depositLiquidity(maxAmountTokens)
-  //     .accounts({
-  //       user: user.publicKey,
-  //       pool,
-  //       poolSignerPda,
-  //       lpMint,
-  //       lpTokenWallet,
-  //       tokenProgram: TOKEN_PROGRAM_ID,
-  //     })
-  //     .remainingAccounts(vaultsAndWallets)
-  //     .signers([user])
-  //     .rpc();
-  // }
+      return id.publicKey
+  }
 
   // public async redeemLiquidity(
   //   input: Partial<RedeemLiquidityArgs>
