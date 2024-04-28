@@ -63,23 +63,8 @@ export class BoundPool {
   public static async new(): Promise<BoundPool> {
     const id = Keypair.generate();
 
-
-
-    // let [id, _] = PublicKey.findProgramAddressSync(
-    //   [Buffer.from("signer"), id.toBuffer()],
-    //   memechan.programId
-    // );
-
     const signer = Keypair.generate();
     await airdrop(signer.publicKey);
-
-    // let tollAuthority = payer.publicKey;
-    // try {
-    //   const info = await memechan.account.programToll.fetch(toll);
-    //   tollAuthority = info.authority;
-    // } catch {
-    //   await createProgramToll(tollAuthority);
-    // }
 
     const poolSigner = BoundPool.signerFrom(id.publicKey);
 

@@ -4,6 +4,7 @@ import { AccountMeta, Keypair, PublicKey } from "@solana/web3.js";
 import { createAccount, createWrappedNativeAccount, getAccount } from "@solana/spl-token";
 import { memechan, payer, provider, sleep } from "../helpers";
 import { BN } from "@project-serum/anchor";
+import { MemeTicket } from "../ticket";
 
 export function test() {
   describe("swap_y", () => {
@@ -47,7 +48,7 @@ export function test() {
 
       await sleep(1000);
 
-      const tickets = [];
+      const tickets: MemeTicket[] = [];
 
       tickets.push(await pool.swap_y({
         memeTokensOut: new BN(1),
@@ -74,7 +75,7 @@ export function test() {
       for (let i = 0; i < tickets.length; i++) {
         const ticket1Id = tickets[i];
 
-        const ticketInfo = await memechan.account.memeTicket.fetch(ticket1Id);
+        const ticketInfo = await ticket1Id.fetch();
         sum = sum.add(ticketInfo.amount)
       }
 

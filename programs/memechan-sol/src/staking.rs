@@ -13,6 +13,7 @@ use std::mem;
 pub struct StakingPool {
     pub pool: Pubkey,
     pub meme_vault: Pubkey,
+    pub meme_mint: Pubkey,
     pub wsol_vault: Pubkey,
     pub vesting_config: VestingConfig,
     pub stakes_total: u64,
@@ -27,6 +28,7 @@ impl StakingPool {
         let discriminant = 8;
         let pool = 32;
         let meme_vault = 32;
+        let meme_mint = 32;
         let wsol_vault = 32;
         let vesting_config = mem::size_of::<VestingConfig>();
         let stakes_total = 8;
@@ -36,6 +38,7 @@ impl StakingPool {
         discriminant
             + pool
             + meme_vault
+            + meme_mint
             + wsol_vault
             + vesting_config
             + stakes_total
@@ -142,9 +145,9 @@ pub fn unstake_handler(ctx: Context<Unstake>, release_amount: u64) -> Result<()>
 #[derive(Accounts)]
 pub struct WithdrawFees<'info> {
     pub staking: Account<'info, StakingPool>,
-    pub lp_ticket: Account<'info, MemeTicket>,
-    pub user_meme_acc: Account<'info, TokenAccount>,
-    pub user_wsol_acc: Account<'info, TokenAccount>,
+    pub meme_ticket: Account<'info, MemeTicket>,
+    pub user_meme: Account<'info, TokenAccount>,
+    pub user_wsol: Account<'info, TokenAccount>,
     pub meme_vault: Account<'info, TokenAccount>,
     pub wsol_vault: Account<'info, TokenAccount>,
     /// CHECK: pda signer
@@ -157,7 +160,7 @@ impl<'info> WithdrawFees<'info> {
     fn send_wsol_fees_to_user(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
             from: self.wsol_vault.to_account_info(),
-            to: self.user_wsol_acc.to_account_info(),
+            to: self.user_wsol.to_account_info(),
             authority: self.staking_signer_pda.to_account_info(),
         };
 
@@ -168,7 +171,7 @@ impl<'info> WithdrawFees<'info> {
     fn send_meme_fees_to_user(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
             from: self.meme_vault.to_account_info(),
-            to: self.user_meme_acc.to_account_info(),
+            to: self.user_meme.to_account_info(),
             authority: self.staking_signer_pda.to_account_info(),
         };
 
@@ -180,7 +183,7 @@ impl<'info> WithdrawFees<'info> {
 pub fn withdraw_fees_handler(ctx: Context<WithdrawFees>) -> Result<()> {
     let accs = ctx.accounts;
     let staking = &mut accs.staking;
-    let lp_ticket = &mut accs.lp_ticket;
+    let lp_ticket = &mut accs.meme_ticket;
 
     let withdrawal = calc_withdraw(staking, lp_ticket).unwrap();
 

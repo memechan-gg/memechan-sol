@@ -390,17 +390,17 @@
           "isSigner": false
         },
         {
-          "name": "lpTicket",
+          "name": "memeTicket",
           "isMut": false,
           "isSigner": false
         },
         {
-          "name": "userMemeAcc",
+          "name": "userMeme",
           "isMut": false,
           "isSigner": false
         },
         {
-          "name": "userWsolAcc",
+          "name": "userWsol",
           "isMut": false,
           "isSigner": false
         },
@@ -546,6 +546,10 @@
           },
           {
             "name": "memeVault",
+            "type": "publicKey"
+          },
+          {
+            "name": "memeMint",
             "type": "publicKey"
           },
           {
@@ -822,5 +826,8 @@
       "code": 6018,
       "name": "BondingCurveInterceptMustBePositive"
     }
-  ]
+  ],
+  "metadata": {
+    "address": "3LpdC7WHSrw2d6mWm3Enfvpzy1u5zoHkysyH1WxdmpPB"
+  }
 }
