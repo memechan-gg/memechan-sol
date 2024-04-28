@@ -7,7 +7,6 @@ export function test() {
       const boundPool = await BoundPool.new();
       const info = await boundPool.fetch();
       console.log(info)
-      //expect(info).to.deep.eq({  });
     });
   });
 }

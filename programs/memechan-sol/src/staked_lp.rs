@@ -47,6 +47,7 @@ impl MemeTicket {
         self.withdraws_meme = 0;
         self.withdraws_wsol = 0;
         self.until_timestamp = Clock::get().unwrap().unix_timestamp + LOCK_TIME;
+        msg!(&self.until_timestamp.to_string());
         self.vesting = VestingData {
             notional: amount,
             released: 0,

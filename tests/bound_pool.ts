@@ -1,13 +1,19 @@
 import {
   AuthorityType,
+  closeAccount,
   createAccount,
   createMint,
+  createNativeMint,
   createWrappedNativeAccount,
   getAccount,
+  getAssociatedTokenAddress,
+  getAssociatedTokenAddressSync,
   getOrCreateAssociatedTokenAccount,
   mintTo,
+  NATIVE_MINT,
   setAuthority,
   TOKEN_PROGRAM_ID,
+  transfer,
 } from "@solana/spl-token";
 import {
   AccountMeta,
@@ -16,8 +22,11 @@ import {
   Signer,
   SystemProgram,
 } from "@solana/web3.js";
-import { airdrop, memechan, payer, provider, admin, solMint } from "./helpers";
+import { airdrop, memechan, payer, provider, admin, solMint, amm, sleep } from "./helpers";
+import { createProgramToll, programTollAddress } from "./amm";
 import { BN } from "@project-serum/anchor";
+import { AmmPool } from "./pool";
+import { Staking } from "./staking";
 
 export interface SwapYArgs { 
   user: Keypair;
@@ -40,16 +49,12 @@ export interface SwapXArgs {
   vaultsAndWallets: AccountMeta[];
 }
 
-export interface RedeemLiquidityArgs {
-  user: Keypair;
+export interface GoLiveArgs {
   pool: PublicKey;
-  poolSigner: PublicKey;
-  lpMint: PublicKey;
-  lpTokenWallet: PublicKey;
-  minAmountTokens: { mint: PublicKey; tokens: { amount: BN } }[];
-  lpTokensToBurn: number;
-  vaultsAndWallets: AccountMeta[];
+  user: Keypair;
+  poolSignerPda: PublicKey;
 }
+
 
 export class BoundPool {
   private constructor(public id: PublicKey, public admin: Keypair, public solVault: PublicKey) {
@@ -176,6 +181,10 @@ export class BoundPool {
     const sol_in = input.solAmountIn ?? 1 * 1e9;
     const meme_out = input.memeTokensOut ?? 1;
 
+    const userSolAddr = getAssociatedTokenAddressSync(
+      NATIVE_MINT,
+      user.publicKey
+    );
     const userSolAcc = input.userSolAcc ?? await createWrappedNativeAccount(
       provider.connection,
       payer,
@@ -186,12 +195,12 @@ export class BoundPool {
     await memechan.methods
       .swapY(new BN(sol_in), new BN(meme_out))
       .accounts({
-        memeTicket:id.publicKey,
+        memeTicket: id.publicKey,
         owner: user.publicKey,
         pool: pool,
         poolSignerPda: poolSignerPda,
         solVault: this.solVault,
-        userSol:userSolAcc,
+        userSol: userSolAcc,
         systemProgram: SystemProgram.programId,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
@@ -207,20 +216,20 @@ export class BoundPool {
     const user = input.user;
 
     const pool = input.pool ?? this.id;
-    const poolSignerPda = input.poolSignerPda ?? this.signerPda();
+    const poolSigner = input.poolSignerPda ?? this.signerPda();
     const meme_in = input.memeAmountIn ?? 9e6 * 1e6;
     const sol_out = input.solTokensOut ?? 1;
 
-    const userMemeTicket = input.userMemeTicket;
+    const memeTicket = input.userMemeTicket;
     const userSolAcc = input.userSolAcc;
 
     await memechan.methods
       .swapX(new BN(meme_in), new BN(sol_out))
       .accounts({
-        userMemeTicket,
+        memeTicket,
         owner: user.publicKey,
         pool: pool,
-        poolSignerPda: poolSignerPda,
+        poolSigner,
         solVault: this.solVault,
         userSol: userSolAcc,
         tokenProgram: TOKEN_PROGRAM_ID,
@@ -228,6 +237,146 @@ export class BoundPool {
       .signers([user])
       .rpc();
   }
+
+  public async go_live(
+    input: Partial<GoLiveArgs>
+  ): Promise<void> {
+    const user = input.user ?? Keypair.generate();
+    await airdrop(user.publicKey);
+    const ammId = Keypair.generate();
+
+    const pool = input.pool ?? this.id;
+    const poolSigner = input.poolSignerPda ?? this.signerPda();
+    const ammPoolSigner = AmmPool.signerFrom(ammId.publicKey);
+    
+    const adminTicketId = Keypair.generate();
+
+    const stakingId = Keypair.generate();
+    const stakingSigner = Staking.signerFrom(stakingId.publicKey);
+
+    const poolInfo = await memechan.account.boundPool.fetch(pool);
+
+    const lpMint = await createMint(
+      provider.connection,
+      user,
+      ammPoolSigner,
+      null,
+      9
+    );
+
+    console.log("2");
+    const lpTokenWalletId = Keypair.generate();
+    const lpTokenWallet = await createAccount(
+      provider.connection,
+      user,
+      lpMint,
+      poolSigner,
+      lpTokenWalletId
+    );
+
+    console.log("3");
+    const toll = await programTollAddress();
+    console.log("3.1")
+    let tollAuthority = payer.publicKey;
+    try {
+      const info = await amm.account.programToll.fetch(toll);
+      tollAuthority = info.authority;
+      console.log("3.1.1")
+    } catch {
+      console.log("3.1.2")
+      await createProgramToll(tollAuthority);
+    }
+
+    console.log("4");
+    const aldrinProgramTollWalletId = Keypair.generate()
+    const aldrinProgramTollWallet = await createAccount(
+      provider.connection,
+      payer,
+      lpMint,
+      tollAuthority,
+      aldrinProgramTollWalletId
+    );
+
+    console.log("5");
+    const stakingMemeVaultId = Keypair.generate()
+    const stakingMemeVault = await createAccount(
+      provider.connection,
+      payer,
+      poolInfo.memeMint,
+      stakingSigner,
+      stakingMemeVaultId
+    );
+
+    console.log("6");
+    const nkey = Keypair.generate();
+    const userSolAcc = await createWrappedNativeAccount(
+      provider.connection,
+      payer,
+      user.publicKey,
+      1e9,
+      nkey
+    );
+    console.log("7");
+    await closeAccount(
+      provider.connection,
+      payer,
+      userSolAcc,
+      stakingSigner,
+      user
+    )
+
+    await sleep(1000);
+
+    console.log("8");
+    const vaults = await Promise.all(
+      [poolInfo.memeMint, poolInfo.solReserve.mint].map(async (mint) => {
+        
+        const kp = Keypair.generate();
+        await createAccount(provider.connection, payer, mint, ammPoolSigner, kp);
+        return {
+          isSigner: false,
+          isWritable: true,
+          pubkey: kp.publicKey,
+        };
+      })
+    );
+
+    
+    console.log("9");
+    await memechan.methods
+      .goLive()
+      .accounts({
+        pool: pool,
+        signer: user.publicKey,
+        adminVaultSol: poolInfo.adminVaultSol,
+        boundPoolSignerPda: poolSigner,
+        lpTokenWallet,
+        launchTokenVault: poolInfo.launchTokenVault,
+        memeMint: poolInfo.memeMint,
+        memeTicket: adminTicketId.publicKey,
+        solMint: NATIVE_MINT,
+        poolWsolVault: poolInfo.solReserve.vault,
+        staking: stakingId.publicKey,
+        stakingMemeVault,
+        stakingPoolSignerPda: stakingSigner,
+        aldrinLpMint: lpMint,
+        aldrinPoolAcc: ammId.publicKey,
+        aldrinPoolSigner: ammPoolSigner,
+        aldrinProgramToll: toll,
+        aldrinProgramTollWallet,
+        aldrinAmmProgram: amm.programId,
+        systemProgram: SystemProgram.programId,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .remainingAccounts(vaults)
+      .signers([user, ammId, adminTicketId, stakingId])
+      .rpc();
+  }
+
+
+
+  
+
 
 
   // public async redeemLiquidity(
@@ -373,3 +522,4 @@ export class BoundPool {
   //     .rpc();
   // }
 }
+

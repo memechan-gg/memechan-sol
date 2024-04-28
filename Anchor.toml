@@ -5,7 +5,7 @@ seeds = false
 skip-lint = false
 
 [programs.localnet]
-amm = "CxpYBhJPgtpyxZaonTdfoqQdgy6HDGYXavLoAFPbHa3"
+amm = "8MGDvwp4baAJ4y7rv3wYVw7g1cWVXehuhVoTes68jGxn"
 memechan_sol = "3LpdC7WHSrw2d6mWm3Enfvpzy1u5zoHkysyH1WxdmpPB"
 
 [registry]

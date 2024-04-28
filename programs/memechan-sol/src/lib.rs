@@ -19,7 +19,7 @@ use anchor_spl::token::spl_token::native_mint;
 use anchor_spl::token::{self, Mint, SetAuthority, Token, TokenAccount, Transfer};
 use core as core_;
 use num_integer::Roots;
-use std::cmp::min;
+use std::cmp::{max, min};
 use std::mem;
 
 declare_id!("3LpdC7WHSrw2d6mWm3Enfvpzy1u5zoHkysyH1WxdmpPB");
@@ -53,7 +53,7 @@ pub mod memechan_sol {
         swap_y_handler(ctx, coin_in_amount, coin_x_min_value)
     }
 
-    pub fn go_live(ctx: Context<GoLive>) -> Result<()> {
+    pub fn go_live<'info>(ctx: Context<'_, '_, '_, 'info, GoLive<'info>>) -> Result<()> {
         go_live_handler(ctx)
     }
 
@@ -69,8 +69,8 @@ pub mod memechan_sol {
         withdraw_fees_handler(ctx)
     }
 
-    pub fn merge_tickets(ctx: Context<MergeTickets>) -> Result<()> {
-        merge_tickets_handler(ctx)
+    pub fn merge_tickets(ctx: Context<StakingMergeTickets>) -> Result<()> {
+        staking_merge_tickets_handler(ctx)
     }
 }
 
@@ -301,7 +301,7 @@ pub struct SwapCoinX<'info> {
         has_one = pool,
         has_one = owner
     )]
-    pub user_meme_ticket: Account<'info, MemeTicket>,
+    pub meme_ticket: Account<'info, MemeTicket>,
     #[account(
         mut,
         constraint = user_sol.mint == native_mint::id()
@@ -316,7 +316,7 @@ pub struct SwapCoinX<'info> {
     pub owner: Signer<'info>,
     /// CHECK: pda signer
     #[account(seeds = [BoundPool::SIGNER_PDA_PREFIX, pool.key().as_ref()], bump)]
-    pub pool_signer_pda: AccountInfo<'info>,
+    pub pool_signer: AccountInfo<'info>,
     pub token_program: Program<'info, Token>,
 }
 
@@ -325,7 +325,7 @@ impl<'info> SwapCoinX<'info> {
         let cpi_accounts = Transfer {
             from: self.sol_vault.to_account_info(),
             to: self.user_sol.to_account_info(),
-            authority: self.pool_signer_pda.to_account_info(),
+            authority: self.pool_signer.to_account_info(),
         };
 
         let cpi_program = self.token_program.to_account_info();
@@ -344,8 +344,10 @@ pub fn swap_x_handler(
         return Err(error!(AmmError::NoZeroTokens));
     }
 
-    let user_ticket = &mut accs.user_meme_ticket;
+    let user_ticket = &mut accs.meme_ticket;
 
+    msg!(&user_ticket.until_timestamp.to_string());
+    msg!(&Clock::get().unwrap().unix_timestamp.to_string());
     if !user_ticket.is_unlocked() {
         return Err(error!(AmmError::TicketTokensLocked));
     }
@@ -366,11 +368,23 @@ pub fn swap_x_handler(
     pool_state.admin_fees_sol += swap_amount.admin_fee_out;
 
     pool_state.meme_amt += swap_amount.amount_in;
-    pool_state.sol_reserve.tokens -= swap_amount.amount_out;
+    pool_state.sol_reserve.tokens -= swap_amount.amount_out + swap_amount.admin_fee_out;
 
     user_ticket.amount -= coin_in_amount;
 
-    token::transfer(accs.send_tokens_to_user(), swap_amount.amount_out).unwrap();
+    let seeds = &[
+        BoundPool::SIGNER_PDA_PREFIX,
+        &accs.pool.key().to_bytes()[..],
+        &[ctx.bumps.pool_signer],
+    ];
+
+    let signer_seeds = &[&seeds[..]];
+
+    token::transfer(
+        accs.send_tokens_to_user().with_signer(signer_seeds),
+        swap_amount.amount_out,
+    )
+    .unwrap();
 
     Ok(())
 }
@@ -487,7 +501,7 @@ pub fn close_ticket_handler(ctx: Context<CloseTicket>) -> Result<()> {
 }
 
 #[derive(Accounts)]
-pub struct MergeTickets<'info> {
+pub struct StakingMergeTickets<'info> {
     pub staking: Account<'info, StakingPool>,
     #[account(
         mut,
@@ -507,7 +521,7 @@ pub struct MergeTickets<'info> {
     pub owner: Signer<'info>,
 }
 
-pub fn merge_tickets_handler(ctx: Context<MergeTickets>) -> Result<()> {
+pub fn staking_merge_tickets_handler(ctx: Context<StakingMergeTickets>) -> Result<()> {
     let accs = ctx.accounts;
     let ticket_into = &mut accs.ticket_into;
     let ticket_from = &mut accs.ticket_from;
@@ -517,6 +531,42 @@ pub fn merge_tickets_handler(ctx: Context<MergeTickets>) -> Result<()> {
     ticket_into.withdraws_meme += ticket_from.withdraws_meme;
     ticket_into.vesting.notional += ticket_from.vesting.notional;
     ticket_into.vesting.released += ticket_from.vesting.released;
+
+    Ok(())
+}
+
+#[derive(Accounts)]
+pub struct BoundMergeTickets<'info> {
+    pub pool: Account<'info, BoundPool>,
+    #[account(
+        mut,
+        has_one = owner,
+        constraint = ticket_into.pool == ticket_from.pool,
+        constraint = ticket_into.pool == pool.key(),
+        constraint = ticket_into.key() != ticket_from.key()
+    )]
+    pub ticket_into: Account<'info, MemeTicket>,
+    #[account(
+        mut,
+        close = owner,
+        has_one = owner
+    )]
+    pub ticket_from: Account<'info, MemeTicket>,
+    #[account(mut)]
+    pub owner: Signer<'info>,
+}
+
+pub fn bound_merge_tickets_handler(ctx: Context<BoundMergeTickets>) -> Result<()> {
+    let accs = ctx.accounts;
+    let ticket_into = &mut accs.ticket_into;
+    let ticket_from = &mut accs.ticket_from;
+
+    ticket_into.amount += ticket_from.amount;
+    ticket_into.withdraws_wsol += ticket_from.withdraws_wsol;
+    ticket_into.withdraws_meme += ticket_from.withdraws_meme;
+    ticket_into.vesting.notional += ticket_from.vesting.notional;
+    ticket_into.vesting.released += ticket_from.vesting.released;
+    ticket_into.until_timestamp = max(ticket_into.until_timestamp, ticket_from.until_timestamp);
 
     Ok(())
 }

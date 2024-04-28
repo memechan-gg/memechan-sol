@@ -7,8 +7,6 @@ import { BN } from "@project-serum/anchor";
 
 export function test() {
   describe("swap_y", () => {
-    const user = Keypair.generate();
-
     it("swaps full sol->memecoin in one go", async () => {
       const pool = await BoundPool.new();
       

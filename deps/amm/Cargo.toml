@@ -19,7 +19,7 @@ no-log-ix-name = []
 [dependencies]
 anchor-lang = "0.29.0"
 anchor-spl = "0.29.0"
-decimal = { path = "../../deps/solana-decimal" }
+decimal = { path = "../solana-decimal" }
 
 [dev-dependencies]
 criterion = "0.3"

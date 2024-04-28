@@ -11,7 +11,7 @@ use crate::endpoints::*;
 use crate::prelude::*;
 
 // TODO: conditionally compile this based on feature "dev"
-declare_id!("CxpYBhJPgtpyxZaonTdfoqQdgy6HDGYXavLoAFPbHa3");
+declare_id!("8MGDvwp4baAJ4y7rv3wYVw7g1cWVXehuhVoTes68jGxn");
 
 #[program]
 pub mod amm {
