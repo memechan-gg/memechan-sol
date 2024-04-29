@@ -391,7 +391,7 @@ export type MemechanSol = {
         },
         {
           "name": "memeTicket",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -406,18 +406,23 @@ export type MemechanSol = {
         },
         {
           "name": "memeVault",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
           "name": "wsolVault",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
           "name": "stakingSignerPda",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "signer",
+          "isMut": false,
+          "isSigner": true
         },
         {
           "name": "tokenProgram",
@@ -1222,7 +1227,7 @@ export const IDL: MemechanSol = {
         },
         {
           "name": "memeTicket",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -1237,18 +1242,23 @@ export const IDL: MemechanSol = {
         },
         {
           "name": "memeVault",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
           "name": "wsolVault",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
           "name": "stakingSignerPda",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "signer",
+          "isMut": false,
+          "isSigner": true
         },
         {
           "name": "tokenProgram",

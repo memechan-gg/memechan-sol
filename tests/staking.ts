@@ -162,6 +162,7 @@ export class Staking {
         staking: this.id,
         userMeme: memeAcc,
         userWsol: wsolAcc,
+        signer: user.publicKey,
         tokenProgram: TOKEN_PROGRAM_ID
       })
       .signers([user])

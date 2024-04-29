@@ -57,12 +57,19 @@ pub struct Unstake<'info> {
     staking: Account<'info, StakingPool>,
     #[account(
         mut,
-        constraint = meme_ticket.pool == staking.pool
+        constraint = meme_ticket.pool == staking.pool,
+        constraint = meme_ticket.owner == signer.key()
     )]
     meme_ticket: Account<'info, MemeTicket>,
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = user_meme.owner == signer.key()
+    )]
     user_meme: Account<'info, TokenAccount>,
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = user_wsol.owner == signer.key()
+    )]
     user_wsol: Account<'info, TokenAccount>,
     #[account(mut)]
     meme_vault: Account<'info, TokenAccount>,
@@ -144,15 +151,33 @@ pub fn unstake_handler(ctx: Context<Unstake>, release_amount: u64) -> Result<()>
 
 #[derive(Accounts)]
 pub struct WithdrawFees<'info> {
+    #[account(
+        has_one = meme_vault,
+        has_one = wsol_vault,
+    )]
     pub staking: Account<'info, StakingPool>,
+    #[account(
+        mut,
+        constraint = meme_ticket.pool == staking.pool,
+        constraint = meme_ticket.owner == signer.key()
+    )]
     pub meme_ticket: Account<'info, MemeTicket>,
+    #[account(
+        constraint = user_meme.owner == signer.key()
+    )]
     pub user_meme: Account<'info, TokenAccount>,
+    #[account(
+        constraint = user_wsol.owner == signer.key()
+    )]
     pub user_wsol: Account<'info, TokenAccount>,
+    #[account(mut)]
     pub meme_vault: Account<'info, TokenAccount>,
+    #[account(mut)]
     pub wsol_vault: Account<'info, TokenAccount>,
     /// CHECK: pda signer
     #[account(seeds = [StakingPool::SIGNER_PDA_PREFIX, staking.key().as_ref()], bump)]
     pub staking_signer_pda: AccountInfo<'info>,
+    pub signer: Signer<'info>,
     pub token_program: Program<'info, Token>,
 }
 
