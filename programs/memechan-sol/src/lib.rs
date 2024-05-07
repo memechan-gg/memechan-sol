@@ -1,12 +1,13 @@
-mod err;
-mod fee_distribution;
-mod fees;
-mod init;
-mod libraries;
-mod raydium;
-mod staked_lp;
-mod staking;
-mod vesting;
+pub mod err;
+pub mod fee_distribution;
+pub mod fees;
+pub mod init;
+pub mod libraries;
+pub mod models;
+pub mod raydium;
+pub mod staked_lp;
+pub mod staking;
+pub mod vesting;
 
 use crate::err::AmmError;
 use crate::fees::*;
@@ -22,6 +23,9 @@ use core as core_;
 use num_integer::Roots;
 use std::cmp::{max, min};
 use std::mem;
+
+pub const RAYDIUM_PROGRAM_ID: Pubkey =
+    solana_program::pubkey!("HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8"); // Devnet
 
 declare_id!("3LpdC7WHSrw2d6mWm3Enfvpzy1u5zoHkysyH1WxdmpPB");
 
@@ -54,8 +58,8 @@ pub mod memechan_sol {
         swap_y_handler(ctx, coin_in_amount, coin_x_min_value)
     }
 
-    pub fn go_live<'info>(ctx: Context<'_, '_, '_, 'info, GoLive<'info>>) -> Result<()> {
-        go_live_handler(ctx)
+    pub fn go_live<'info>(ctx: Context<'_, '_, '_, 'info, GoLive<'info>>, nonce: u8) -> Result<()> {
+        go_live_handler(ctx, nonce)
     }
 
     pub fn add_fees<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<()> {
@@ -105,7 +109,7 @@ pub struct BoundPool {
     pub admin_fees_meme: u64,
     pub admin_fees_sol: u64,
     pub admin_vault_sol: Pubkey,
-    pub launch_token_vault: Pubkey,
+    pub pool_meme_vault: Pubkey,
     pub fees: Fees,
     pub config: Config,
     pub locked: bool,
@@ -295,7 +299,7 @@ pub fn new_handler(ctx: Context<New>) -> Result<()> {
 
     pool.meme_amt = MAX_TICKET_TOKENS * MEME_TOKEN_DECIMALS;
     pool.meme_mint = accs.meme_mint.key();
-    pool.launch_token_vault = accs.launch_vault.key();
+    pool.pool_meme_vault = accs.launch_vault.key();
     pool.locked = false;
 
     Ok(())
