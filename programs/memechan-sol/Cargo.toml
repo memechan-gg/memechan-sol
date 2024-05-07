@@ -18,6 +18,9 @@ no-log-ix-name = []
 [dependencies]
 anchor-lang = "0.29.0"
 anchor-spl = "0.29.0"
+solana-program = "*"
 num-integer = "0.1.46"
 uint = "0.9.5"
-amm = { path = "../../deps/amm", features = ["cpi"] }
+# amm = { path = "../../deps/amm", features = ["cpi"] }
+# amm = { git = "https://github.com/aldrin-labs/amm.git", features = ["cpi"] }
+

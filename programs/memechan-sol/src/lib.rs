@@ -3,6 +3,7 @@ mod fee_distribution;
 mod fees;
 mod init;
 mod libraries;
+mod raydium;
 mod staked_lp;
 mod staking;
 mod vesting;
