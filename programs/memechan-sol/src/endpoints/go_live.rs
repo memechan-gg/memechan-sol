@@ -1,12 +1,11 @@
+use crate::consts::{MAX_TICKET_TOKENS, MEME_TOKEN_DECIMALS};
 use crate::err::AmmError;
-use crate::fees::{LAUNCH_FEE, PRECISION};
 use crate::libraries::MulDiv;
-use crate::models::{TokenAmount, TokenLimit};
-use crate::staked_lp::MemeTicket;
-use crate::staking::StakingPool;
-use crate::{
-    admin, vesting, BoundPool, MAX_TICKET_TOKENS, MEME_TOKEN_DECIMALS, RAYDIUM_PROGRAM_ID,
-};
+use crate::models::bound::BoundPool;
+use crate::models::fees::{LAUNCH_FEE, PRECISION};
+use crate::models::staked_lp::MemeTicket;
+use crate::models::staking::StakingPool;
+use crate::{admin, vesting, RAYDIUM_PROGRAM_ID};
 use crate::{err, raydium};
 use anchor_lang::prelude::*;
 use anchor_spl::token;
@@ -276,10 +275,7 @@ impl<'info> GoLive<'info> {
     }
 }
 
-pub fn go_live_handler<'info>(
-    ctx: Context<'_, '_, '_, 'info, GoLive<'info>>,
-    nonce: u8,
-) -> Result<()> {
+pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, GoLive<'info>>, nonce: u8) -> Result<()> {
     let accs = ctx.accounts;
 
     let bp_seeds = &[

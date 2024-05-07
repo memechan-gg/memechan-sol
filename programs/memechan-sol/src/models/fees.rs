@@ -11,12 +11,14 @@ pub struct Fees {
     pub fee_out_percent: u64,
 }
 
-pub fn get_fee_in_amount(fees: &Fees, amount: u64) -> Result<u64> {
-    get_fee_amount(amount, fees.fee_in_percent)
-}
+impl Fees {
+    pub fn get_fee_in_amount(&self, amount: u64) -> Result<u64> {
+        get_fee_amount(amount, self.fee_in_percent)
+    }
 
-pub fn get_fee_out_amount(fees: &Fees, amount: u64) -> Result<u64> {
-    get_fee_amount(amount, fees.fee_out_percent)
+    pub fn get_fee_out_amount(&self, amount: u64) -> Result<u64> {
+        get_fee_amount(amount, self.fee_out_percent)
+    }
 }
 
 fn get_fee_amount(x: u64, percent: u64) -> Result<u64> {
