@@ -1,6 +1,7 @@
 pub mod bound;
 pub mod fee_distribution;
 pub mod fees;
+pub mod raydium;
 pub mod staked_lp;
 pub mod staking;
 
@@ -37,4 +38,16 @@ pub struct SwapAmount {
 
 fn mist(sui: u64) -> u64 {
     WSOL_DECIMALS * sui
+}
+
+#[derive(Clone)]
+pub struct OpenBook;
+
+impl anchor_lang::Id for OpenBook {
+    fn id() -> Pubkey {
+        // Devnet
+        solana_program::pubkey!("EoTcMgcDRTJVZDMZWBoU6rhYHZfkNTVEAfz3uUJRcYGj")
+        // Mainnet
+        // solana_program::pubkey!("srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX")
+    }
 }

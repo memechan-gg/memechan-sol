@@ -1,4 +1,7 @@
-use crate::{models::staking::StakingPool, raydium, RAYDIUM_PROGRAM_ID};
+use crate::{
+    models::{staking::StakingPool, OpenBook},
+    raydium, RAYDIUM_PROGRAM_ID,
+};
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token, TokenAccount};
 
@@ -22,7 +25,6 @@ pub struct AddFees<'info> {
     pub aldrin_pool_acc: AccountInfo<'info>,
     #[account(mut)]
     pub raydium_lp_mint: Account<'info, Mint>,
-    pub token_program: Program<'info, Token>,
 
     #[account(mut)]
     pub pool_lp_wallet: Box<Account<'info, TokenAccount>>,
@@ -31,24 +33,45 @@ pub struct AddFees<'info> {
     pub signer: Signer<'info>,
 
     // raydium
+    /// CHECK: Checks done in cpi call to raydium
     #[account(mut)]
     pub raydium_amm: AccountInfo<'info>,
+    /// CHECK: Checks done in cpi call to raydium
     pub raydium_amm_authority: AccountInfo<'info>,
+    #[account(mut)]
+    pub raydium_meme_vault: Box<Account<'info, TokenAccount>>,
+    #[account(mut)]
+    pub raydium_wsol_vault: Box<Account<'info, TokenAccount>>,
+
+    // Open Book
+    /// CHECK: Checks done in cpi call to raydium
+    #[account(mut)]
     pub open_orders: AccountInfo<'info>,
-    pub raydium_meme_vault: AccountInfo<'info>,
-    pub raydium_wsol_vault: AccountInfo<'info>,
+    /// CHECK: Checks done in cpi call to raydium
+    #[account(mut)]
     pub target_orders: AccountInfo<'info>,
-    pub amm_config: AccountInfo<'info>,
-    pub fee_destination: AccountInfo<'info>,
-    pub market_program_id: AccountInfo<'info>,
+    /// CHECK: Checks done in cpi call to raydium
+    #[account(mut)]
     pub market_account: AccountInfo<'info>,
-    pub user_destination_lp_token_ata: AccountInfo<'info>,
+    /// CHECK: Checks done in cpi call to raydium
+    #[account(mut)]
     pub market_event_queue: AccountInfo<'info>,
-    pub market_coin_vault: AccountInfo<'info>,
-    pub market_pc_vault: AccountInfo<'info>,
+    #[account(mut)]
+    pub market_coin_vault: Box<Account<'info, TokenAccount>>,
+    #[account(mut)]
+    pub market_pc_vault: Box<Account<'info, TokenAccount>>,
+    /// CHECK: Checks done in cpi call to raydium
     pub market_vault_signer: AccountInfo<'info>,
+    /// CHECK: Checks done in cpi call to raydium
+    #[account(mut)]
     pub market_bids: AccountInfo<'info>,
+    /// CHECK: Checks done in cpi call to raydium
+    #[account(mut)]
     pub market_asks: AccountInfo<'info>,
+
+    // Programs
+    pub token_program: Program<'info, Token>,
+    pub market_program_id: Program<'info, OpenBook>,
 }
 
 impl<'info> AddFees<'info> {

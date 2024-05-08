@@ -177,7 +177,7 @@ export type MemechanSol = {
           "isSigner": true
         },
         {
-          "name": "launchTokenVault",
+          "name": "poolMemeVault",
           "isMut": true,
           "isSigner": false
         },
@@ -217,32 +217,12 @@ export type MemechanSol = {
           "isSigner": false
         },
         {
-          "name": "aldrinPoolAcc",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "aldrinPoolSigner",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "aldrinProgramToll",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "aldrinProgramTollWallet",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "aldrinLpMint",
+          "name": "raydiumLpMint",
           "isMut": true,
           "isSigner": false
         },
         {
-          "name": "lpTokenWallet",
+          "name": "poolLpWallet",
           "isMut": true,
           "isSigner": false
         },
@@ -252,7 +232,77 @@ export type MemechanSol = {
           "isSigner": true
         },
         {
-          "name": "aldrinAmmProgram",
+          "name": "raydiumAmm",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "raydiumAmmAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "raydiumMemeVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "raydiumWsolVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "ammConfig",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "feeDestination",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "userDestinationLpTokenAta",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "openOrders",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "targetOrders",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketEventQueue",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "clock",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "ataProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "marketProgramId",
           "isMut": false,
           "isSigner": false
         },
@@ -267,7 +317,12 @@ export type MemechanSol = {
           "isSigner": false
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "nonce",
+          "type": "u8"
+        }
+      ]
     },
     {
       "name": "addFees",
@@ -298,27 +353,92 @@ export type MemechanSol = {
           "isSigner": false
         },
         {
-          "name": "aldrinLpMint",
+          "name": "raydiumLpMint",
           "isMut": true,
           "isSigner": false
         },
         {
-          "name": "aldrinPoolSigner",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "aldrinPoolLpWallet",
+          "name": "poolLpWallet",
           "isMut": true,
           "isSigner": false
         },
         {
-          "name": "aldrinAmmProgram",
+          "name": "signer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "raydiumAmm",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "raydiumAmmAuthority",
           "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "raydiumMemeVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "raydiumWsolVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "openOrders",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "targetOrders",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketEventQueue",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketCoinVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketPcVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketVaultSigner",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "marketBids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketAsks",
+          "isMut": true,
           "isSigner": false
         },
         {
           "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "marketProgramId",
           "isMut": false,
           "isSigner": false
         }
@@ -503,6 +623,363 @@ export type MemechanSol = {
   ],
   "accounts": [
     {
+      "name": "boundPool",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "memeAmt",
+            "type": "u64"
+          },
+          {
+            "name": "memeMint",
+            "type": "publicKey"
+          },
+          {
+            "name": "solReserve",
+            "type": {
+              "defined": "Reserve"
+            }
+          },
+          {
+            "name": "adminFeesMeme",
+            "type": "u64"
+          },
+          {
+            "name": "adminFeesSol",
+            "type": "u64"
+          },
+          {
+            "name": "adminVaultSol",
+            "type": "publicKey"
+          },
+          {
+            "name": "poolMemeVault",
+            "type": "publicKey"
+          },
+          {
+            "name": "fees",
+            "type": {
+              "defined": "Fees"
+            }
+          },
+          {
+            "name": "config",
+            "type": {
+              "defined": "Config"
+            }
+          },
+          {
+            "name": "locked",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ammConfig",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pnlOwner",
+            "docs": [
+              "withdraw pnl owner"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "cancelOwner",
+            "docs": [
+              "admin amm order owner"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "pending1",
+            "docs": [
+              "pending"
+            ],
+            "type": {
+              "array": [
+                "u64",
+                28
+              ]
+            }
+          },
+          {
+            "name": "pending2",
+            "docs": [
+              "pending"
+            ],
+            "type": {
+              "array": [
+                "u64",
+                31
+              ]
+            }
+          },
+          {
+            "name": "createPoolFee",
+            "docs": [
+              "init amm pool fee amount"
+            ],
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ammInfo",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "status",
+            "docs": [
+              "Initialized status."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "nonce",
+            "docs": [
+              "Nonce used in program address.",
+              "The program address is created deterministically with the nonce,",
+              "amm program id, and amm account pubkey.  This program address has",
+              "authority over the amm's token coin account, token pc account, and pool",
+              "token mint."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "orderNum",
+            "docs": [
+              "max order count"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "depth",
+            "docs": [
+              "within this range, 5 => 5% range"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "coinDecimals",
+            "docs": [
+              "coin decimal"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "pcDecimals",
+            "docs": [
+              "pc decimal"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "state",
+            "docs": [
+              "amm machine state"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "resetFlag",
+            "docs": [
+              "amm reset_flag"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "minSize",
+            "docs": [
+              "min size 1->0.000001"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "volMaxCutRatio",
+            "docs": [
+              "vol_max_cut_ratio numerator, sys_decimal_value as denominator"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "amountWave",
+            "docs": [
+              "amount wave numerator, sys_decimal_value as denominator"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "coinLotSize",
+            "docs": [
+              "coinLotSize 1 -> 0.000001"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "pcLotSize",
+            "docs": [
+              "pcLotSize 1 -> 0.000001"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "minPriceMultiplier",
+            "docs": [
+              "min_cur_price: (2 * amm.order_num * amm.pc_lot_size) * max_price_multiplier"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "maxPriceMultiplier",
+            "docs": [
+              "max_cur_price: (2 * amm.order_num * amm.pc_lot_size) * max_price_multiplier"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "sysDecimalValue",
+            "docs": [
+              "system decimal value, used to normalize the value of coin and pc amount"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "fees",
+            "docs": [
+              "All fee information"
+            ],
+            "type": {
+              "defined": "Fees"
+            }
+          },
+          {
+            "name": "stateData",
+            "docs": [
+              "Statistical data"
+            ],
+            "type": {
+              "defined": "StateData"
+            }
+          },
+          {
+            "name": "coinVault",
+            "docs": [
+              "Coin vault"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "pcVault",
+            "docs": [
+              "Pc vault"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "coinVaultMint",
+            "docs": [
+              "Coin vault mint"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "pcVaultMint",
+            "docs": [
+              "Pc vault mint"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "lpMint",
+            "docs": [
+              "lp mint"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "openOrders",
+            "docs": [
+              "open_orders key"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "market",
+            "docs": [
+              "market key"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "marketProgram",
+            "docs": [
+              "market program key"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "targetOrders",
+            "docs": [
+              "target_orders key"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "padding1",
+            "docs": [
+              "padding"
+            ],
+            "type": {
+              "array": [
+                "u64",
+                8
+              ]
+            }
+          },
+          {
+            "name": "ammOwner",
+            "docs": [
+              "amm owner key"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "lpAmount",
+            "docs": [
+              "pool lp amount"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "clientOrderId",
+            "docs": [
+              "client order id"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "padding2",
+            "docs": [
+              "padding"
+            ],
+            "type": {
+              "array": [
+                "u64",
+                2
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "memeTicket",
       "type": {
         "kind": "struct",
@@ -581,63 +1058,41 @@ export type MemechanSol = {
           }
         ]
       }
-    },
+    }
+  ],
+  "types": [
     {
-      "name": "boundPool",
+      "name": "Config",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "memeAmt",
+            "name": "alphaAbs",
+            "type": "u128"
+          },
+          {
+            "name": "beta",
+            "type": "u128"
+          },
+          {
+            "name": "priceFactor",
             "type": "u64"
           },
           {
-            "name": "memeMint",
-            "type": "publicKey"
-          },
-          {
-            "name": "solReserve",
-            "type": {
-              "defined": "Reserve"
-            }
-          },
-          {
-            "name": "adminFeesMeme",
+            "name": "gammaS",
             "type": "u64"
           },
           {
-            "name": "adminFeesSol",
+            "name": "gammaM",
             "type": "u64"
           },
           {
-            "name": "adminVaultSol",
-            "type": "publicKey"
-          },
-          {
-            "name": "launchTokenVault",
-            "type": "publicKey"
-          },
-          {
-            "name": "fees",
-            "type": {
-              "defined": "Fees"
-            }
-          },
-          {
-            "name": "config",
-            "type": {
-              "defined": "Config"
-            }
-          },
-          {
-            "name": "locked",
-            "type": "bool"
+            "name": "omegaM",
+            "type": "u64"
           }
         ]
       }
-    }
-  ],
-  "types": [
+    },
     {
       "name": "Fees",
       "type": {
@@ -650,6 +1105,225 @@ export type MemechanSol = {
           {
             "name": "feeOutPercent",
             "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Fees",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "minSeparateNumerator",
+            "docs": [
+              "numerator of the min_separate"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "minSeparateDenominator",
+            "docs": [
+              "denominator of the min_separate"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "tradeFeeNumerator",
+            "docs": [
+              "numerator of the fee"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "tradeFeeDenominator",
+            "docs": [
+              "denominator of the fee",
+              "and 'trade_fee_denominator' must be equal to 'min_separate_denominator'"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "pnlNumerator",
+            "docs": [
+              "numerator of the pnl"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "pnlDenominator",
+            "docs": [
+              "denominator of the pnl"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "swapFeeNumerator",
+            "docs": [
+              "numerator of the swap_fee"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "swapFeeDenominator",
+            "docs": [
+              "denominator of the swap_fee"
+            ],
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "StateData",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "needTakePnlCoin",
+            "docs": [
+              "delay to take pnl coin"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "needTakePnlPc",
+            "docs": [
+              "delay to take pnl pc"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "totalPnlPc",
+            "docs": [
+              "total pnl pc"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "totalPnlCoin",
+            "docs": [
+              "total pnl coin"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "poolOpenTime",
+            "docs": [
+              "ido pool open time"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "padding",
+            "docs": [
+              "padding for future updates"
+            ],
+            "type": {
+              "array": [
+                "u64",
+                2
+              ]
+            }
+          },
+          {
+            "name": "orderbookToInitTime",
+            "docs": [
+              "switch from orderbookonly to init"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "swapCoinInAmount",
+            "docs": [
+              "swap coin in amount"
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "swapPcOutAmount",
+            "docs": [
+              "swap pc out amount"
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "swapAccPcFee",
+            "docs": [
+              "charge pc as swap fee while swap pc to coin"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "swapPcInAmount",
+            "docs": [
+              "swap pc in amount"
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "swapCoinOutAmount",
+            "docs": [
+              "swap coin out amount"
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "swapAccCoinFee",
+            "docs": [
+              "charge coin as swap fee while swap coin to pc"
+            ],
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TokenLimit",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "mint",
+            "type": "publicKey"
+          },
+          {
+            "name": "tokens",
+            "type": {
+              "defined": "TokenAmount"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "TokenAmount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "amount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Reserve",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "tokens",
+            "type": "u64"
+          },
+          {
+            "name": "mint",
+            "type": "publicKey"
+          },
+          {
+            "name": "vault",
+            "type": "publicKey"
           }
         ]
       }
@@ -691,53 +1365,125 @@ export type MemechanSol = {
       }
     },
     {
-      "name": "Config",
+      "name": "AmmInstruction",
+      "docs": [
+        "Instructions supported by the AmmInfo program."
+      ],
       "type": {
-        "kind": "struct",
-        "fields": [
+        "kind": "enum",
+        "variants": [
           {
-            "name": "alphaAbs",
-            "type": "u128"
+            "name": "Initialize",
+            "fields": [
+              {
+                "defined": "InitializeInstruction"
+              }
+            ]
           },
           {
-            "name": "beta",
-            "type": "u128"
+            "name": "Initialize2",
+            "fields": [
+              {
+                "defined": "InitializeInstruction2"
+              }
+            ]
           },
           {
-            "name": "priceFactor",
-            "type": "u64"
+            "name": "MonitorStep",
+            "fields": [
+              {
+                "defined": "MonitorStepInstruction"
+              }
+            ]
           },
           {
-            "name": "gammaS",
-            "type": "u64"
+            "name": "Deposit",
+            "fields": [
+              {
+                "defined": "DepositInstruction"
+              }
+            ]
           },
           {
-            "name": "gammaM",
-            "type": "u64"
+            "name": "Withdraw",
+            "fields": [
+              {
+                "defined": "WithdrawInstruction"
+              }
+            ]
           },
           {
-            "name": "omegaM",
-            "type": "u64"
-          }
-        ]
-      }
-    },
-    {
-      "name": "Reserve",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "tokens",
-            "type": "u64"
+            "name": "MigrateToOpenBook"
           },
           {
-            "name": "mint",
-            "type": "publicKey"
+            "name": "SetParams",
+            "fields": [
+              {
+                "defined": "SetParamsInstruction"
+              }
+            ]
           },
           {
-            "name": "vault",
-            "type": "publicKey"
+            "name": "WithdrawPnl"
+          },
+          {
+            "name": "WithdrawSrm",
+            "fields": [
+              {
+                "defined": "WithdrawSrmInstruction"
+              }
+            ]
+          },
+          {
+            "name": "SwapBaseIn",
+            "fields": [
+              {
+                "defined": "SwapInstructionBaseIn"
+              }
+            ]
+          },
+          {
+            "name": "PreInitialize",
+            "fields": [
+              {
+                "defined": "PreInitializeInstruction"
+              }
+            ]
+          },
+          {
+            "name": "SwapBaseOut",
+            "fields": [
+              {
+                "defined": "SwapInstructionBaseOut"
+              }
+            ]
+          },
+          {
+            "name": "SimulateInfo",
+            "fields": [
+              {
+                "defined": "SimulateInstruction"
+              }
+            ]
+          },
+          {
+            "name": "AdminCancelOrders",
+            "fields": [
+              {
+                "defined": "AdminCancelOrdersInstruction"
+              }
+            ]
+          },
+          {
+            "name": "CreateConfigAccount"
+          },
+          {
+            "name": "UpdateConfigAccount",
+            "fields": [
+              {
+                "defined": "ConfigArgs"
+              }
+            ]
           }
         ]
       }
@@ -1013,7 +1759,7 @@ export const IDL: MemechanSol = {
           "isSigner": true
         },
         {
-          "name": "launchTokenVault",
+          "name": "poolMemeVault",
           "isMut": true,
           "isSigner": false
         },
@@ -1053,32 +1799,12 @@ export const IDL: MemechanSol = {
           "isSigner": false
         },
         {
-          "name": "aldrinPoolAcc",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "aldrinPoolSigner",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "aldrinProgramToll",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "aldrinProgramTollWallet",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "aldrinLpMint",
+          "name": "raydiumLpMint",
           "isMut": true,
           "isSigner": false
         },
         {
-          "name": "lpTokenWallet",
+          "name": "poolLpWallet",
           "isMut": true,
           "isSigner": false
         },
@@ -1088,7 +1814,77 @@ export const IDL: MemechanSol = {
           "isSigner": true
         },
         {
-          "name": "aldrinAmmProgram",
+          "name": "raydiumAmm",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "raydiumAmmAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "raydiumMemeVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "raydiumWsolVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "ammConfig",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "feeDestination",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "userDestinationLpTokenAta",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "openOrders",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "targetOrders",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketEventQueue",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "clock",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "ataProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "marketProgramId",
           "isMut": false,
           "isSigner": false
         },
@@ -1103,7 +1899,12 @@ export const IDL: MemechanSol = {
           "isSigner": false
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "nonce",
+          "type": "u8"
+        }
+      ]
     },
     {
       "name": "addFees",
@@ -1134,27 +1935,92 @@ export const IDL: MemechanSol = {
           "isSigner": false
         },
         {
-          "name": "aldrinLpMint",
+          "name": "raydiumLpMint",
           "isMut": true,
           "isSigner": false
         },
         {
-          "name": "aldrinPoolSigner",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "aldrinPoolLpWallet",
+          "name": "poolLpWallet",
           "isMut": true,
           "isSigner": false
         },
         {
-          "name": "aldrinAmmProgram",
+          "name": "signer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "raydiumAmm",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "raydiumAmmAuthority",
           "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "raydiumMemeVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "raydiumWsolVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "openOrders",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "targetOrders",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketEventQueue",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketCoinVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketPcVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketVaultSigner",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "marketBids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketAsks",
+          "isMut": true,
           "isSigner": false
         },
         {
           "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "marketProgramId",
           "isMut": false,
           "isSigner": false
         }
@@ -1339,6 +2205,363 @@ export const IDL: MemechanSol = {
   ],
   "accounts": [
     {
+      "name": "boundPool",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "memeAmt",
+            "type": "u64"
+          },
+          {
+            "name": "memeMint",
+            "type": "publicKey"
+          },
+          {
+            "name": "solReserve",
+            "type": {
+              "defined": "Reserve"
+            }
+          },
+          {
+            "name": "adminFeesMeme",
+            "type": "u64"
+          },
+          {
+            "name": "adminFeesSol",
+            "type": "u64"
+          },
+          {
+            "name": "adminVaultSol",
+            "type": "publicKey"
+          },
+          {
+            "name": "poolMemeVault",
+            "type": "publicKey"
+          },
+          {
+            "name": "fees",
+            "type": {
+              "defined": "Fees"
+            }
+          },
+          {
+            "name": "config",
+            "type": {
+              "defined": "Config"
+            }
+          },
+          {
+            "name": "locked",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ammConfig",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pnlOwner",
+            "docs": [
+              "withdraw pnl owner"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "cancelOwner",
+            "docs": [
+              "admin amm order owner"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "pending1",
+            "docs": [
+              "pending"
+            ],
+            "type": {
+              "array": [
+                "u64",
+                28
+              ]
+            }
+          },
+          {
+            "name": "pending2",
+            "docs": [
+              "pending"
+            ],
+            "type": {
+              "array": [
+                "u64",
+                31
+              ]
+            }
+          },
+          {
+            "name": "createPoolFee",
+            "docs": [
+              "init amm pool fee amount"
+            ],
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ammInfo",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "status",
+            "docs": [
+              "Initialized status."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "nonce",
+            "docs": [
+              "Nonce used in program address.",
+              "The program address is created deterministically with the nonce,",
+              "amm program id, and amm account pubkey.  This program address has",
+              "authority over the amm's token coin account, token pc account, and pool",
+              "token mint."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "orderNum",
+            "docs": [
+              "max order count"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "depth",
+            "docs": [
+              "within this range, 5 => 5% range"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "coinDecimals",
+            "docs": [
+              "coin decimal"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "pcDecimals",
+            "docs": [
+              "pc decimal"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "state",
+            "docs": [
+              "amm machine state"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "resetFlag",
+            "docs": [
+              "amm reset_flag"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "minSize",
+            "docs": [
+              "min size 1->0.000001"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "volMaxCutRatio",
+            "docs": [
+              "vol_max_cut_ratio numerator, sys_decimal_value as denominator"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "amountWave",
+            "docs": [
+              "amount wave numerator, sys_decimal_value as denominator"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "coinLotSize",
+            "docs": [
+              "coinLotSize 1 -> 0.000001"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "pcLotSize",
+            "docs": [
+              "pcLotSize 1 -> 0.000001"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "minPriceMultiplier",
+            "docs": [
+              "min_cur_price: (2 * amm.order_num * amm.pc_lot_size) * max_price_multiplier"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "maxPriceMultiplier",
+            "docs": [
+              "max_cur_price: (2 * amm.order_num * amm.pc_lot_size) * max_price_multiplier"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "sysDecimalValue",
+            "docs": [
+              "system decimal value, used to normalize the value of coin and pc amount"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "fees",
+            "docs": [
+              "All fee information"
+            ],
+            "type": {
+              "defined": "Fees"
+            }
+          },
+          {
+            "name": "stateData",
+            "docs": [
+              "Statistical data"
+            ],
+            "type": {
+              "defined": "StateData"
+            }
+          },
+          {
+            "name": "coinVault",
+            "docs": [
+              "Coin vault"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "pcVault",
+            "docs": [
+              "Pc vault"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "coinVaultMint",
+            "docs": [
+              "Coin vault mint"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "pcVaultMint",
+            "docs": [
+              "Pc vault mint"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "lpMint",
+            "docs": [
+              "lp mint"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "openOrders",
+            "docs": [
+              "open_orders key"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "market",
+            "docs": [
+              "market key"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "marketProgram",
+            "docs": [
+              "market program key"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "targetOrders",
+            "docs": [
+              "target_orders key"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "padding1",
+            "docs": [
+              "padding"
+            ],
+            "type": {
+              "array": [
+                "u64",
+                8
+              ]
+            }
+          },
+          {
+            "name": "ammOwner",
+            "docs": [
+              "amm owner key"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "lpAmount",
+            "docs": [
+              "pool lp amount"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "clientOrderId",
+            "docs": [
+              "client order id"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "padding2",
+            "docs": [
+              "padding"
+            ],
+            "type": {
+              "array": [
+                "u64",
+                2
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "memeTicket",
       "type": {
         "kind": "struct",
@@ -1417,63 +2640,41 @@ export const IDL: MemechanSol = {
           }
         ]
       }
-    },
+    }
+  ],
+  "types": [
     {
-      "name": "boundPool",
+      "name": "Config",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "memeAmt",
+            "name": "alphaAbs",
+            "type": "u128"
+          },
+          {
+            "name": "beta",
+            "type": "u128"
+          },
+          {
+            "name": "priceFactor",
             "type": "u64"
           },
           {
-            "name": "memeMint",
-            "type": "publicKey"
-          },
-          {
-            "name": "solReserve",
-            "type": {
-              "defined": "Reserve"
-            }
-          },
-          {
-            "name": "adminFeesMeme",
+            "name": "gammaS",
             "type": "u64"
           },
           {
-            "name": "adminFeesSol",
+            "name": "gammaM",
             "type": "u64"
           },
           {
-            "name": "adminVaultSol",
-            "type": "publicKey"
-          },
-          {
-            "name": "launchTokenVault",
-            "type": "publicKey"
-          },
-          {
-            "name": "fees",
-            "type": {
-              "defined": "Fees"
-            }
-          },
-          {
-            "name": "config",
-            "type": {
-              "defined": "Config"
-            }
-          },
-          {
-            "name": "locked",
-            "type": "bool"
+            "name": "omegaM",
+            "type": "u64"
           }
         ]
       }
-    }
-  ],
-  "types": [
+    },
     {
       "name": "Fees",
       "type": {
@@ -1486,6 +2687,225 @@ export const IDL: MemechanSol = {
           {
             "name": "feeOutPercent",
             "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Fees",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "minSeparateNumerator",
+            "docs": [
+              "numerator of the min_separate"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "minSeparateDenominator",
+            "docs": [
+              "denominator of the min_separate"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "tradeFeeNumerator",
+            "docs": [
+              "numerator of the fee"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "tradeFeeDenominator",
+            "docs": [
+              "denominator of the fee",
+              "and 'trade_fee_denominator' must be equal to 'min_separate_denominator'"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "pnlNumerator",
+            "docs": [
+              "numerator of the pnl"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "pnlDenominator",
+            "docs": [
+              "denominator of the pnl"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "swapFeeNumerator",
+            "docs": [
+              "numerator of the swap_fee"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "swapFeeDenominator",
+            "docs": [
+              "denominator of the swap_fee"
+            ],
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "StateData",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "needTakePnlCoin",
+            "docs": [
+              "delay to take pnl coin"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "needTakePnlPc",
+            "docs": [
+              "delay to take pnl pc"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "totalPnlPc",
+            "docs": [
+              "total pnl pc"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "totalPnlCoin",
+            "docs": [
+              "total pnl coin"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "poolOpenTime",
+            "docs": [
+              "ido pool open time"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "padding",
+            "docs": [
+              "padding for future updates"
+            ],
+            "type": {
+              "array": [
+                "u64",
+                2
+              ]
+            }
+          },
+          {
+            "name": "orderbookToInitTime",
+            "docs": [
+              "switch from orderbookonly to init"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "swapCoinInAmount",
+            "docs": [
+              "swap coin in amount"
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "swapPcOutAmount",
+            "docs": [
+              "swap pc out amount"
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "swapAccPcFee",
+            "docs": [
+              "charge pc as swap fee while swap pc to coin"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "swapPcInAmount",
+            "docs": [
+              "swap pc in amount"
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "swapCoinOutAmount",
+            "docs": [
+              "swap coin out amount"
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "swapAccCoinFee",
+            "docs": [
+              "charge coin as swap fee while swap coin to pc"
+            ],
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TokenLimit",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "mint",
+            "type": "publicKey"
+          },
+          {
+            "name": "tokens",
+            "type": {
+              "defined": "TokenAmount"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "TokenAmount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "amount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Reserve",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "tokens",
+            "type": "u64"
+          },
+          {
+            "name": "mint",
+            "type": "publicKey"
+          },
+          {
+            "name": "vault",
+            "type": "publicKey"
           }
         ]
       }
@@ -1527,53 +2947,125 @@ export const IDL: MemechanSol = {
       }
     },
     {
-      "name": "Config",
+      "name": "AmmInstruction",
+      "docs": [
+        "Instructions supported by the AmmInfo program."
+      ],
       "type": {
-        "kind": "struct",
-        "fields": [
+        "kind": "enum",
+        "variants": [
           {
-            "name": "alphaAbs",
-            "type": "u128"
+            "name": "Initialize",
+            "fields": [
+              {
+                "defined": "InitializeInstruction"
+              }
+            ]
           },
           {
-            "name": "beta",
-            "type": "u128"
+            "name": "Initialize2",
+            "fields": [
+              {
+                "defined": "InitializeInstruction2"
+              }
+            ]
           },
           {
-            "name": "priceFactor",
-            "type": "u64"
+            "name": "MonitorStep",
+            "fields": [
+              {
+                "defined": "MonitorStepInstruction"
+              }
+            ]
           },
           {
-            "name": "gammaS",
-            "type": "u64"
+            "name": "Deposit",
+            "fields": [
+              {
+                "defined": "DepositInstruction"
+              }
+            ]
           },
           {
-            "name": "gammaM",
-            "type": "u64"
+            "name": "Withdraw",
+            "fields": [
+              {
+                "defined": "WithdrawInstruction"
+              }
+            ]
           },
           {
-            "name": "omegaM",
-            "type": "u64"
-          }
-        ]
-      }
-    },
-    {
-      "name": "Reserve",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "tokens",
-            "type": "u64"
+            "name": "MigrateToOpenBook"
           },
           {
-            "name": "mint",
-            "type": "publicKey"
+            "name": "SetParams",
+            "fields": [
+              {
+                "defined": "SetParamsInstruction"
+              }
+            ]
           },
           {
-            "name": "vault",
-            "type": "publicKey"
+            "name": "WithdrawPnl"
+          },
+          {
+            "name": "WithdrawSrm",
+            "fields": [
+              {
+                "defined": "WithdrawSrmInstruction"
+              }
+            ]
+          },
+          {
+            "name": "SwapBaseIn",
+            "fields": [
+              {
+                "defined": "SwapInstructionBaseIn"
+              }
+            ]
+          },
+          {
+            "name": "PreInitialize",
+            "fields": [
+              {
+                "defined": "PreInitializeInstruction"
+              }
+            ]
+          },
+          {
+            "name": "SwapBaseOut",
+            "fields": [
+              {
+                "defined": "SwapInstructionBaseOut"
+              }
+            ]
+          },
+          {
+            "name": "SimulateInfo",
+            "fields": [
+              {
+                "defined": "SimulateInstruction"
+              }
+            ]
+          },
+          {
+            "name": "AdminCancelOrders",
+            "fields": [
+              {
+                "defined": "AdminCancelOrdersInstruction"
+              }
+            ]
+          },
+          {
+            "name": "CreateConfigAccount"
+          },
+          {
+            "name": "UpdateConfigAccount",
+            "fields": [
+              {
+                "defined": "ConfigArgs"
+              }
+            ]
           }
         ]
       }

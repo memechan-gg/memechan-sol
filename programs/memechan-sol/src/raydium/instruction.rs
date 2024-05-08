@@ -2,20 +2,9 @@
 
 #![allow(clippy::too_many_arguments)]
 #![allow(deprecated)]
-use anchor_lang::prelude::borsh::{self, BorshSerialize};
-// use crate::state::{AmmParams, Fees, LastOrderDistance, SimulateParams};
-// use arrayref::array_ref;
-use solana_program::{
-    instruction::{AccountMeta, Instruction},
-    program_error::ProgramError,
-    program_pack::Pack,
-    pubkey::Pubkey,
-    sysvar,
-};
-use std::convert::TryInto;
-use std::mem::size_of;
-
 use super::models::{Fees, LastOrderDistance};
+use anchor_lang::prelude::borsh::{self, BorshSerialize};
+use solana_program::pubkey::Pubkey;
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, BorshSerialize)]

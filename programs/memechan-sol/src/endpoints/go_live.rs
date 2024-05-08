@@ -3,11 +3,14 @@ use crate::err::AmmError;
 use crate::libraries::MulDiv;
 use crate::models::bound::BoundPool;
 use crate::models::fees::{LAUNCH_FEE, PRECISION};
+use crate::models::raydium::{AmmConfig, AmmInfo};
 use crate::models::staked_lp::MemeTicket;
 use crate::models::staking::StakingPool;
+use crate::models::OpenBook;
 use crate::{admin, vesting, RAYDIUM_PROGRAM_ID};
 use crate::{err, raydium};
 use anchor_lang::prelude::*;
+use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token;
 use anchor_spl::token::spl_token::instruction::AuthorityType;
 use anchor_spl::token::spl_token::native_mint;
@@ -48,7 +51,7 @@ pub struct GoLive<'info> {
         payer = signer,
         space = StakingPool::space()
     )]
-    pub staking: Account<'info, StakingPool>,
+    pub staking: Box<Account<'info, StakingPool>>,
     #[account(mut)]
     pub pool_meme_vault: Box<Account<'info, TokenAccount>>,
     #[account(
@@ -84,27 +87,57 @@ pub struct GoLive<'info> {
     // signer and programs
     #[account(mut)]
     pub signer: Signer<'info>,
-    pub token_program: Program<'info, Token>,
-    pub system_program: Program<'info, System>,
-    pub clock: Sysvar<'info, Clock>,
 
     // raydium
-    pub ata_program: AccountInfo<'info>,
-    pub rent_program: AccountInfo<'info>,
+    /// CHECK: Checks done in cpi call to raydium
     #[account(mut)]
-    pub raydium_amm: AccountInfo<'info>,
+    pub raydium_amm: AccountLoader<'info, AmmInfo>,
+    /// CHECK: Raydium signer, checks done in cpi call to raydium
     pub raydium_amm_authority: AccountInfo<'info>,
-    pub open_orders: AccountInfo<'info>,
-    pub raydium_meme_vault: AccountInfo<'info>,
-    pub raydium_wsol_vault: AccountInfo<'info>,
-    pub target_orders: AccountInfo<'info>,
-    pub amm_config: AccountInfo<'info>,
-    pub fee_destination: AccountInfo<'info>,
-    pub market_program_id: AccountInfo<'info>,
-    pub market_account: AccountInfo<'info>,
-    pub user_destination_lp_token_ata: AccountInfo<'info>,
-    pub market_event_queue: AccountInfo<'info>,
+    #[account(mut)]
+    pub raydium_meme_vault: Box<Account<'info, TokenAccount>>,
+    #[account(mut)]
+    pub raydium_wsol_vault: Box<Account<'info, TokenAccount>>,
+    /// CHECK: Checks done in cpi call to raydium
+    pub amm_config: AccountLoader<'info, AmmConfig>,
+    /// CHECK: Checks done in cpi call to raydium
+    pub fee_destination: UncheckedAccount<'info>,
+    /// CHECK: Checks done in cpi call to raydium
+    #[account(mut)]
+    pub user_destination_lp_token_ata: UncheckedAccount<'info>,
+
+    // Open Book
+    /// CHECK: Checks done in cpi call to raydium
+    #[account(zero)]
+    // pub open_orders: AccountInfo<'info>,
+    pub open_orders: UncheckedAccount<'info>,
+    // pub open_orders: AccountLoader<'info, OpenOrders2>,
+    /// CHECK: Checks done in cpi call to raydium
+    #[account(zero)]
+    pub target_orders: UncheckedAccount<'info>,
+    /// CHECK: Checks done in cpi call to raydium
+    #[account(zero)]
+    pub market_account: UncheckedAccount<'info>,
+    /// CHECK: Checks done in cpi call to raydium
+    #[account(zero)]
+    pub market_event_queue: UncheckedAccount<'info>,
+
+    // Sysvars
+    pub rent: Sysvar<'info, Rent>,
+    pub clock: Sysvar<'info, Clock>,
+
+    // Programs
+    /// CHECK: Checks done in cpi call to raydium
+    pub ata_program: Program<'info, AssociatedToken>,
+    // Checked by raydium account
+    pub market_program_id: Program<'info, OpenBook>,
+    pub token_program: Program<'info, Token>,
+    pub system_program: Program<'info, System>,
 }
+
+// 4328
+// 4296
+// 4096
 
 impl<'info> GoLive<'info> {
     fn create_raydium_pool(
@@ -126,7 +159,7 @@ impl<'info> GoLive<'info> {
             &self.token_program.key(),
             &self.ata_program.key(),
             &self.system_program.key(),
-            &self.rent_program.key(),
+            &self.rent.key(),
             &self.raydium_amm.key(),
             &self.raydium_amm_authority.key(),
             &self.open_orders.key(),
@@ -151,7 +184,7 @@ impl<'info> GoLive<'info> {
                 self.token_program.to_account_info().clone(),
                 self.ata_program.to_account_info().clone(),
                 self.system_program.to_account_info().clone(),
-                self.rent_program.to_account_info().clone(),
+                self.rent.to_account_info().clone(),
                 self.raydium_amm.to_account_info().clone(),
                 self.raydium_amm_authority.to_account_info().clone(),
                 self.open_orders.to_account_info().clone(),
@@ -371,7 +404,7 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, GoLive<'info>>, nonce: u8) 
         sol_supply - live_fee_amt,        // init_pc_amount
         amm_meme_balance,                 // init_coin_amount
         staking_signer_seeds,
-    );
+    )?;
 
     // No need to add liquidity as already added above in init instruciton
     // accs.deposit_liquidity(

@@ -5,10 +5,7 @@ use crate::{
 use anchor_lang::prelude::*;
 use num_integer::Roots;
 use solana_program::pubkey::Pubkey;
-use std::{
-    cmp::{max, min},
-    mem,
-};
+use std::{cmp::min, mem};
 
 use super::{fees::Fees, mist, Reserve, SwapAmount};
 
