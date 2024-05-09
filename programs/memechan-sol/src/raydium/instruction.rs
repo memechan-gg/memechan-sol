@@ -1,5 +1,6 @@
 //! Instruction types
 
+#![allow(dead_code)]
 #![allow(clippy::too_many_arguments)]
 #![allow(deprecated)]
 use super::models::{LastOrderDistance, RaydiumFees};
@@ -8,7 +9,7 @@ use solana_program::pubkey::Pubkey;
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, BorshSerialize)]
-pub struct InitializeInstruction {
+pub(crate) struct InitializeInstruction {
     /// nonce used to create valid program address
     pub nonce: u8,
     /// utc timestamps for pool open
@@ -17,7 +18,7 @@ pub struct InitializeInstruction {
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, BorshSerialize)]
-pub struct InitializeInstruction2 {
+pub(crate) struct InitializeInstruction2 {
     /// nonce used to create valid program address
     pub nonce: u8,
     /// utc timestamps for pool open
@@ -30,14 +31,14 @@ pub struct InitializeInstruction2 {
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, BorshSerialize)]
-pub struct PreInitializeInstruction {
+pub(crate) struct PreInitializeInstruction {
     /// nonce used to create valid program address
     pub nonce: u8,
 }
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, BorshSerialize)]
-pub struct MonitorStepInstruction {
+pub(crate) struct MonitorStepInstruction {
     /// max value of plan/new/cancel orders
     pub plan_order_limit: u16,
     pub place_order_limit: u16,
@@ -46,7 +47,7 @@ pub struct MonitorStepInstruction {
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, BorshSerialize)]
-pub struct DepositInstruction {
+pub(crate) struct DepositInstruction {
     /// Pool token amount to transfer. token_a and token_b amount are set by
     /// the current exchange rate and size of the pool
     pub max_coin_amount: u64,
@@ -56,7 +57,7 @@ pub struct DepositInstruction {
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, BorshSerialize)]
-pub struct WithdrawInstruction {
+pub(crate) struct WithdrawInstruction {
     /// Pool token amount to transfer. token_a and token_b amount are set by
     /// the current exchange rate and size of the pool
     pub amount: u64,
@@ -64,7 +65,7 @@ pub struct WithdrawInstruction {
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, BorshSerialize)]
-pub struct SetParamsInstruction {
+pub(crate) struct SetParamsInstruction {
     pub param: u8,
     pub value: Option<u64>,
     pub new_pubkey: Option<Pubkey>,
@@ -74,13 +75,13 @@ pub struct SetParamsInstruction {
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, BorshSerialize)]
-pub struct WithdrawSrmInstruction {
+pub(crate) struct WithdrawSrmInstruction {
     pub amount: u64,
 }
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, BorshSerialize)]
-pub struct SwapInstructionBaseIn {
+pub(crate) struct SwapInstructionBaseIn {
     // SOURCE amount to transfer, output to DESTINATION is based on the exchange rate
     pub amount_in: u64,
     /// Minimum amount of DESTINATION token to output, prevents excessive slippage
@@ -89,7 +90,7 @@ pub struct SwapInstructionBaseIn {
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, BorshSerialize)]
-pub struct SwapInstructionBaseOut {
+pub(crate) struct SwapInstructionBaseOut {
     // SOURCE amount to transfer, output to DESTINATION is based on the exchange rate
     pub max_amount_in: u64,
     /// Minimum amount of DESTINATION token to output, prevents excessive slippage
@@ -98,7 +99,7 @@ pub struct SwapInstructionBaseOut {
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, BorshSerialize)]
-pub struct SimulateInstruction {
+pub(crate) struct SimulateInstruction {
     pub param: u8,
     pub swap_base_in_value: Option<SwapInstructionBaseIn>,
     pub swap_base_out_value: Option<SwapInstructionBaseOut>,
@@ -106,14 +107,14 @@ pub struct SimulateInstruction {
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, BorshSerialize)]
-pub struct AdminCancelOrdersInstruction {
+pub(crate) struct AdminCancelOrdersInstruction {
     pub limit: u16,
 }
 
 /// Update config acccount params
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, BorshSerialize)]
-pub struct ConfigArgs {
+pub(crate) struct ConfigArgs {
     pub param: u8,
     pub owner: Option<Pubkey>,
     pub create_pool_fee: Option<u64>,
@@ -122,7 +123,7 @@ pub struct ConfigArgs {
 /// Instructions supported by the AmmInfo program.
 #[repr(C)]
 #[derive(Clone, Debug, PartialEq, BorshSerialize)]
-pub enum AmmInstruction {
+pub(crate) enum AmmInstruction {
     ///   Initializes a new AmmInfo.
     ///
     ///   Not supported yet, please use `Initialize2` to new a AMM pool

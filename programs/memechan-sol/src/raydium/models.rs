@@ -155,7 +155,7 @@ unsafe impl Pod for StateData {}
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, BorshSerialize)]
-pub struct LastOrderDistance {
+pub(crate) struct LastOrderDistance {
     pub last_order_numerator: u64,
     pub last_order_denominator: u64,
 }
