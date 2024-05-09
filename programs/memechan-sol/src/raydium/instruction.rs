@@ -2,7 +2,7 @@
 
 #![allow(clippy::too_many_arguments)]
 #![allow(deprecated)]
-use super::models::{Fees, LastOrderDistance};
+use super::models::{LastOrderDistance, RaydiumFees};
 use anchor_lang::prelude::borsh::{self, BorshSerialize};
 use solana_program::pubkey::Pubkey;
 
@@ -68,7 +68,7 @@ pub struct SetParamsInstruction {
     pub param: u8,
     pub value: Option<u64>,
     pub new_pubkey: Option<Pubkey>,
-    pub fees: Option<Fees>,
+    pub fees: Option<RaydiumFees>,
     pub last_order_distance: Option<LastOrderDistance>,
 }
 

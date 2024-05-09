@@ -9,7 +9,7 @@ pub struct LastOrderDistance {
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, BorshSerialize)]
-pub struct Fees {
+pub struct RaydiumFees {
     /// numerator of the min_separate
     pub min_separate_numerator: u64,
     /// denominator of the min_separate

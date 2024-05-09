@@ -1577,5 +1577,8 @@
       "code": 6018,
       "name": "BondingCurveInterceptMustBePositive"
     }
-  ]
+  ],
+  "metadata": {
+    "address": "23VLhZhrnBkfyCW4QG17QJfpXiB8C7sNtM3MVMuoTnBf"
+  }
 }
