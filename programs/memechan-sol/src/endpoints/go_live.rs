@@ -38,64 +38,125 @@ const SOL_THRESHOLD: u64 = 300;
 
 #[derive(Accounts)]
 pub struct GoLive<'info> {
-    // go_live instruction accounts
+    /// Signer
+    #[account(mut)]
+    pub signer: Signer<'info>,
+    //
+    //
+    // ===== Bonding Pool =====
+    //
+    /// Bonding Pool account
     #[account(
         mut,
         close = signer,
-        has_one = pool_meme_vault,
         has_one = admin_vault_sol
     )]
     pub pool: Box<Account<'info, BoundPool>>,
+    /// CHECK: bound-curve phase pda signer
+    #[account(seeds = [BoundPool::SIGNER_PDA_PREFIX, pool.key().as_ref()], bump)]
+    pub bound_pool_signer_pda: AccountInfo<'info>,
+    /// Bonding Pool Meme vault
+    #[account(
+        mut,
+        constraint = pool.meme_reserve.vault == pool_meme_vault.key()
+    )]
+    pub pool_meme_vault: Box<Account<'info, TokenAccount>>,
+    #[account(
+        mut,
+        constraint = pool.sol_reserve.vault == pool_wsol_vault.key()
+    )]
+    /// Bonding Pool WSOL vault
+    pub pool_wsol_vault: Box<Account<'info, TokenAccount>>,
+    /// Bonding Pool Admin Vault
+    #[account(
+        mut,
+        constraint = pool.admin_vault_sol == admin_vault_sol.key()
+    )]
+    pub admin_vault_sol: Box<Account<'info, TokenAccount>>,
+    //
+    //
+    //
+    //
+    //
+    // ===== Memechan Mint Accounts =====
+    //
+    /// Mint Account for Meme
+    #[account(
+        constraint = pool_meme_vault.mint == meme_mint.key()
+    )]
+    pub meme_mint: Box<Account<'info, Mint>>,
+    /// Mint Account for WSOL
+    #[account(
+        constraint = sol_mint.key() == native_mint::id()
+            @ err::acc("sol mint should be native WSOL mint")
+    )]
+    pub sol_mint: Box<Account<'info, Mint>>,
+    //
+    //
+    //
+    //
+    //
+    // ===== Staking Pool Accounts =====
+    //
+    /// Staking Pool Account
     #[account(
         init,
         payer = signer,
         space = StakingPool::space()
     )]
     pub staking: Box<Account<'info, StakingPool>>,
-    #[account(mut)]
-    pub pool_meme_vault: Box<Account<'info, TokenAccount>>,
-    #[account(
-        mut,
-        constraint = pool.sol_reserve.vault == pool_wsol_vault.key()
-    )]
-    pub pool_wsol_vault: Box<Account<'info, TokenAccount>>,
-    #[account(mut)]
-    pub admin_vault_sol: Box<Account<'info, TokenAccount>>,
-    #[account(init, payer = signer, space = MemeTicket::space())]
-    pub meme_ticket: Box<Account<'info, MemeTicket>>,
-    /// CHECK: bound-curve phase pda signer
-    #[account(seeds = [BoundPool::SIGNER_PDA_PREFIX, pool.key().as_ref()], bump)]
-    pub bound_pool_signer_pda: AccountInfo<'info>,
+    //
+    /// Staking Pool Signer
     /// CHECK: live phase pda signer
     #[account(mut, seeds = [StakingPool::SIGNER_PDA_PREFIX, staking.key().as_ref()], bump)]
     pub staking_pool_signer_pda: AccountInfo<'info>,
-    #[account(
-        constraint = pool_meme_vault.mint == meme_mint.key()
-    )]
-    pub meme_mint: Box<Account<'info, Mint>>,
-    #[account(
-        constraint = sol_mint.key() == native_mint::id()
-            @ err::acc("sol mint should be native WSOL mint")
-    )]
-    pub sol_mint: Box<Account<'info, Mint>>,
-
-    #[account(mut)]
-    pub raydium_lp_mint: Box<Account<'info, Mint>>,
-    #[account(mut)]
-    pub pool_lp_wallet: Box<Account<'info, TokenAccount>>,
-
-    // signer and programs
-    #[account(mut)]
-    pub signer: Signer<'info>,
-
-    // raydium
+    //
+    /// Meme Ticket Account of Admin
+    #[account(init, payer = signer, space = MemeTicket::space())]
+    pub meme_ticket: Box<Account<'info, MemeTicket>>,
+    //
+    //
+    //
+    //
+    //
+    // ===== OpenBook Accounts =====
+    //
+    /// Open Orders Account
+    /// CHECK: Checks done in cpi call to raydium
+    #[account(zero)]
+    pub open_orders: UncheckedAccount<'info>,
+    /// Target Orders Account
+    /// CHECK: Checks done in cpi call to raydium
+    #[account(zero)]
+    pub target_orders: UncheckedAccount<'info>,
+    /// Market Orders Account
+    /// CHECK: Checks done in cpi call to raydium
+    #[account(zero)]
+    pub market_account: UncheckedAccount<'info>,
+    //
+    //
+    //
+    //
+    //
+    // ===== Raydium Accounts =====
+    //
+    /// Raydium AMM Account
     /// CHECK: Checks done in cpi call to raydium
     #[account(mut)]
     pub raydium_amm: AccountLoader<'info, AmmInfo>,
+    /// Raydium AMM Signer
     /// CHECK: Raydium signer, checks done in cpi call to raydium
     pub raydium_amm_authority: AccountInfo<'info>,
+    /// Raydium LP MinT
+    #[account(mut)]
+    pub raydium_lp_mint: Box<Account<'info, Mint>>,
+    /// Raydium LP Token Account
+    // #[account(mut)]
+    // pub pool_lp_wallet: Box<Account<'info, TokenAccount>>,
+    /// Raydium Meme Token Account
     #[account(mut)]
     pub raydium_meme_vault: Box<Account<'info, TokenAccount>>,
+    /// Raydium WSOL Token Account
     #[account(mut)]
     pub raydium_wsol_vault: Box<Account<'info, TokenAccount>>,
     /// CHECK: Checks done in cpi call to raydium
@@ -105,22 +166,6 @@ pub struct GoLive<'info> {
     /// CHECK: Checks done in cpi call to raydium
     #[account(mut)]
     pub user_destination_lp_token_ata: UncheckedAccount<'info>,
-
-    // Open Book
-    /// CHECK: Checks done in cpi call to raydium
-    #[account(zero)]
-    // pub open_orders: AccountInfo<'info>,
-    pub open_orders: UncheckedAccount<'info>,
-    // pub open_orders: AccountLoader<'info, OpenOrders2>,
-    /// CHECK: Checks done in cpi call to raydium
-    #[account(zero)]
-    pub target_orders: UncheckedAccount<'info>,
-    /// CHECK: Checks done in cpi call to raydium
-    #[account(zero)]
-    pub market_account: UncheckedAccount<'info>,
-    /// CHECK: Checks done in cpi call to raydium
-    #[account(zero)]
-    pub market_event_queue: UncheckedAccount<'info>,
 
     // Sysvars
     pub rent: Sysvar<'info, Rent>,
@@ -134,10 +179,6 @@ pub struct GoLive<'info> {
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
 }
-
-// 4328
-// 4296
-// 4096
 
 impl<'info> GoLive<'info> {
     fn create_raydium_pool(
@@ -209,58 +250,58 @@ impl<'info> GoLive<'info> {
         Ok(())
     }
 
-    pub fn deposit_liquidity(
-        &self,
-        max_meme_amount: u64,
-        max_wsol_amount: u64,
-        signer_seeds: &[&[&[u8]]; 1],
-    ) -> Result<()> {
-        let instruction = raydium::deposit(
-            &RAYDIUM_PROGRAM_ID,
-            // Params
-            max_meme_amount,
-            max_wsol_amount,
-            0, // base_side is meme token (i.e. 0)
-            // Accounts
-            &self.token_program.key(),
-            &self.raydium_amm.key(),
-            &self.raydium_amm_authority.key(),
-            &self.open_orders.key(),
-            &self.target_orders.key(),
-            &self.raydium_lp_mint.key(),
-            &self.raydium_meme_vault.key(),
-            &self.pool_wsol_vault.key(),
-            &self.market_account.key(),
-            &self.pool_meme_vault.key(),
-            &self.pool_wsol_vault.key(),
-            &self.pool_lp_wallet.key(),
-            &self.signer.key(),
-            &self.market_event_queue.key(),
-        );
+    // pub fn deposit_liquidity(
+    //     &self,
+    //     max_meme_amount: u64,
+    //     max_wsol_amount: u64,
+    //     signer_seeds: &[&[&[u8]]; 1],
+    // ) -> Result<()> {
+    //     let instruction = raydium::deposit(
+    //         &RAYDIUM_PROGRAM_ID,
+    //         // Params
+    //         max_meme_amount,
+    //         max_wsol_amount,
+    //         0, // base_side is meme token (i.e. 0)
+    //         // Accounts
+    //         &self.token_program.key(),
+    //         &self.raydium_amm.key(),
+    //         &self.raydium_amm_authority.key(),
+    //         &self.open_orders.key(),
+    //         &self.target_orders.key(),
+    //         &self.raydium_lp_mint.key(),
+    //         &self.raydium_meme_vault.key(),
+    //         &self.pool_wsol_vault.key(),
+    //         &self.market_account.key(),
+    //         &self.pool_meme_vault.key(),
+    //         &self.pool_wsol_vault.key(),
+    //         &self.pool_lp_wallet.key(),
+    //         &self.signer.key(),
+    //         &self.market_event_queue.key(),
+    //     );
 
-        solana_program::program::invoke_signed(
-            &instruction,
-            &[
-                self.token_program.to_account_info().clone(),
-                self.raydium_amm.to_account_info().clone(),
-                self.raydium_amm_authority.to_account_info().clone(),
-                self.open_orders.to_account_info().clone(),
-                self.target_orders.to_account_info().clone(),
-                self.raydium_lp_mint.to_account_info().clone(),
-                self.raydium_meme_vault.to_account_info().clone(),
-                self.pool_wsol_vault.to_account_info().clone(),
-                self.market_account.to_account_info().clone(),
-                self.pool_meme_vault.to_account_info().clone(),
-                self.pool_wsol_vault.to_account_info().clone(),
-                self.pool_lp_wallet.to_account_info().clone(),
-                self.signer.to_account_info().clone(),
-                self.market_event_queue.to_account_info().clone(),
-            ],
-            signer_seeds,
-        )?;
+    //     solana_program::program::invoke_signed(
+    //         &instruction,
+    //         &[
+    //             self.token_program.to_account_info().clone(),
+    //             self.raydium_amm.to_account_info().clone(),
+    //             self.raydium_amm_authority.to_account_info().clone(),
+    //             self.open_orders.to_account_info().clone(),
+    //             self.target_orders.to_account_info().clone(),
+    //             self.raydium_lp_mint.to_account_info().clone(),
+    //             self.raydium_meme_vault.to_account_info().clone(),
+    //             self.pool_wsol_vault.to_account_info().clone(),
+    //             self.market_account.to_account_info().clone(),
+    //             self.pool_meme_vault.to_account_info().clone(),
+    //             self.pool_wsol_vault.to_account_info().clone(),
+    //             self.pool_lp_wallet.to_account_info().clone(),
+    //             self.signer.to_account_info().clone(),
+    //             self.market_event_queue.to_account_info().clone(),
+    //         ],
+    //         signer_seeds,
+    //     )?;
 
-        Ok(())
-    }
+    //     Ok(())
+    // }
 
     // pub fn deposit_liquidity_ctx(&self) -> CpiContext<'_, '_, '_, 'info, DepositLiquidity<'info>> {
     //     let cpi_program = self.aldrin_amm_program.to_account_info();

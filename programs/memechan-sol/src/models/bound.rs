@@ -11,13 +11,14 @@ use super::{fees::Fees, mist, Reserve, SwapAmount};
 
 #[account]
 pub struct BoundPool {
-    pub meme_amt: u64,
-    pub meme_mint: Pubkey,
+    pub meme_reserve: Reserve,
+    // pub meme_amt: u64,
+    // pub meme_mint: Pubkey,
+    // pub pool_meme_vault: Pubkey,
     pub sol_reserve: Reserve,
     pub admin_fees_meme: u64,
     pub admin_fees_sol: u64,
     pub admin_vault_sol: Pubkey,
-    pub pool_meme_vault: Pubkey,
     pub fees: Fees,
     pub config: Config,
     pub locked: bool,
@@ -157,7 +158,7 @@ impl BoundPool {
     }
 
     fn balances(&self) -> (u64, u64) {
-        (self.meme_amt, self.sol_reserve.tokens)
+        (self.meme_reserve.tokens, self.sol_reserve.tokens)
     }
 }
 

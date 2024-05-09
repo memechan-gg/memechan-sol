@@ -72,9 +72,9 @@ pub fn handle(ctx: Context<SwapCoinY>, coin_in_amount: u64, coin_x_min_value: u6
     pool.admin_fees_meme += swap_amount.admin_fee_out;
 
     pool.sol_reserve.tokens += swap_amount.amount_in;
-    pool.meme_amt -= swap_amount.amount_out + swap_amount.admin_fee_out;
+    pool.meme_reserve.tokens -= swap_amount.amount_out + swap_amount.admin_fee_out;
 
-    if pool.meme_amt == 0 {
+    if pool.meme_reserve.tokens == 0 {
         pool.locked = true;
     };
 

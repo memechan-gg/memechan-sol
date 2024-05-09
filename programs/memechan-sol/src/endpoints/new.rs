@@ -152,9 +152,9 @@ pub fn handle(ctx: Context<New>) -> Result<()> {
         price_factor,
     };
 
-    pool.meme_amt = MAX_TICKET_TOKENS * MEME_TOKEN_DECIMALS;
-    pool.meme_mint = accs.meme_mint.key();
-    pool.pool_meme_vault = accs.launch_vault.key();
+    pool.meme_reserve.tokens = MAX_TICKET_TOKENS * MEME_TOKEN_DECIMALS;
+    pool.meme_reserve.mint = accs.meme_mint.key();
+    pool.meme_reserve.vault = accs.launch_vault.key();
     pool.locked = false;
 
     Ok(())

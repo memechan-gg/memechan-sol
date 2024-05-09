@@ -77,7 +77,7 @@ pub fn handle(ctx: Context<SwapCoinX>, coin_in_amount: u64, coin_y_min_value: u6
     pool_state.admin_fees_meme += swap_amount.admin_fee_in;
     pool_state.admin_fees_sol += swap_amount.admin_fee_out;
 
-    pool_state.meme_amt += swap_amount.amount_in;
+    pool_state.meme_reserve.tokens += swap_amount.amount_in;
     pool_state.sol_reserve.tokens -= swap_amount.amount_out + swap_amount.admin_fee_out;
 
     user_ticket.amount -= coin_in_amount;
