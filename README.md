@@ -11,3 +11,5 @@ Used math lib from Raydium, thanks for that.
 `solana config set --localhost`
 
 `solana config set --devnet`
+
+`solana-keygen new --outfile kp.json`
