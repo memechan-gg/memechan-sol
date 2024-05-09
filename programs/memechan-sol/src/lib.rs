@@ -11,9 +11,6 @@ use core as core_;
 
 use endpoints::*;
 
-pub const RAYDIUM_PROGRAM_ID: Pubkey =
-    solana_program::pubkey!("HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8"); // Devnet
-
 declare_id!("H7MBCGWncCL9RtMpFEbouei8donVgxj4F7NwpyMvHgUH");
 
 pub mod admin {

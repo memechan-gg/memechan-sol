@@ -8,8 +8,8 @@ Used math lib from Raydium, thanks for that.
 
 `anchor deploy --program-name memechan_sol --program-keypair keypairs/kp.json`
 
-`solana config set --localhost`
+`solana config set --url localhost`
 
-`solana config set --devnet`
+`solana config set --url devnet`
 
 `solana-keygen new --outfile kp.json`

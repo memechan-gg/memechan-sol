@@ -1,4 +1,4 @@
-use crate::consts::{MAX_TICKET_TOKENS, MEME_TOKEN_DECIMALS};
+use crate::consts::{MAX_TICKET_TOKENS, MEME_TOKEN_DECIMALS, RAYDIUM_PROGRAM_ID};
 use crate::err::AmmError;
 use crate::libraries::MulDiv;
 use crate::models::bound::BoundPool;
@@ -7,7 +7,7 @@ use crate::models::staked_lp::MemeTicket;
 use crate::models::staking::StakingPool;
 use crate::models::OpenBook;
 use crate::raydium::models::{AmmConfig, AmmInfo};
-use crate::{admin, vesting, RAYDIUM_PROGRAM_ID};
+use crate::{admin, vesting};
 use crate::{err, raydium};
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
