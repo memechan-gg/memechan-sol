@@ -677,6 +677,86 @@ export type MemechanSol = {
       }
     },
     {
+      "name": "memeTicket",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "publicKey"
+          },
+          {
+            "name": "pool",
+            "type": "publicKey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "withdrawsMeme",
+            "type": "u64"
+          },
+          {
+            "name": "withdrawsWsol",
+            "type": "u64"
+          },
+          {
+            "name": "untilTimestamp",
+            "type": "i64"
+          },
+          {
+            "name": "vesting",
+            "type": {
+              "defined": "VestingData"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "stakingPool",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pool",
+            "type": "publicKey"
+          },
+          {
+            "name": "memeVault",
+            "type": "publicKey"
+          },
+          {
+            "name": "memeMint",
+            "type": "publicKey"
+          },
+          {
+            "name": "wsolVault",
+            "type": "publicKey"
+          },
+          {
+            "name": "vestingConfig",
+            "type": {
+              "defined": "VestingConfig"
+            }
+          },
+          {
+            "name": "stakesTotal",
+            "type": "u64"
+          },
+          {
+            "name": "feesXTotal",
+            "type": "u64"
+          },
+          {
+            "name": "feesYTotal",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
       "name": "ammConfig",
       "type": {
         "kind": "struct",
@@ -856,7 +936,7 @@ export type MemechanSol = {
               "All fee information"
             ],
             "type": {
-              "defined": "Fees"
+              "defined": "RaydiumFees"
             }
           },
           {
@@ -978,86 +1058,6 @@ export type MemechanSol = {
           }
         ]
       }
-    },
-    {
-      "name": "memeTicket",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "owner",
-            "type": "publicKey"
-          },
-          {
-            "name": "pool",
-            "type": "publicKey"
-          },
-          {
-            "name": "amount",
-            "type": "u64"
-          },
-          {
-            "name": "withdrawsMeme",
-            "type": "u64"
-          },
-          {
-            "name": "withdrawsWsol",
-            "type": "u64"
-          },
-          {
-            "name": "untilTimestamp",
-            "type": "i64"
-          },
-          {
-            "name": "vesting",
-            "type": {
-              "defined": "VestingData"
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "stakingPool",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "pool",
-            "type": "publicKey"
-          },
-          {
-            "name": "memeVault",
-            "type": "publicKey"
-          },
-          {
-            "name": "memeMint",
-            "type": "publicKey"
-          },
-          {
-            "name": "wsolVault",
-            "type": "publicKey"
-          },
-          {
-            "name": "vestingConfig",
-            "type": {
-              "defined": "VestingConfig"
-            }
-          },
-          {
-            "name": "stakesTotal",
-            "type": "u64"
-          },
-          {
-            "name": "feesXTotal",
-            "type": "u64"
-          },
-          {
-            "name": "feesYTotal",
-            "type": "u64"
-          }
-        ]
-      }
     }
   ],
   "types": [
@@ -1110,7 +1110,57 @@ export type MemechanSol = {
       }
     },
     {
-      "name": "Fees",
+      "name": "TokenLimit",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "mint",
+            "type": "publicKey"
+          },
+          {
+            "name": "tokens",
+            "type": {
+              "defined": "TokenAmount"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "TokenAmount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "amount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Reserve",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "tokens",
+            "type": "u64"
+          },
+          {
+            "name": "mint",
+            "type": "publicKey"
+          },
+          {
+            "name": "vault",
+            "type": "publicKey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RaydiumFees",
       "type": {
         "kind": "struct",
         "fields": [
@@ -1274,56 +1324,6 @@ export type MemechanSol = {
               "charge coin as swap fee while swap coin to pc"
             ],
             "type": "u64"
-          }
-        ]
-      }
-    },
-    {
-      "name": "TokenLimit",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "mint",
-            "type": "publicKey"
-          },
-          {
-            "name": "tokens",
-            "type": {
-              "defined": "TokenAmount"
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "TokenAmount",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "amount",
-            "type": "u64"
-          }
-        ]
-      }
-    },
-    {
-      "name": "Reserve",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "tokens",
-            "type": "u64"
-          },
-          {
-            "name": "mint",
-            "type": "publicKey"
-          },
-          {
-            "name": "vault",
-            "type": "publicKey"
           }
         ]
       }
@@ -2259,6 +2259,86 @@ export const IDL: MemechanSol = {
       }
     },
     {
+      "name": "memeTicket",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "publicKey"
+          },
+          {
+            "name": "pool",
+            "type": "publicKey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "withdrawsMeme",
+            "type": "u64"
+          },
+          {
+            "name": "withdrawsWsol",
+            "type": "u64"
+          },
+          {
+            "name": "untilTimestamp",
+            "type": "i64"
+          },
+          {
+            "name": "vesting",
+            "type": {
+              "defined": "VestingData"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "stakingPool",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pool",
+            "type": "publicKey"
+          },
+          {
+            "name": "memeVault",
+            "type": "publicKey"
+          },
+          {
+            "name": "memeMint",
+            "type": "publicKey"
+          },
+          {
+            "name": "wsolVault",
+            "type": "publicKey"
+          },
+          {
+            "name": "vestingConfig",
+            "type": {
+              "defined": "VestingConfig"
+            }
+          },
+          {
+            "name": "stakesTotal",
+            "type": "u64"
+          },
+          {
+            "name": "feesXTotal",
+            "type": "u64"
+          },
+          {
+            "name": "feesYTotal",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
       "name": "ammConfig",
       "type": {
         "kind": "struct",
@@ -2438,7 +2518,7 @@ export const IDL: MemechanSol = {
               "All fee information"
             ],
             "type": {
-              "defined": "Fees"
+              "defined": "RaydiumFees"
             }
           },
           {
@@ -2560,86 +2640,6 @@ export const IDL: MemechanSol = {
           }
         ]
       }
-    },
-    {
-      "name": "memeTicket",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "owner",
-            "type": "publicKey"
-          },
-          {
-            "name": "pool",
-            "type": "publicKey"
-          },
-          {
-            "name": "amount",
-            "type": "u64"
-          },
-          {
-            "name": "withdrawsMeme",
-            "type": "u64"
-          },
-          {
-            "name": "withdrawsWsol",
-            "type": "u64"
-          },
-          {
-            "name": "untilTimestamp",
-            "type": "i64"
-          },
-          {
-            "name": "vesting",
-            "type": {
-              "defined": "VestingData"
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "stakingPool",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "pool",
-            "type": "publicKey"
-          },
-          {
-            "name": "memeVault",
-            "type": "publicKey"
-          },
-          {
-            "name": "memeMint",
-            "type": "publicKey"
-          },
-          {
-            "name": "wsolVault",
-            "type": "publicKey"
-          },
-          {
-            "name": "vestingConfig",
-            "type": {
-              "defined": "VestingConfig"
-            }
-          },
-          {
-            "name": "stakesTotal",
-            "type": "u64"
-          },
-          {
-            "name": "feesXTotal",
-            "type": "u64"
-          },
-          {
-            "name": "feesYTotal",
-            "type": "u64"
-          }
-        ]
-      }
     }
   ],
   "types": [
@@ -2692,7 +2692,57 @@ export const IDL: MemechanSol = {
       }
     },
     {
-      "name": "Fees",
+      "name": "TokenLimit",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "mint",
+            "type": "publicKey"
+          },
+          {
+            "name": "tokens",
+            "type": {
+              "defined": "TokenAmount"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "TokenAmount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "amount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Reserve",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "tokens",
+            "type": "u64"
+          },
+          {
+            "name": "mint",
+            "type": "publicKey"
+          },
+          {
+            "name": "vault",
+            "type": "publicKey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RaydiumFees",
       "type": {
         "kind": "struct",
         "fields": [
@@ -2856,56 +2906,6 @@ export const IDL: MemechanSol = {
               "charge coin as swap fee while swap coin to pc"
             ],
             "type": "u64"
-          }
-        ]
-      }
-    },
-    {
-      "name": "TokenLimit",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "mint",
-            "type": "publicKey"
-          },
-          {
-            "name": "tokens",
-            "type": {
-              "defined": "TokenAmount"
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "TokenAmount",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "amount",
-            "type": "u64"
-          }
-        ]
-      }
-    },
-    {
-      "name": "Reserve",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "tokens",
-            "type": "u64"
-          },
-          {
-            "name": "mint",
-            "type": "publicKey"
-          },
-          {
-            "name": "vault",
-            "type": "publicKey"
           }
         ]
       }
