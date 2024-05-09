@@ -14,11 +14,11 @@ use endpoints::*;
 pub const RAYDIUM_PROGRAM_ID: Pubkey =
     solana_program::pubkey!("HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8"); // Devnet
 
-declare_id!("3LpdC7WHSrw2d6mWm3Enfvpzy1u5zoHkysyH1WxdmpPB");
+declare_id!("765KsCHycVsQB9giSsr8b8jCa5q7xT7dZBa6gPMEFWos");
 
 pub mod admin {
     use anchor_lang::prelude::declare_id;
-    declare_id!("8vBA2MzaQdt3UWimSkx1J4m2zMgp8A2iwtRKzXVurXP2");
+    declare_id!("8RSDaghj3qZLBNvRBiN5oULX66dgng9pW2HxHubpR8TW");
 }
 
 #[program]
