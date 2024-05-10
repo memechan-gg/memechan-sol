@@ -6,7 +6,7 @@ use crate::models::fees::{LAUNCH_FEE, PRECISION};
 use crate::models::staked_lp::MemeTicket;
 use crate::models::staking::StakingPool;
 use crate::models::OpenBook;
-use crate::raydium::models::{AmmConfig, AmmInfo};
+use crate::raydium::models::{AmmConfig, AmmInfo, MarketState, OpenOrders};
 use crate::{admin, vesting};
 use crate::{err, raydium};
 use anchor_lang::prelude::*;
@@ -124,17 +124,18 @@ pub struct GoLive<'info> {
     /// Open Orders Account
     /// CHECK: Checks done in cpi call to raydium
     #[account(zero)]
-    pub open_orders: UncheckedAccount<'info>,
+    pub open_orders: AccountLoader<'info, OpenOrders>,
     /// Target Orders Account
     /// CHECK: Checks done in cpi call to raydium
     #[account(zero)]
-    pub target_orders: UncheckedAccount<'info>,
+    pub target_orders: AccountLoader<'info, OpenOrders>, // UncheckedAccount<'info>,
     /// Market Orders Account
     /// CHECK: Checks done in cpi call to raydium
     #[account(zero)]
-    pub market_account: UncheckedAccount<'info>,
+    pub market_account: AccountLoader<'info, MarketState>,
+    /// CHECK: Checks done in cpi call to raydium
     #[account(zero)]
-    pub market_event_queue: UncheckedAccount<'info>,
+    pub market_event_queue: AccountInfo<'info>,
     //
     //
     //

@@ -32,7 +32,6 @@ pub const LP_MINT_ASSOCIATED_SEED: &'static [u8] = b"lp_mint_associated_seed";
 /// Amm config seed
 pub const AMM_CONFIG_SEED: &'static [u8] = b"amm_config_account_seed";
 
-#[cfg(feature = "localnet")]
 pub const RAYDIUM_PROGRAM_ID: Pubkey =
     solana_program::pubkey!("EA68RLWrCRtwbiudgb25mHrFzuLBfCEVVhHEeuFF9sC6"); // Localnet
 
