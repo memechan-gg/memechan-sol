@@ -26,7 +26,9 @@ pub struct New<'info> {
     #[account(
         init,
         payer = sender,
-        space = BoundPool::space()
+        space = BoundPool::space(),
+        seeds = [BoundPool::POOL_PREFIX, meme_mint.key().as_ref(), sol_mint.key().as_ref()],
+        bump
     )]
     pub pool: Account<'info, BoundPool>,
     #[account(

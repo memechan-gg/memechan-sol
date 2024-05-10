@@ -1,0 +1,1 @@
+anchor deploy  --program-name memechan_sol --program-keypair keypairs/kp.json

@@ -13,7 +13,7 @@ export type MemechanSol = {
         {
           "name": "pool",
           "isMut": true,
-          "isSigner": true
+          "isSigner": false
         },
         {
           "name": "memeMint",
@@ -167,34 +167,20 @@ export type MemechanSol = {
       "name": "goLive",
       "accounts": [
         {
+          "name": "signer",
+          "isMut": true,
+          "isSigner": true,
+          "docs": [
+            "Signer"
+          ]
+        },
+        {
           "name": "pool",
           "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "staking",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "poolMemeVault",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "poolWsolVault",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "adminVaultSol",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "memeTicket",
-          "isMut": true,
-          "isSigner": true
+          "isSigner": false,
+          "docs": [
+            "Bonding Pool account"
+          ]
         },
         {
           "name": "boundPoolSignerPda",
@@ -202,54 +188,133 @@ export type MemechanSol = {
           "isSigner": false
         },
         {
-          "name": "stakingPoolSignerPda",
+          "name": "poolMemeVault",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "Bonding Pool Meme vault"
+          ]
+        },
+        {
+          "name": "poolWsolVault",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Bonding Pool WSOL vault"
+          ]
+        },
+        {
+          "name": "adminVaultSol",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Bonding Pool Admin Vault"
+          ]
         },
         {
           "name": "memeMint",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "Mint Account for Meme"
+          ]
         },
         {
           "name": "solMint",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "Mint Account for WSOL"
+          ]
         },
         {
-          "name": "raydiumLpMint",
+          "name": "staking",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "Staking Pool Account"
+          ]
         },
         {
-          "name": "poolLpWallet",
+          "name": "stakingPoolSignerPda",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "Staking Pool Signer"
+          ]
         },
         {
-          "name": "signer",
+          "name": "memeTicket",
           "isMut": true,
-          "isSigner": true
+          "isSigner": false,
+          "docs": [
+            "Meme Ticket Account of Admin"
+          ]
+        },
+        {
+          "name": "openOrders",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Open Orders Account"
+          ]
+        },
+        {
+          "name": "targetOrders",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Target Orders Account"
+          ]
+        },
+        {
+          "name": "marketAccount",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Market Orders Account"
+          ]
         },
         {
           "name": "raydiumAmm",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "Raydium AMM Account"
+          ]
         },
         {
           "name": "raydiumAmmAuthority",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "Raydium AMM Signer"
+          ]
+        },
+        {
+          "name": "raydiumLpMint",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Raydium LP MinT"
+          ]
         },
         {
           "name": "raydiumMemeVault",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "Raydium LP Token Account",
+            "Raydium Meme Token Account"
+          ]
         },
         {
           "name": "raydiumWsolVault",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "Raydium WSOL Token Account"
+          ]
         },
         {
           "name": "ammConfig",
@@ -263,26 +328,6 @@ export type MemechanSol = {
         },
         {
           "name": "userDestinationLpTokenAta",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "openOrders",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "targetOrders",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "marketAccount",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "marketEventQueue",
           "isMut": true,
           "isSigner": false
         },
@@ -628,12 +673,10 @@ export type MemechanSol = {
         "kind": "struct",
         "fields": [
           {
-            "name": "memeAmt",
-            "type": "u64"
-          },
-          {
-            "name": "memeMint",
-            "type": "publicKey"
+            "name": "memeReserve",
+            "type": {
+              "defined": "Reserve"
+            }
           },
           {
             "name": "solReserve",
@@ -651,10 +694,6 @@ export type MemechanSol = {
           },
           {
             "name": "adminVaultSol",
-            "type": "publicKey"
-          },
-          {
-            "name": "poolMemeVault",
             "type": "publicKey"
           },
           {
@@ -1471,7 +1510,7 @@ export const IDL: MemechanSol = {
         {
           "name": "pool",
           "isMut": true,
-          "isSigner": true
+          "isSigner": false
         },
         {
           "name": "memeMint",
@@ -1625,34 +1664,20 @@ export const IDL: MemechanSol = {
       "name": "goLive",
       "accounts": [
         {
+          "name": "signer",
+          "isMut": true,
+          "isSigner": true,
+          "docs": [
+            "Signer"
+          ]
+        },
+        {
           "name": "pool",
           "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "staking",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "poolMemeVault",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "poolWsolVault",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "adminVaultSol",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "memeTicket",
-          "isMut": true,
-          "isSigner": true
+          "isSigner": false,
+          "docs": [
+            "Bonding Pool account"
+          ]
         },
         {
           "name": "boundPoolSignerPda",
@@ -1660,54 +1685,133 @@ export const IDL: MemechanSol = {
           "isSigner": false
         },
         {
-          "name": "stakingPoolSignerPda",
+          "name": "poolMemeVault",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "Bonding Pool Meme vault"
+          ]
+        },
+        {
+          "name": "poolWsolVault",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Bonding Pool WSOL vault"
+          ]
+        },
+        {
+          "name": "adminVaultSol",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Bonding Pool Admin Vault"
+          ]
         },
         {
           "name": "memeMint",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "Mint Account for Meme"
+          ]
         },
         {
           "name": "solMint",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "Mint Account for WSOL"
+          ]
         },
         {
-          "name": "raydiumLpMint",
+          "name": "staking",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "Staking Pool Account"
+          ]
         },
         {
-          "name": "poolLpWallet",
+          "name": "stakingPoolSignerPda",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "Staking Pool Signer"
+          ]
         },
         {
-          "name": "signer",
+          "name": "memeTicket",
           "isMut": true,
-          "isSigner": true
+          "isSigner": false,
+          "docs": [
+            "Meme Ticket Account of Admin"
+          ]
+        },
+        {
+          "name": "openOrders",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Open Orders Account"
+          ]
+        },
+        {
+          "name": "targetOrders",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Target Orders Account"
+          ]
+        },
+        {
+          "name": "marketAccount",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Market Orders Account"
+          ]
         },
         {
           "name": "raydiumAmm",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "Raydium AMM Account"
+          ]
         },
         {
           "name": "raydiumAmmAuthority",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "Raydium AMM Signer"
+          ]
+        },
+        {
+          "name": "raydiumLpMint",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Raydium LP MinT"
+          ]
         },
         {
           "name": "raydiumMemeVault",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "Raydium LP Token Account",
+            "Raydium Meme Token Account"
+          ]
         },
         {
           "name": "raydiumWsolVault",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "Raydium WSOL Token Account"
+          ]
         },
         {
           "name": "ammConfig",
@@ -1721,26 +1825,6 @@ export const IDL: MemechanSol = {
         },
         {
           "name": "userDestinationLpTokenAta",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "openOrders",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "targetOrders",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "marketAccount",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "marketEventQueue",
           "isMut": true,
           "isSigner": false
         },
@@ -2086,12 +2170,10 @@ export const IDL: MemechanSol = {
         "kind": "struct",
         "fields": [
           {
-            "name": "memeAmt",
-            "type": "u64"
-          },
-          {
-            "name": "memeMint",
-            "type": "publicKey"
+            "name": "memeReserve",
+            "type": {
+              "defined": "Reserve"
+            }
           },
           {
             "name": "solReserve",
@@ -2109,10 +2191,6 @@ export const IDL: MemechanSol = {
           },
           {
             "name": "adminVaultSol",
-            "type": "publicKey"
-          },
-          {
-            "name": "poolMemeVault",
             "type": "publicKey"
           },
           {
