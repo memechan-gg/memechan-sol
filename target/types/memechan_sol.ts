@@ -13,7 +13,7 @@ export type MemechanSol = {
         {
           "name": "pool",
           "isMut": true,
-          "isSigner": true
+          "isSigner": false
         },
         {
           "name": "memeMint",
@@ -230,7 +230,7 @@ export type MemechanSol = {
         {
           "name": "staking",
           "isMut": true,
-          "isSigner": true,
+          "isSigner": false,
           "docs": [
             "Staking Pool Account"
           ]
@@ -246,7 +246,7 @@ export type MemechanSol = {
         {
           "name": "memeTicket",
           "isMut": true,
-          "isSigner": true,
+          "isSigner": false,
           "docs": [
             "Meme Ticket Account of Admin"
           ]
@@ -1879,7 +1879,7 @@ export const IDL: MemechanSol = {
         {
           "name": "pool",
           "isMut": true,
-          "isSigner": true
+          "isSigner": false
         },
         {
           "name": "memeMint",
@@ -2096,7 +2096,7 @@ export const IDL: MemechanSol = {
         {
           "name": "staking",
           "isMut": true,
-          "isSigner": true,
+          "isSigner": false,
           "docs": [
             "Staking Pool Account"
           ]
@@ -2112,7 +2112,7 @@ export const IDL: MemechanSol = {
         {
           "name": "memeTicket",
           "isMut": true,
-          "isSigner": true,
+          "isSigner": false,
           "docs": [
             "Meme Ticket Account of Admin"
           ]

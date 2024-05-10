@@ -13,7 +13,7 @@
         {
           "name": "pool",
           "isMut": true,
-          "isSigner": true
+          "isSigner": false
         },
         {
           "name": "memeMint",
@@ -230,7 +230,7 @@
         {
           "name": "staking",
           "isMut": true,
-          "isSigner": true,
+          "isSigner": false,
           "docs": [
             "Staking Pool Account"
           ]
@@ -246,7 +246,7 @@
         {
           "name": "memeTicket",
           "isMut": true,
-          "isSigner": true,
+          "isSigner": false,
           "docs": [
             "Meme Ticket Account of Admin"
           ]
@@ -1863,6 +1863,6 @@
     }
   ],
   "metadata": {
-    "address": "A2jCV16hMx5dYnQrydBRnxTnLJrGP49w1n1HHRU8sm4W"
+    "address": "CSPY4iu6wRJMtJKN4Qr5kYXckxKowL8yExnnKX5EXg9Y"
   }
 }

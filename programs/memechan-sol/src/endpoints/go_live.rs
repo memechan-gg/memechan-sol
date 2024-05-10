@@ -102,7 +102,9 @@ pub struct GoLive<'info> {
     #[account(
         init,
         payer = signer,
-        space = StakingPool::space()
+        space = StakingPool::space(),
+        seeds = [StakingPool::POOL_PREFIX, meme_mint.key().as_ref()],
+        bump
     )]
     pub staking: Box<Account<'info, StakingPool>>,
     //
@@ -112,7 +114,13 @@ pub struct GoLive<'info> {
     pub staking_pool_signer_pda: AccountInfo<'info>,
     //
     /// Meme Ticket Account of Admin
-    #[account(init, payer = signer, space = MemeTicket::space())]
+    #[account(
+        init,
+        payer = signer,
+        space = MemeTicket::space(),
+        seeds = [MemeTicket::ADMIN_TICKET_PREFIX, staking.key().as_ref()],
+        bump
+    )]
     pub meme_ticket: Box<Account<'info, MemeTicket>>,
     //
     //

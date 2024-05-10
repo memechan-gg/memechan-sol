@@ -32,14 +32,9 @@ pub const LP_MINT_ASSOCIATED_SEED: &'static [u8] = b"lp_mint_associated_seed";
 /// Amm config seed
 pub const AMM_CONFIG_SEED: &'static [u8] = b"amm_config_account_seed";
 
-pub const RAYDIUM_PROGRAM_ID: Pubkey =
-    solana_program::pubkey!("EA68RLWrCRtwbiudgb25mHrFzuLBfCEVVhHEeuFF9sC6"); // Localnet
+// pub const RAYDIUM_PROGRAM_ID: Pubkey =
+//     solana_program::pubkey!("EA68RLWrCRtwbiudgb25mHrFzuLBfCEVVhHEeuFF9sC6"); // Localnet
 
-#[cfg(all(
-    not(feature = "localnet"),
-    not(feature = "mainnet"),
-    feature = "devnet"
-))]
 pub const RAYDIUM_PROGRAM_ID: Pubkey =
     solana_program::pubkey!("HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8"); // Devnet
 #[cfg(all(

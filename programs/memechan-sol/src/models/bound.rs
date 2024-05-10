@@ -201,6 +201,7 @@ pub fn compute_beta(
 }
 
 impl BoundPool {
+    pub const POOL_PREFIX: &'static [u8; 10] = b"bound_pool";
     pub const SIGNER_PDA_PREFIX: &'static [u8; 6] = b"signer";
 
     pub fn space() -> usize {

@@ -15,6 +15,7 @@ pub struct StakingPool {
 }
 
 impl StakingPool {
+    pub const POOL_PREFIX: &'static [u8; 12] = b"staking_pool";
     pub const SIGNER_PDA_PREFIX: &'static [u8; 7] = b"staking";
 
     pub fn space() -> usize {
