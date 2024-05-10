@@ -166,7 +166,7 @@ pub(crate) struct LastOrderDistance {
 }
 
 #[repr(C)]
-#[derive(Clone, Copy, Default, Zeroable, Pod)]
+#[derive(Clone, Copy, Default, AnchorDeserialize, AnchorSerialize, Zeroable, Pod)]
 pub struct TargetOrder {
     pub price: u64,
     pub vol: u64,

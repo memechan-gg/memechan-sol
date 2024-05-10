@@ -1721,6 +1721,22 @@
       }
     },
     {
+      "name": "TargetOrder",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "price",
+            "type": "u64"
+          },
+          {
+            "name": "vol",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
       "name": "VestingConfig",
       "type": {
         "kind": "struct",

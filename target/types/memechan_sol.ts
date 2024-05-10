@@ -1721,6 +1721,22 @@ export type MemechanSol = {
       }
     },
     {
+      "name": "TargetOrder",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "price",
+            "type": "u64"
+          },
+          {
+            "name": "vol",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
       "name": "VestingConfig",
       "type": {
         "kind": "struct",
@@ -3565,6 +3581,22 @@ export const IDL: MemechanSol = {
             "docs": [
               "charge coin as swap fee while swap coin to pc"
             ],
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TargetOrder",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "price",
+            "type": "u64"
+          },
+          {
+            "name": "vol",
             "type": "u64"
           }
         ]
