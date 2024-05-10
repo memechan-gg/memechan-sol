@@ -133,6 +133,8 @@ pub struct GoLive<'info> {
     /// CHECK: Checks done in cpi call to raydium
     #[account(zero)]
     pub market_account: UncheckedAccount<'info>,
+    #[account(zero)]
+    pub market_event_queue: UncheckedAccount<'info>,
     //
     //
     //
@@ -151,29 +153,29 @@ pub struct GoLive<'info> {
     #[account(mut)]
     pub raydium_lp_mint: Box<Account<'info, Mint>>,
     /// Raydium LP Token Account
-    // #[account(mut)]
-    // pub pool_lp_wallet: Box<Account<'info, TokenAccount>>,
+    #[account(mut)]
+    pub pool_lp_wallet: Box<Account<'info, TokenAccount>>, // TODO: who is authority?
     /// Raydium Meme Token Account
     #[account(mut)]
     pub raydium_meme_vault: Box<Account<'info, TokenAccount>>,
     /// Raydium WSOL Token Account
     #[account(mut)]
     pub raydium_wsol_vault: Box<Account<'info, TokenAccount>>,
+    // /// CHECK: Checks done in cpi call to raydium
+    // pub amm_config: AccountLoader<'info, AmmConfig>,
+    // /// CHECK: Checks done in cpi call to raydium
+    // pub fee_destination: UncheckedAccount<'info>,
     /// CHECK: Checks done in cpi call to raydium
-    pub amm_config: AccountLoader<'info, AmmConfig>,
-    /// CHECK: Checks done in cpi call to raydium
-    pub fee_destination: UncheckedAccount<'info>,
-    /// CHECK: Checks done in cpi call to raydium
-    #[account(mut)]
-    pub user_destination_lp_token_ata: UncheckedAccount<'info>,
+    // #[account(mut)]
+    // pub user_destination_lp_token_ata: UncheckedAccount<'info>,
 
     // Sysvars
     pub rent: Sysvar<'info, Rent>,
     pub clock: Sysvar<'info, Clock>,
 
     // Programs
-    /// CHECK: Checks done in cpi call to raydium
-    pub ata_program: Program<'info, AssociatedToken>,
+    // /// CHECK: Checks done in cpi call to raydium
+    // pub ata_program: Program<'info, AssociatedToken>,
     // Checked by raydium account
     pub market_program_id: Program<'info, OpenBook>,
     pub token_program: Program<'info, Token>,
@@ -181,127 +183,127 @@ pub struct GoLive<'info> {
 }
 
 impl<'info> GoLive<'info> {
-    fn create_raydium_pool(
-        &self,
-        nonce: u8,
-        open_time: u64,
-        init_pc_amount: u64,
-        init_coin_amount: u64,
-        signer_seeds: &[&[&[u8]]; 1],
-    ) -> Result<()> {
-        let instruction = raydium::initialize2(
-            &RAYDIUM_PROGRAM_ID,
-            // Params
-            nonce,
-            open_time,
-            init_pc_amount,
-            init_coin_amount,
-            // Accounts
-            &self.token_program.key(),
-            &self.ata_program.key(),
-            &self.system_program.key(),
-            &self.rent.key(),
-            &self.raydium_amm.key(),
-            &self.raydium_amm_authority.key(),
-            &self.open_orders.key(),
-            &self.raydium_lp_mint.key(),    // lp mint
-            &self.meme_mint.key(),          // coin mint
-            &self.sol_mint.key(),           // pc_mint
-            &self.raydium_meme_vault.key(), // coin_vault
-            &self.raydium_wsol_vault.key(), // pc_vault
-            &self.target_orders.key(),
-            &self.amm_config.key(),
-            &self.fee_destination.key(),
-            &self.market_program_id.key(),
-            &self.market_account.key(),
-            &self.signer.key(), // user/signer
-            &self.pool_meme_vault.key(),
-            &self.pool_wsol_vault.key(),
-            &self.user_destination_lp_token_ata.key(),
-        );
-        solana_program::program::invoke_signed(
-            &instruction,
-            &[
-                self.token_program.to_account_info().clone(),
-                self.ata_program.to_account_info().clone(),
-                self.system_program.to_account_info().clone(),
-                self.rent.to_account_info().clone(),
-                self.raydium_amm.to_account_info().clone(),
-                self.raydium_amm_authority.to_account_info().clone(),
-                self.open_orders.to_account_info().clone(),
-                self.raydium_lp_mint.to_account_info().clone(),
-                self.meme_mint.to_account_info().clone(),
-                self.sol_mint.to_account_info().clone(),
-                self.raydium_meme_vault.to_account_info().clone(),
-                self.raydium_wsol_vault.to_account_info().clone(),
-                self.target_orders.to_account_info().clone(),
-                self.amm_config.to_account_info().clone(),
-                self.fee_destination.to_account_info().clone(),
-                self.market_program_id.to_account_info().clone(),
-                self.market_account.to_account_info().clone(),
-                self.signer.to_account_info().clone(),
-                self.pool_meme_vault.to_account_info().clone(),
-                self.pool_wsol_vault.to_account_info().clone(),
-                self.user_destination_lp_token_ata.to_account_info().clone(),
-            ],
-            signer_seeds,
-        )?;
-
-        Ok(())
-    }
-
-    // pub fn deposit_liquidity(
+    // fn create_raydium_pool(
     //     &self,
-    //     max_meme_amount: u64,
-    //     max_wsol_amount: u64,
+    //     nonce: u8,
+    //     open_time: u64,
+    //     init_pc_amount: u64,
+    //     init_coin_amount: u64,
     //     signer_seeds: &[&[&[u8]]; 1],
     // ) -> Result<()> {
-    //     let instruction = raydium::deposit(
+    //     let instruction = raydium::initialize2(
     //         &RAYDIUM_PROGRAM_ID,
     //         // Params
-    //         max_meme_amount,
-    //         max_wsol_amount,
-    //         0, // base_side is meme token (i.e. 0)
+    //         nonce,
+    //         open_time,
+    //         init_pc_amount,
+    //         init_coin_amount,
     //         // Accounts
     //         &self.token_program.key(),
+    //         &self.ata_program.key(),
+    //         &self.system_program.key(),
+    //         &self.rent.key(),
     //         &self.raydium_amm.key(),
     //         &self.raydium_amm_authority.key(),
     //         &self.open_orders.key(),
+    //         &self.raydium_lp_mint.key(),    // lp mint
+    //         &self.meme_mint.key(),          // coin mint
+    //         &self.sol_mint.key(),           // pc_mint
+    //         &self.raydium_meme_vault.key(), // coin_vault
+    //         &self.raydium_wsol_vault.key(), // pc_vault
     //         &self.target_orders.key(),
-    //         &self.raydium_lp_mint.key(),
-    //         &self.raydium_meme_vault.key(),
-    //         &self.pool_wsol_vault.key(),
+    //         &self.amm_config.key(),
+    //         &self.fee_destination.key(),
+    //         &self.market_program_id.key(),
     //         &self.market_account.key(),
+    //         &self.signer.key(), // user/signer
     //         &self.pool_meme_vault.key(),
     //         &self.pool_wsol_vault.key(),
-    //         &self.pool_lp_wallet.key(),
-    //         &self.signer.key(),
-    //         &self.market_event_queue.key(),
+    //         &self.user_destination_lp_token_ata.key(),
     //     );
-
     //     solana_program::program::invoke_signed(
     //         &instruction,
     //         &[
     //             self.token_program.to_account_info().clone(),
+    //             self.ata_program.to_account_info().clone(),
+    //             self.system_program.to_account_info().clone(),
+    //             self.rent.to_account_info().clone(),
     //             self.raydium_amm.to_account_info().clone(),
     //             self.raydium_amm_authority.to_account_info().clone(),
     //             self.open_orders.to_account_info().clone(),
-    //             self.target_orders.to_account_info().clone(),
     //             self.raydium_lp_mint.to_account_info().clone(),
+    //             self.meme_mint.to_account_info().clone(),
+    //             self.sol_mint.to_account_info().clone(),
     //             self.raydium_meme_vault.to_account_info().clone(),
-    //             self.pool_wsol_vault.to_account_info().clone(),
+    //             self.raydium_wsol_vault.to_account_info().clone(),
+    //             self.target_orders.to_account_info().clone(),
+    //             self.amm_config.to_account_info().clone(),
+    //             self.fee_destination.to_account_info().clone(),
+    //             self.market_program_id.to_account_info().clone(),
     //             self.market_account.to_account_info().clone(),
+    //             self.signer.to_account_info().clone(),
     //             self.pool_meme_vault.to_account_info().clone(),
     //             self.pool_wsol_vault.to_account_info().clone(),
-    //             self.pool_lp_wallet.to_account_info().clone(),
-    //             self.signer.to_account_info().clone(),
-    //             self.market_event_queue.to_account_info().clone(),
+    //             self.user_destination_lp_token_ata.to_account_info().clone(),
     //         ],
     //         signer_seeds,
     //     )?;
 
     //     Ok(())
     // }
+
+    pub fn deposit_liquidity(
+        &self,
+        max_meme_amount: u64,
+        max_wsol_amount: u64,
+        signer_seeds: &[&[&[u8]]; 1],
+    ) -> Result<()> {
+        let instruction = raydium::deposit(
+            &RAYDIUM_PROGRAM_ID,
+            // Params
+            max_meme_amount,
+            max_wsol_amount,
+            0, // base_side is meme token (i.e. 0)
+            // Accounts
+            &self.token_program.key(),
+            &self.raydium_amm.key(),
+            &self.raydium_amm_authority.key(),
+            &self.open_orders.key(),
+            &self.target_orders.key(),
+            &self.raydium_lp_mint.key(),
+            &self.raydium_meme_vault.key(),
+            &self.pool_wsol_vault.key(),
+            &self.market_account.key(),
+            &self.pool_meme_vault.key(),
+            &self.pool_wsol_vault.key(),
+            &self.pool_lp_wallet.key(),
+            &self.signer.key(),
+            &self.market_event_queue.key(),
+        );
+
+        solana_program::program::invoke_signed(
+            &instruction,
+            &[
+                self.token_program.to_account_info().clone(),
+                self.raydium_amm.to_account_info().clone(),
+                self.raydium_amm_authority.to_account_info().clone(),
+                self.open_orders.to_account_info().clone(),
+                self.target_orders.to_account_info().clone(),
+                self.raydium_lp_mint.to_account_info().clone(),
+                self.raydium_meme_vault.to_account_info().clone(),
+                self.pool_wsol_vault.to_account_info().clone(),
+                self.market_account.to_account_info().clone(),
+                self.pool_meme_vault.to_account_info().clone(),
+                self.pool_wsol_vault.to_account_info().clone(),
+                self.pool_lp_wallet.to_account_info().clone(),
+                self.signer.to_account_info().clone(),
+                self.market_event_queue.to_account_info().clone(),
+            ],
+            signer_seeds,
+        )?;
+
+        Ok(())
+    }
 
     // pub fn deposit_liquidity_ctx(&self) -> CpiContext<'_, '_, '_, 'info, DepositLiquidity<'info>> {
     //     let cpi_program = self.aldrin_amm_program.to_account_info();
@@ -438,14 +440,14 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, GoLive<'info>>, nonce: u8) 
     staking.pool = accs.pool.key();
 
     // 6. Initialize pool & Add liquidity to the pool
-    msg!("6");
-    accs.create_raydium_pool(
-        nonce,
-        accs.clock.unix_timestamp as u64, // open time
-        sol_supply - live_fee_amt,        // init_pc_amount
-        amm_meme_balance,                 // init_coin_amount
-        staking_signer_seeds,
-    )?;
+    msg!("6"); // TODO
+               // accs.create_raydium_pool(
+               //     nonce,
+               //     accs.clock.unix_timestamp as u64, // open time
+               //     sol_supply - live_fee_amt,        // init_pc_amount
+               //     amm_meme_balance,                 // init_coin_amount
+               //     staking_signer_seeds,
+               // )?;
 
     // No need to add liquidity as already added above in init instruciton
     // accs.deposit_liquidity(
