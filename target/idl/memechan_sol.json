@@ -175,59 +175,6 @@
           ]
         },
         {
-          "name": "pool",
-          "isMut": true,
-          "isSigner": false,
-          "docs": [
-            "Bonding Pool account"
-          ]
-        },
-        {
-          "name": "boundPoolSignerPda",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "poolMemeVault",
-          "isMut": true,
-          "isSigner": false,
-          "docs": [
-            "Bonding Pool Meme vault"
-          ]
-        },
-        {
-          "name": "poolWsolVault",
-          "isMut": true,
-          "isSigner": false,
-          "docs": [
-            "Bonding Pool WSOL vault"
-          ]
-        },
-        {
-          "name": "adminVaultSol",
-          "isMut": true,
-          "isSigner": false,
-          "docs": [
-            "Bonding Pool Admin Vault"
-          ]
-        },
-        {
-          "name": "memeMint",
-          "isMut": false,
-          "isSigner": false,
-          "docs": [
-            "Mint Account for Meme"
-          ]
-        },
-        {
-          "name": "solMint",
-          "isMut": false,
-          "isSigner": false,
-          "docs": [
-            "Mint Account for WSOL"
-          ]
-        },
-        {
           "name": "staking",
           "isMut": true,
           "isSigner": false,
@@ -244,11 +191,35 @@
           ]
         },
         {
-          "name": "memeTicket",
+          "name": "poolMemeVault",
           "isMut": true,
           "isSigner": false,
           "docs": [
-            "Meme Ticket Account of Admin"
+            "Staking Pool Meme vault"
+          ]
+        },
+        {
+          "name": "poolWsolVault",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Staking Pool WSOL vault"
+          ]
+        },
+        {
+          "name": "memeMint",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "Mint Account for Meme"
+          ]
+        },
+        {
+          "name": "solMint",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "Mint Account for WSOL"
           ]
         },
         {
@@ -1492,8 +1463,5 @@
       "code": 6018,
       "name": "BondingCurveInterceptMustBePositive"
     }
-  ],
-  "metadata": {
-    "address": "GpZkFVSF2DBW7P4S3jDde7pydU2WBE3GiiHpRyqt1zcj"
-  }
+  ]
 }

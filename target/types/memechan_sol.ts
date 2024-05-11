@@ -175,59 +175,6 @@ export type MemechanSol = {
           ]
         },
         {
-          "name": "pool",
-          "isMut": true,
-          "isSigner": false,
-          "docs": [
-            "Bonding Pool account"
-          ]
-        },
-        {
-          "name": "boundPoolSignerPda",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "poolMemeVault",
-          "isMut": true,
-          "isSigner": false,
-          "docs": [
-            "Bonding Pool Meme vault"
-          ]
-        },
-        {
-          "name": "poolWsolVault",
-          "isMut": true,
-          "isSigner": false,
-          "docs": [
-            "Bonding Pool WSOL vault"
-          ]
-        },
-        {
-          "name": "adminVaultSol",
-          "isMut": true,
-          "isSigner": false,
-          "docs": [
-            "Bonding Pool Admin Vault"
-          ]
-        },
-        {
-          "name": "memeMint",
-          "isMut": false,
-          "isSigner": false,
-          "docs": [
-            "Mint Account for Meme"
-          ]
-        },
-        {
-          "name": "solMint",
-          "isMut": false,
-          "isSigner": false,
-          "docs": [
-            "Mint Account for WSOL"
-          ]
-        },
-        {
           "name": "staking",
           "isMut": true,
           "isSigner": false,
@@ -244,11 +191,35 @@ export type MemechanSol = {
           ]
         },
         {
-          "name": "memeTicket",
+          "name": "poolMemeVault",
           "isMut": true,
           "isSigner": false,
           "docs": [
-            "Meme Ticket Account of Admin"
+            "Staking Pool Meme vault"
+          ]
+        },
+        {
+          "name": "poolWsolVault",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Staking Pool WSOL vault"
+          ]
+        },
+        {
+          "name": "memeMint",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "Mint Account for Meme"
+          ]
+        },
+        {
+          "name": "solMint",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "Mint Account for WSOL"
           ]
         },
         {
@@ -1672,59 +1643,6 @@ export const IDL: MemechanSol = {
           ]
         },
         {
-          "name": "pool",
-          "isMut": true,
-          "isSigner": false,
-          "docs": [
-            "Bonding Pool account"
-          ]
-        },
-        {
-          "name": "boundPoolSignerPda",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "poolMemeVault",
-          "isMut": true,
-          "isSigner": false,
-          "docs": [
-            "Bonding Pool Meme vault"
-          ]
-        },
-        {
-          "name": "poolWsolVault",
-          "isMut": true,
-          "isSigner": false,
-          "docs": [
-            "Bonding Pool WSOL vault"
-          ]
-        },
-        {
-          "name": "adminVaultSol",
-          "isMut": true,
-          "isSigner": false,
-          "docs": [
-            "Bonding Pool Admin Vault"
-          ]
-        },
-        {
-          "name": "memeMint",
-          "isMut": false,
-          "isSigner": false,
-          "docs": [
-            "Mint Account for Meme"
-          ]
-        },
-        {
-          "name": "solMint",
-          "isMut": false,
-          "isSigner": false,
-          "docs": [
-            "Mint Account for WSOL"
-          ]
-        },
-        {
           "name": "staking",
           "isMut": true,
           "isSigner": false,
@@ -1741,11 +1659,35 @@ export const IDL: MemechanSol = {
           ]
         },
         {
-          "name": "memeTicket",
+          "name": "poolMemeVault",
           "isMut": true,
           "isSigner": false,
           "docs": [
-            "Meme Ticket Account of Admin"
+            "Staking Pool Meme vault"
+          ]
+        },
+        {
+          "name": "poolWsolVault",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Staking Pool WSOL vault"
+          ]
+        },
+        {
+          "name": "memeMint",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "Mint Account for Meme"
+          ]
+        },
+        {
+          "name": "solMint",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "Mint Account for WSOL"
           ]
         },
         {
