@@ -164,6 +164,127 @@ export type MemechanSol = {
       ]
     },
     {
+      "name": "initStakingPool",
+      "accounts": [
+        {
+          "name": "signer",
+          "isMut": true,
+          "isSigner": true,
+          "docs": [
+            "Signer"
+          ]
+        },
+        {
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Bonding Pool account"
+          ]
+        },
+        {
+          "name": "boundPoolSignerPda",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "poolMemeVault",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Bonding Pool Meme vault"
+          ]
+        },
+        {
+          "name": "poolWsolVault",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Bonding Pool WSOL vault"
+          ]
+        },
+        {
+          "name": "adminVaultSol",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Bonding Pool Admin Vault"
+          ]
+        },
+        {
+          "name": "memeMint",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "Mint Account for Meme"
+          ]
+        },
+        {
+          "name": "solMint",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "Mint Account for WSOL"
+          ]
+        },
+        {
+          "name": "staking",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Staking Pool Account"
+          ]
+        },
+        {
+          "name": "stakingPoolSignerPda",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Staking Pool Signer"
+          ]
+        },
+        {
+          "name": "memeTicket",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Meme Ticket Account of Admin"
+          ]
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "clock",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "ataProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "marketProgramId",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "goLive",
       "accounts": [
         {
@@ -293,7 +414,7 @@ export type MemechanSol = {
           "isSigner": false
         },
         {
-          "name": "feeDestination",
+          "name": "feeDestinationInfo",
           "isMut": false,
           "isSigner": false
         },
@@ -1068,6 +1189,367 @@ export type MemechanSol = {
           }
         ]
       }
+    },
+    {
+      "name": "targetOrders",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": {
+              "array": [
+                "u64",
+                4
+              ]
+            }
+          },
+          {
+            "name": "buyOrders",
+            "type": {
+              "array": [
+                {
+                  "defined": "TargetOrder"
+                },
+                50
+              ]
+            }
+          },
+          {
+            "name": "padding1",
+            "type": {
+              "array": [
+                "u64",
+                8
+              ]
+            }
+          },
+          {
+            "name": "targetX",
+            "type": "u128"
+          },
+          {
+            "name": "targetY",
+            "type": "u128"
+          },
+          {
+            "name": "planXBuy",
+            "type": "u128"
+          },
+          {
+            "name": "planYBuy",
+            "type": "u128"
+          },
+          {
+            "name": "planXSell",
+            "type": "u128"
+          },
+          {
+            "name": "planYSell",
+            "type": "u128"
+          },
+          {
+            "name": "placedX",
+            "type": "u128"
+          },
+          {
+            "name": "placedY",
+            "type": "u128"
+          },
+          {
+            "name": "calcPnlX",
+            "type": "u128"
+          },
+          {
+            "name": "calcPnlY",
+            "type": "u128"
+          },
+          {
+            "name": "sellOrders",
+            "type": {
+              "array": [
+                {
+                  "defined": "TargetOrder"
+                },
+                50
+              ]
+            }
+          },
+          {
+            "name": "padding2",
+            "type": {
+              "array": [
+                "u64",
+                6
+              ]
+            }
+          },
+          {
+            "name": "replaceBuyClientId",
+            "type": {
+              "array": [
+                "u64",
+                10
+              ]
+            }
+          },
+          {
+            "name": "replaceSellClientId",
+            "type": {
+              "array": [
+                "u64",
+                10
+              ]
+            }
+          },
+          {
+            "name": "lastOrderNumerator",
+            "type": "u64"
+          },
+          {
+            "name": "lastOrderDenominator",
+            "type": "u64"
+          },
+          {
+            "name": "planOrdersCur",
+            "type": "u64"
+          },
+          {
+            "name": "placeOrdersCur",
+            "type": "u64"
+          },
+          {
+            "name": "validBuyOrderNum",
+            "type": "u64"
+          },
+          {
+            "name": "validSellOrderNum",
+            "type": "u64"
+          },
+          {
+            "name": "padding3",
+            "type": {
+              "array": [
+                "u64",
+                10
+              ]
+            }
+          },
+          {
+            "name": "freeSlotBits",
+            "type": "u128"
+          }
+        ]
+      }
+    },
+    {
+      "name": "openOrders",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "accountFlags",
+            "type": "u64"
+          },
+          {
+            "name": "market",
+            "type": {
+              "array": [
+                "u64",
+                4
+              ]
+            }
+          },
+          {
+            "name": "owner",
+            "type": {
+              "array": [
+                "u64",
+                4
+              ]
+            }
+          },
+          {
+            "name": "nativeCoinFree",
+            "type": "u64"
+          },
+          {
+            "name": "nativeCoinTotal",
+            "type": "u64"
+          },
+          {
+            "name": "nativePcFree",
+            "type": "u64"
+          },
+          {
+            "name": "nativePcTotal",
+            "type": "u64"
+          },
+          {
+            "name": "freeSlotBits",
+            "type": "u128"
+          },
+          {
+            "name": "isBidBits",
+            "type": "u128"
+          },
+          {
+            "name": "orders",
+            "type": {
+              "array": [
+                "u128",
+                128
+              ]
+            }
+          },
+          {
+            "name": "clientOrderIds",
+            "type": {
+              "array": [
+                "u64",
+                128
+              ]
+            }
+          },
+          {
+            "name": "referrerRebatesAccrued",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "marketState",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "accountFlags",
+            "type": "u64"
+          },
+          {
+            "name": "ownAddress",
+            "type": {
+              "array": [
+                "u64",
+                4
+              ]
+            }
+          },
+          {
+            "name": "vaultSignerNonce",
+            "type": "u64"
+          },
+          {
+            "name": "coinMint",
+            "type": {
+              "array": [
+                "u64",
+                4
+              ]
+            }
+          },
+          {
+            "name": "pcMint",
+            "type": {
+              "array": [
+                "u64",
+                4
+              ]
+            }
+          },
+          {
+            "name": "coinVault",
+            "type": {
+              "array": [
+                "u64",
+                4
+              ]
+            }
+          },
+          {
+            "name": "coinDepositsTotal",
+            "type": "u64"
+          },
+          {
+            "name": "coinFeesAccrued",
+            "type": "u64"
+          },
+          {
+            "name": "pcVault",
+            "type": {
+              "array": [
+                "u64",
+                4
+              ]
+            }
+          },
+          {
+            "name": "pcDepositsTotal",
+            "type": "u64"
+          },
+          {
+            "name": "pcFeesAccrued",
+            "type": "u64"
+          },
+          {
+            "name": "pcDustThreshold",
+            "type": "u64"
+          },
+          {
+            "name": "reqQ",
+            "type": {
+              "array": [
+                "u64",
+                4
+              ]
+            }
+          },
+          {
+            "name": "eventQ",
+            "type": {
+              "array": [
+                "u64",
+                4
+              ]
+            }
+          },
+          {
+            "name": "bids",
+            "type": {
+              "array": [
+                "u64",
+                4
+              ]
+            }
+          },
+          {
+            "name": "asks",
+            "type": {
+              "array": [
+                "u64",
+                4
+              ]
+            }
+          },
+          {
+            "name": "coinLotSize",
+            "type": "u64"
+          },
+          {
+            "name": "pcLotSize",
+            "type": "u64"
+          },
+          {
+            "name": "feeRateBps",
+            "type": "u64"
+          },
+          {
+            "name": "referrerRebatesAccrued",
+            "type": "u64"
+          }
+        ]
+      }
     }
   ],
   "types": [
@@ -1333,6 +1815,22 @@ export type MemechanSol = {
             "docs": [
               "charge coin as swap fee while swap coin to pc"
             ],
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TargetOrder",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "price",
+            "type": "u64"
+          },
+          {
+            "name": "vol",
             "type": "u64"
           }
         ]
@@ -1632,6 +2130,127 @@ export const IDL: MemechanSol = {
       ]
     },
     {
+      "name": "initStakingPool",
+      "accounts": [
+        {
+          "name": "signer",
+          "isMut": true,
+          "isSigner": true,
+          "docs": [
+            "Signer"
+          ]
+        },
+        {
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Bonding Pool account"
+          ]
+        },
+        {
+          "name": "boundPoolSignerPda",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "poolMemeVault",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Bonding Pool Meme vault"
+          ]
+        },
+        {
+          "name": "poolWsolVault",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Bonding Pool WSOL vault"
+          ]
+        },
+        {
+          "name": "adminVaultSol",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Bonding Pool Admin Vault"
+          ]
+        },
+        {
+          "name": "memeMint",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "Mint Account for Meme"
+          ]
+        },
+        {
+          "name": "solMint",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "Mint Account for WSOL"
+          ]
+        },
+        {
+          "name": "staking",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Staking Pool Account"
+          ]
+        },
+        {
+          "name": "stakingPoolSignerPda",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Staking Pool Signer"
+          ]
+        },
+        {
+          "name": "memeTicket",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Meme Ticket Account of Admin"
+          ]
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "clock",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "ataProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "marketProgramId",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "goLive",
       "accounts": [
         {
@@ -1761,7 +2380,7 @@ export const IDL: MemechanSol = {
           "isSigner": false
         },
         {
-          "name": "feeDestination",
+          "name": "feeDestinationInfo",
           "isMut": false,
           "isSigner": false
         },
@@ -2536,6 +3155,367 @@ export const IDL: MemechanSol = {
           }
         ]
       }
+    },
+    {
+      "name": "targetOrders",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": {
+              "array": [
+                "u64",
+                4
+              ]
+            }
+          },
+          {
+            "name": "buyOrders",
+            "type": {
+              "array": [
+                {
+                  "defined": "TargetOrder"
+                },
+                50
+              ]
+            }
+          },
+          {
+            "name": "padding1",
+            "type": {
+              "array": [
+                "u64",
+                8
+              ]
+            }
+          },
+          {
+            "name": "targetX",
+            "type": "u128"
+          },
+          {
+            "name": "targetY",
+            "type": "u128"
+          },
+          {
+            "name": "planXBuy",
+            "type": "u128"
+          },
+          {
+            "name": "planYBuy",
+            "type": "u128"
+          },
+          {
+            "name": "planXSell",
+            "type": "u128"
+          },
+          {
+            "name": "planYSell",
+            "type": "u128"
+          },
+          {
+            "name": "placedX",
+            "type": "u128"
+          },
+          {
+            "name": "placedY",
+            "type": "u128"
+          },
+          {
+            "name": "calcPnlX",
+            "type": "u128"
+          },
+          {
+            "name": "calcPnlY",
+            "type": "u128"
+          },
+          {
+            "name": "sellOrders",
+            "type": {
+              "array": [
+                {
+                  "defined": "TargetOrder"
+                },
+                50
+              ]
+            }
+          },
+          {
+            "name": "padding2",
+            "type": {
+              "array": [
+                "u64",
+                6
+              ]
+            }
+          },
+          {
+            "name": "replaceBuyClientId",
+            "type": {
+              "array": [
+                "u64",
+                10
+              ]
+            }
+          },
+          {
+            "name": "replaceSellClientId",
+            "type": {
+              "array": [
+                "u64",
+                10
+              ]
+            }
+          },
+          {
+            "name": "lastOrderNumerator",
+            "type": "u64"
+          },
+          {
+            "name": "lastOrderDenominator",
+            "type": "u64"
+          },
+          {
+            "name": "planOrdersCur",
+            "type": "u64"
+          },
+          {
+            "name": "placeOrdersCur",
+            "type": "u64"
+          },
+          {
+            "name": "validBuyOrderNum",
+            "type": "u64"
+          },
+          {
+            "name": "validSellOrderNum",
+            "type": "u64"
+          },
+          {
+            "name": "padding3",
+            "type": {
+              "array": [
+                "u64",
+                10
+              ]
+            }
+          },
+          {
+            "name": "freeSlotBits",
+            "type": "u128"
+          }
+        ]
+      }
+    },
+    {
+      "name": "openOrders",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "accountFlags",
+            "type": "u64"
+          },
+          {
+            "name": "market",
+            "type": {
+              "array": [
+                "u64",
+                4
+              ]
+            }
+          },
+          {
+            "name": "owner",
+            "type": {
+              "array": [
+                "u64",
+                4
+              ]
+            }
+          },
+          {
+            "name": "nativeCoinFree",
+            "type": "u64"
+          },
+          {
+            "name": "nativeCoinTotal",
+            "type": "u64"
+          },
+          {
+            "name": "nativePcFree",
+            "type": "u64"
+          },
+          {
+            "name": "nativePcTotal",
+            "type": "u64"
+          },
+          {
+            "name": "freeSlotBits",
+            "type": "u128"
+          },
+          {
+            "name": "isBidBits",
+            "type": "u128"
+          },
+          {
+            "name": "orders",
+            "type": {
+              "array": [
+                "u128",
+                128
+              ]
+            }
+          },
+          {
+            "name": "clientOrderIds",
+            "type": {
+              "array": [
+                "u64",
+                128
+              ]
+            }
+          },
+          {
+            "name": "referrerRebatesAccrued",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "marketState",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "accountFlags",
+            "type": "u64"
+          },
+          {
+            "name": "ownAddress",
+            "type": {
+              "array": [
+                "u64",
+                4
+              ]
+            }
+          },
+          {
+            "name": "vaultSignerNonce",
+            "type": "u64"
+          },
+          {
+            "name": "coinMint",
+            "type": {
+              "array": [
+                "u64",
+                4
+              ]
+            }
+          },
+          {
+            "name": "pcMint",
+            "type": {
+              "array": [
+                "u64",
+                4
+              ]
+            }
+          },
+          {
+            "name": "coinVault",
+            "type": {
+              "array": [
+                "u64",
+                4
+              ]
+            }
+          },
+          {
+            "name": "coinDepositsTotal",
+            "type": "u64"
+          },
+          {
+            "name": "coinFeesAccrued",
+            "type": "u64"
+          },
+          {
+            "name": "pcVault",
+            "type": {
+              "array": [
+                "u64",
+                4
+              ]
+            }
+          },
+          {
+            "name": "pcDepositsTotal",
+            "type": "u64"
+          },
+          {
+            "name": "pcFeesAccrued",
+            "type": "u64"
+          },
+          {
+            "name": "pcDustThreshold",
+            "type": "u64"
+          },
+          {
+            "name": "reqQ",
+            "type": {
+              "array": [
+                "u64",
+                4
+              ]
+            }
+          },
+          {
+            "name": "eventQ",
+            "type": {
+              "array": [
+                "u64",
+                4
+              ]
+            }
+          },
+          {
+            "name": "bids",
+            "type": {
+              "array": [
+                "u64",
+                4
+              ]
+            }
+          },
+          {
+            "name": "asks",
+            "type": {
+              "array": [
+                "u64",
+                4
+              ]
+            }
+          },
+          {
+            "name": "coinLotSize",
+            "type": "u64"
+          },
+          {
+            "name": "pcLotSize",
+            "type": "u64"
+          },
+          {
+            "name": "feeRateBps",
+            "type": "u64"
+          },
+          {
+            "name": "referrerRebatesAccrued",
+            "type": "u64"
+          }
+        ]
+      }
     }
   ],
   "types": [
@@ -2801,6 +3781,22 @@ export const IDL: MemechanSol = {
             "docs": [
               "charge coin as swap fee while swap coin to pc"
             ],
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TargetOrder",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "price",
+            "type": "u64"
+          },
+          {
+            "name": "vol",
             "type": "u64"
           }
         ]

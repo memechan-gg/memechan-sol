@@ -1,7 +1,7 @@
 use crate::consts::{MAX_TICKET_TOKENS, MEME_TOKEN_DECIMALS, RAYDIUM_PROGRAM_ID};
 use crate::models::staking::StakingPool;
 use crate::models::OpenBook;
-use crate::raydium::models::{AmmConfig, AmmInfo};
+use crate::raydium::models::{AmmConfig, AmmInfo, MarketState, OpenOrders, TargetOrders};
 use crate::{err, raydium};
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
@@ -71,15 +71,15 @@ pub struct GoLive<'info> {
     /// Open Orders Account
     /// CHECK: Checks done in cpi call to raydium
     #[account(zero)]
-    pub open_orders: UncheckedAccount<'info>,
+    pub open_orders: AccountLoader<'info, OpenOrders>,
     /// Target Orders Account
     /// CHECK: Checks done in cpi call to raydium
     #[account(zero)]
-    pub target_orders: UncheckedAccount<'info>,
+    pub target_orders: AccountLoader<'info, TargetOrders>,
     /// Market Orders Account
     /// CHECK: Checks done in cpi call to raydium
     #[account(zero)]
-    pub market_account: UncheckedAccount<'info>,
+    pub market_account: AccountLoader<'info, MarketState>,
     //
     //
     //
@@ -92,7 +92,7 @@ pub struct GoLive<'info> {
     // pub raydium_amm: AccountLoader<'info, AmmInfo>,
     /// Raydium AMM Signer
     /// CHECK: Raydium signer, checks done in cpi call to raydium
-    pub raydium_amm_authority: UncheckedAccount<'info>,
+    pub raydium_amm_authority: AccountInfo<'info>,
     /// Raydium LP MinT
     #[account(mut)]
     pub raydium_lp_mint: Box<Account<'info, Mint>>,
@@ -108,10 +108,10 @@ pub struct GoLive<'info> {
     /// CHECK: Checks done in cpi call to raydium
     pub amm_config: AccountLoader<'info, AmmConfig>,
     /// CHECK: Checks done in cpi call to raydium
-    pub fee_destination: UncheckedAccount<'info>,
+    pub fee_destination_info: AccountInfo<'info>,
     /// CHECK: Checks done in cpi call to raydium
     #[account(mut)]
-    pub user_destination_lp_token_ata: UncheckedAccount<'info>,
+    pub user_destination_lp_token_ata: AccountInfo<'info>,
     //
     // Sysvars
     pub rent: Sysvar<'info, Rent>,
@@ -157,7 +157,7 @@ impl<'info> GoLive<'info> {
             &self.raydium_wsol_vault.key(), // pc_vault
             &self.target_orders.key(),
             &self.amm_config.key(),
-            &self.fee_destination.key(),
+            &self.fee_destination_info.key(),
             &self.market_program_id.key(),
             &self.market_account.key(),
             &self.signer.key(), // user/signer
@@ -182,7 +182,7 @@ impl<'info> GoLive<'info> {
                 self.raydium_wsol_vault.to_account_info().clone(),
                 self.target_orders.to_account_info().clone(),
                 self.amm_config.to_account_info().clone(),
-                self.fee_destination.to_account_info().clone(),
+                self.fee_destination_info.to_account_info().clone(),
                 self.market_program_id.to_account_info().clone(),
                 self.market_account.to_account_info().clone(),
                 self.signer.to_account_info().clone(),
