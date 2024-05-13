@@ -1,3 +1,5 @@
+deps/*
+
 .anchor
 .DS_Store
 target
