@@ -15,7 +15,7 @@ use anchor_spl::token::spl_token::instruction::AuthorityType;
 use anchor_spl::token::spl_token::native_mint;
 use anchor_spl::token::{Mint, SetAuthority, Token, TokenAccount, Transfer};
 
-const SOL_THRESHOLD: u64 = 300;
+// const SOL_THRESHOLD: u64 = 300; // TODO: add
 
 #[derive(Accounts)]
 pub struct InitStakingPool<'info> {
@@ -175,9 +175,10 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, InitStakingPool<'info>>) ->
     msg!("1");
     accs.pool_wsol_vault.reload().unwrap();
     let sol_supply = accs.pool_wsol_vault.amount;
-    if sol_supply != SOL_THRESHOLD * 10_u64.checked_pow(native_mint::DECIMALS as u32).unwrap() {
-        return Err(error!(AmmError::InvariantViolation));
-    }
+    // TODO: Add back
+    // if sol_supply != SOL_THRESHOLD * 10_u64.checked_pow(native_mint::DECIMALS as u32).unwrap() {
+    //     return Err(error!(AmmError::InvariantViolation));
+    // }
 
     // 2. Collect live fees
     msg!("2");
