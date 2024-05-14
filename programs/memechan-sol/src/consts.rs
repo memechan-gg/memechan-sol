@@ -32,40 +32,16 @@ pub const LP_MINT_ASSOCIATED_SEED: &'static [u8] = b"lp_mint_associated_seed";
 /// Amm config seed
 pub const AMM_CONFIG_SEED: &'static [u8] = b"amm_config_account_seed";
 
-#[cfg(feature = "localnet")]
-pub const RAYDIUM_PROGRAM_ID: Pubkey =
-    solana_program::pubkey!("FszPLAESehPmaW69NAGBLzRLFNFNjPQXNCfSEac8nst"); // Localnet
-
-#[cfg(all(
-    not(feature = "localnet"),
-    not(feature = "mainnet"),
-    feature = "devnet"
-))]
+#[cfg(not(feature = "mainnet"))]
 pub const RAYDIUM_PROGRAM_ID: Pubkey =
     solana_program::pubkey!("HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8"); // Devnet
-#[cfg(all(
-    not(feature = "localnet"),
-    not(feature = "devnet"),
-    feature = "mainnet"
-))]
+#[cfg(feature = "mainnet")]
 pub const RAYDIUM_PROGRAM_ID: Pubkey =
-    solana_program::pubkey!("675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8"); // Devnet
+    solana_program::pubkey!("675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8"); // Mainnet
 
-#[cfg(feature = "localnet")]
-pub const OPENBOOK_PROGRAM_ID: Pubkey =
-    solana_program::pubkey!("5LwV4JK4ExCPJGJqhJLEQcHPeVsUX1omRo97jH6BvymW"); // Localnet
-
-#[cfg(all(
-    not(feature = "localnet"),
-    not(feature = "mainnet"),
-    feature = "devnet"
-))]
+#[cfg(not(feature = "mainnet"))]
 pub const OPENBOOK_PROGRAM_ID: Pubkey =
     solana_program::pubkey!("EoTcMgcDRTJVZDMZWBoU6rhYHZfkNTVEAfz3uUJRcYGj"); // Devnet
-#[cfg(all(
-    not(feature = "localnet"),
-    not(feature = "devnet"),
-    feature = "mainnet"
-))]
+#[cfg(feature = "mainnet")]
 pub const OPENBOOK_PROGRAM_ID: Pubkey =
     solana_program::pubkey!("srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX"); // Mainnet
