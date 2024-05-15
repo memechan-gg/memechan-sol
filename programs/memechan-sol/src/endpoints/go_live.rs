@@ -103,9 +103,11 @@ pub struct GoLive<'info> {
     // pub pool_lp_wallet: Box<Account<'info, TokenAccount>>,
     /// Raydium Meme Token Account
     #[account(mut)]
+    /// CHECK: Checks done in cpi call to raydium
     pub raydium_meme_vault: UncheckedAccount<'info>,
     /// Raydium WSOL Token Account
     #[account(mut)]
+    /// CHECK: Checks done in cpi call to raydium
     pub raydium_wsol_vault: UncheckedAccount<'info>,
     /// CHECK: Checks done in cpi call to raydium
     pub amm_config: UncheckedAccount<'info>,
