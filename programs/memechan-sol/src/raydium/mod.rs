@@ -73,7 +73,7 @@ pub fn initialize2(
         AccountMeta::new_readonly(*fee_destination, false), // 14. `[]` AMM create pool fee destination Account
         AccountMeta::new_readonly(*market_program_id, false), // 15. `[]` Market program id
         AccountMeta::new(*market_account, false), // 16. `[writable]` Market Account. Market program is the owner.
-        AccountMeta::new(*user, false),           // 17. `[writable, singer]` User wallet Account
+        AccountMeta::new(*user, true),            // 17. `[writable, singer]` User wallet Account
         AccountMeta::new_readonly(*user_coin_wallet, false), // 18. `[]` User token coin Account
         AccountMeta::new_readonly(*user_pc_wallet, false), // 19. '[]` User token pc Account
         AccountMeta::new(*user_destination_lp_token_ata, false), // 20. `[writable]` User destination lp token ATA Account
