@@ -87,12 +87,15 @@ pub struct GoLive<'info> {
     //
     /// Raydium AMM Account
     /// CHECK: Checks done in cpi call to raydium
+    #[account(mut)]
     pub raydium_amm: UncheckedAccount<'info>,
     // pub raydium_amm: AccountLoader<'info, AmmInfo>,
     /// Raydium AMM Signer
     /// CHECK: Raydium signer, checks done in cpi call to raydium
     pub raydium_amm_authority: AccountInfo<'info>,
     /// Raydium LP MinT
+    /// CHECK: live phase pda signer
+    #[account(mut)]
     pub raydium_lp_mint: UncheckedAccount<'info>,
     /// Raydium LP Token Account
     // #[account(mut)]
