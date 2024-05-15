@@ -131,7 +131,6 @@ impl<'info> GoLive<'info> {
         open_time: u64,
         init_pc_amount: u64,
         init_coin_amount: u64,
-        signer_seeds: &[&[&[u8]]; 1],
     ) -> Result<()> {
         let instruction = raydium::initialize2(
             &RAYDIUM_PROGRAM_ID,
@@ -163,7 +162,7 @@ impl<'info> GoLive<'info> {
             &self.pool_wsol_vault.key(),
             &self.user_destination_lp_token_ata.key(),
         );
-        solana_program::program::invoke_signed(
+        solana_program::program::invoke(
             &instruction,
             &[
                 self.token_program.to_account_info().clone(),
@@ -188,7 +187,6 @@ impl<'info> GoLive<'info> {
                 self.pool_wsol_vault.to_account_info().clone(),
                 self.user_destination_lp_token_ata.to_account_info().clone(),
             ],
-            signer_seeds,
         )?;
 
         Ok(())
@@ -235,7 +233,6 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, GoLive<'info>>, nonce: u8) 
         accs.clock.unix_timestamp as u64, // open time
         sol_supply,                       // init_pc_amount
         amm_meme_balance,                 // init_coin_amount
-        staking_signer_seeds,
     )?;
 
     msg!("4");
