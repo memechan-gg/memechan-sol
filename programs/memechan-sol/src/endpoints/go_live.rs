@@ -137,6 +137,7 @@ impl<'info> GoLive<'info> {
         open_time: u64,
         init_pc_amount: u64,
         init_coin_amount: u64,
+        seeds: &[&[&[u8]]],
     ) -> Result<()> {
         let instruction = raydium::initialize2(
             &self.raydium_program.key(),
@@ -163,12 +164,12 @@ impl<'info> GoLive<'info> {
             &self.fee_destination_info.key(),
             &self.market_program_id.key(),
             &self.market_account.key(),
-            &self.signer.key(), // user/signer
+            &self.staking_pool_signer_pda.key(), // user/signer
             &self.pool_meme_vault.key(),
             &self.pool_wsol_vault.key(),
             &self.user_destination_lp_token_ata.key(),
         );
-        solana_program::program::invoke(
+        solana_program::program::invoke_signed(
             &instruction,
             &[
                 self.token_program.to_account_info().clone(), // 0. `[]` Spl Token program id
@@ -188,11 +189,12 @@ impl<'info> GoLive<'info> {
                 self.fee_destination_info.to_account_info().clone(), // 14. `[]` AMM create pool fee destination Account
                 self.market_program_id.to_account_info().clone(),    // 15. `[]` Market program id
                 self.market_account.to_account_info().clone(), // 16. `[writable]` Market Account. Market program is the owner.
-                self.signer.to_account_info().clone(), // 17. `[writable, singer]` User wallet Account
+                self.staking_pool_signer_pda.to_account_info().clone(), // 17. `[writable, singer]` User wallet Account
                 self.pool_meme_vault.to_account_info().clone(), // 18. `[]` User token coin Account
                 self.pool_wsol_vault.to_account_info().clone(), // 19. '[]` User token pc Account
                 self.user_destination_lp_token_ata.to_account_info().clone(), // 20. `[writable]` User destination lp token ATA Account
             ],
+            seeds,
         )?;
 
         Ok(())
@@ -239,6 +241,7 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, GoLive<'info>>, nonce: u8) 
         accs.clock.unix_timestamp as u64, // open time
         sol_supply,                       // init_pc_amount
         amm_meme_balance,                 // init_coin_amount
+        staking_signer_seeds,
     )?;
 
     msg!("4");
