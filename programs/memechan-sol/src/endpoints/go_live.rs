@@ -71,15 +71,15 @@ pub struct GoLive<'info> {
     /// Open Orders Account
     /// CHECK: Checks done in cpi call to raydium
     #[account(mut)]
-    pub open_orders: AccountLoader<'info, OpenOrders>,
+    pub open_orders: UncheckedAccount<'info>,
     /// Target Orders Account
     /// CHECK: Checks done in cpi call to raydium
     #[account(mut)]
-    pub target_orders: AccountLoader<'info, TargetOrders>,
+    pub target_orders: UncheckedAccount<'info>,
     /// Market Orders Account
     /// CHECK: Checks done in cpi call to raydium
     #[account(mut)]
-    pub market_account: AccountLoader<'info, MarketState>,
+    pub market_account: UncheckedAccount<'info>,
     //
     //
     //
