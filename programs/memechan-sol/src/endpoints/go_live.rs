@@ -93,8 +93,7 @@ pub struct GoLive<'info> {
     /// CHECK: Raydium signer, checks done in cpi call to raydium
     pub raydium_amm_authority: AccountInfo<'info>,
     /// Raydium LP MinT
-    #[account(mut)]
-    pub raydium_lp_mint: Box<Account<'info, Mint>>,
+    pub raydium_lp_mint: UncheckedAccount<'info>,
     /// Raydium LP Token Account
     // #[account(mut)]
     // pub pool_lp_wallet: Box<Account<'info, TokenAccount>>,
