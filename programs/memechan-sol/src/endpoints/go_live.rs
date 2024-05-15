@@ -70,15 +70,15 @@ pub struct GoLive<'info> {
     //
     /// Open Orders Account
     /// CHECK: Checks done in cpi call to raydium
-    #[account(zero)]
+    #[account(mut)]
     pub open_orders: AccountLoader<'info, OpenOrders>,
     /// Target Orders Account
     /// CHECK: Checks done in cpi call to raydium
-    #[account(zero)]
+    #[account(mut)]
     pub target_orders: AccountLoader<'info, TargetOrders>,
     /// Market Orders Account
     /// CHECK: Checks done in cpi call to raydium
-    #[account(zero)]
+    #[account(mut)]
     pub market_account: AccountLoader<'info, MarketState>,
     //
     //
@@ -87,8 +87,7 @@ pub struct GoLive<'info> {
     //
     /// Raydium AMM Account
     /// CHECK: Checks done in cpi call to raydium
-    #[account(mut)]
-    pub raydium_amm: AccountLoader<'info, AmmInfo>,
+    pub raydium_amm: UncheckedAccount<'info>,
     // pub raydium_amm: AccountLoader<'info, AmmInfo>,
     /// Raydium AMM Signer
     /// CHECK: Raydium signer, checks done in cpi call to raydium
@@ -106,7 +105,7 @@ pub struct GoLive<'info> {
     #[account(mut)]
     pub raydium_wsol_vault: Box<Account<'info, TokenAccount>>,
     /// CHECK: Checks done in cpi call to raydium
-    pub amm_config: AccountLoader<'info, AmmConfig>,
+    pub amm_config: UncheckedAccount<'info>,
     /// CHECK: Checks done in cpi call to raydium
     pub fee_destination_info: AccountInfo<'info>,
     /// CHECK: Checks done in cpi call to raydium
