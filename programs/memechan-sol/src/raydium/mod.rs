@@ -70,7 +70,7 @@ pub fn initialize2(
         AccountMeta::new(*pc_vault, false), // 11. `[writable]` AMM pc vault Account. Must be non zero, owned by $authority.
         AccountMeta::new(*target_orders, false), // 12. `[writable]` AMM target orders Account. To store plan orders informations.
         AccountMeta::new_readonly(*amm_config, false), // 13. `[]` AMM config Account, derived from `find_program_address(&[&&AMM_CONFIG_SEED])`.
-        AccountMeta::new_readonly(*fee_destination, false), // 14. `[]` AMM create pool fee destination Account
+        AccountMeta::new(*fee_destination, false), // 14. `[]` AMM create pool fee destination Account
         AccountMeta::new_readonly(*market_program_id, false), // 15. `[]` Market program id
         AccountMeta::new(*market_account, false), // 16. `[writable]` Market Account. Market program is the owner.
         AccountMeta::new(*user, true),            // 17. `[writable, singer]` User wallet Account
@@ -128,7 +128,7 @@ pub fn deposit(
         AccountMeta::new(*user_coin_wallet, false), // `[writable]` User coin token Account to deposit into.
         AccountMeta::new(*user_pc_wallet, false), // `[writable]` User pc token Account to deposit into.
         AccountMeta::new(*user_lp_wallet, false), // `[writable]` User lp token. To deposit the generated tokens, user is the owner.
-        AccountMeta::new(*user, false),           // '[signer]` User wallet Account
+        AccountMeta::new(*user, true),            // '[signer]` User wallet Account
         AccountMeta::new_readonly(*market_event_queue, false), // `[]` Market event queue Account.
     ];
 

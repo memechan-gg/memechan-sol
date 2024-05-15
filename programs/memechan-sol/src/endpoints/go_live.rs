@@ -110,6 +110,7 @@ pub struct GoLive<'info> {
     /// CHECK: Checks done in cpi call to raydium
     pub amm_config: UncheckedAccount<'info>,
     /// CHECK: Checks done in cpi call to raydium
+    #[account(mut)]
     pub fee_destination_info: AccountInfo<'info>,
     /// CHECK: Checks done in cpi call to raydium
     #[account(mut)]
