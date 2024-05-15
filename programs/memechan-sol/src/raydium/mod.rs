@@ -6,6 +6,17 @@ pub use instruction::*;
 pub use anchor_lang::prelude::*;
 use solana_program::instruction::Instruction;
 
+use crate::consts::RAYDIUM_PROGRAM_ID;
+
+#[derive(Clone)]
+pub struct RaydiumAmm;
+
+impl anchor_lang::Id for RaydiumAmm {
+    fn id() -> Pubkey {
+        RAYDIUM_PROGRAM_ID
+    }
+}
+
 /// Creates an `Initialize2` instruction.
 pub fn initialize2(
     program_id: &Pubkey, // raydium program
@@ -45,27 +56,27 @@ pub fn initialize2(
     }))
     .unwrap();
     let accounts = vec![
-        AccountMeta::new_readonly(*spl_token_program, false), // `[]` Spl Token program id
-        AccountMeta::new_readonly(*ata_program, false),       // `[]` Associated Token program id
-        AccountMeta::new_readonly(*sys_program, false),       // `[]` Sys program id
-        AccountMeta::new_readonly(*rent_program, false),      // `[]` Rent program id
-        AccountMeta::new(*amm, false), // `[writable]` New AMM Account to create.
-        AccountMeta::new_readonly(*amm_authority, false), // `[]` $authority derived from `create_program_address(&[AUTHORITY_AMM, &[nonce]])`.
-        AccountMeta::new(*open_orders, false),            // `[writable]` AMM open orders Account
-        AccountMeta::new(*lp_mint, false),                // `[writable]` AMM lp mint Account
-        AccountMeta::new_readonly(*coin_mint, false),     // `[]` AMM coin mint Account
-        AccountMeta::new_readonly(*pc_mint, false),       // `[]` AMM pc mint Account
-        AccountMeta::new(*coin_vault, false), // `[writable]` AMM coin vault Account. Must be non zero, owned by $authority.
-        AccountMeta::new(*pc_vault, false), // `[writable]` AMM pc vault Account. Must be non zero, owned by $authority.
-        AccountMeta::new(*target_orders, false), // `[writable]` AMM target orders Account. To store plan orders informations.
-        AccountMeta::new_readonly(*amm_config, false), // `[]` AMM config Account, derived from `find_program_address(&[&&AMM_CONFIG_SEED])`.
-        AccountMeta::new_readonly(*fee_destination, false), // `[]` AMM create pool fee destination Account
-        AccountMeta::new_readonly(*market_program_id, false), // `[]` Market program id
-        AccountMeta::new(*market_account, false), // `[writable]` Market Account. Market program is the owner.
-        AccountMeta::new(*user, false),           // `[writable, singer]` User wallet Account
-        AccountMeta::new_readonly(*user_coin_wallet, false), // `[]` User token coin Account
-        AccountMeta::new_readonly(*user_pc_wallet, false), // '[]` User token pc Account
-        AccountMeta::new(*user_destination_lp_token_ata, false), // `[writable]` User destination lp token ATA Account
+        AccountMeta::new_readonly(*spl_token_program, false), // 0. `[]` Spl Token program id
+        AccountMeta::new_readonly(*ata_program, false),       // 1. `[]` Associated Token program id
+        AccountMeta::new_readonly(*sys_program, false),       // 2. `[]` Sys program id
+        AccountMeta::new_readonly(*rent_program, false),      // 3. `[]` Rent program id
+        AccountMeta::new(*amm, false), // 4. `[writable]` New AMM Account to create.
+        AccountMeta::new_readonly(*amm_authority, false), // 5. `[]` $authority derived from `create_program_address(&[AUTHORITY_AMM, &[nonce]])`.
+        AccountMeta::new(*open_orders, false),            // 6. `[writable]` AMM open orders Account
+        AccountMeta::new(*lp_mint, false),                // 7. `[writable]` AMM lp mint Account
+        AccountMeta::new_readonly(*coin_mint, false),     // 8. `[]` AMM coin mint Account
+        AccountMeta::new_readonly(*pc_mint, false),       // 9. `[]` AMM pc mint Account
+        AccountMeta::new(*coin_vault, false), // 10. `[writable]` AMM coin vault Account. Must be non zero, owned by $authority.
+        AccountMeta::new(*pc_vault, false), // 11. `[writable]` AMM pc vault Account. Must be non zero, owned by $authority.
+        AccountMeta::new(*target_orders, false), // 12. `[writable]` AMM target orders Account. To store plan orders informations.
+        AccountMeta::new_readonly(*amm_config, false), // 13. `[]` AMM config Account, derived from `find_program_address(&[&&AMM_CONFIG_SEED])`.
+        AccountMeta::new_readonly(*fee_destination, false), // 14. `[]` AMM create pool fee destination Account
+        AccountMeta::new_readonly(*market_program_id, false), // 15. `[]` Market program id
+        AccountMeta::new(*market_account, false), // 16. `[writable]` Market Account. Market program is the owner.
+        AccountMeta::new(*user, false),           // 17. `[writable, singer]` User wallet Account
+        AccountMeta::new_readonly(*user_coin_wallet, false), // 18. `[]` User token coin Account
+        AccountMeta::new_readonly(*user_pc_wallet, false), // 19. '[]` User token pc Account
+        AccountMeta::new(*user_destination_lp_token_ata, false), // 20. `[writable]` User destination lp token ATA Account
     ];
 
     Instruction {
