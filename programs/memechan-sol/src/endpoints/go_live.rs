@@ -107,6 +107,7 @@ pub struct GoLive<'info> {
     /// CHECK: Checks done in cpi call to raydium
     pub raydium_meme_vault: UncheckedAccount<'info>,
     /// Raydium WSOL Token Account
+    /// CHECK: Checks done in cpi call to raydium
     #[account(mut)]
     pub raydium_wsol_vault: UncheckedAccount<'info>,
     /// CHECK: Checks done in cpi call to raydium
