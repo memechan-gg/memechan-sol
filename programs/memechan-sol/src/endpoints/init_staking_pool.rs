@@ -207,14 +207,26 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, InitStakingPool<'info>>) ->
     )
     .unwrap();
 
+    accs.pool_wsol_vault.reload().unwrap();
+
     // 3. Transfer pool_wsol_vault
     msg!("3");
+    msg!(
+        "Amount of wSOL to transfer {:?}",
+        accs.pool_wsol_vault.amount
+    );
 
     token::transfer(
         accs.token_transfer_wsol_ctx().with_signer(bp_signer_seeds),
         accs.pool_wsol_vault.amount,
     )
     .unwrap();
+
+    msg!(
+        "Amount of Meme to transfer {:?}",
+        accs.pool_meme_vault.amount
+    );
+
     token::transfer(
         accs.token_transfer_meme_ctx().with_signer(bp_signer_seeds),
         accs.pool_meme_vault.amount,
