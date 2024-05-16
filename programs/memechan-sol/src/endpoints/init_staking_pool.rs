@@ -237,9 +237,9 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, InitStakingPool<'info>>) ->
     msg!("4");
     let staking = &mut accs.staking;
 
-    staking.meme_vault = accs.pool_meme_vault.key();
+    staking.meme_vault = accs.staking_meme_vault.key();
     staking.meme_mint = accs.meme_mint.key();
-    staking.wsol_vault = accs.pool_wsol_vault.key();
+    staking.wsol_vault = accs.staking_wsol_vault.key();
     staking.stakes_total = MAX_TICKET_TOKENS * MEME_TOKEN_DECIMALS;
     staking.vesting_config = vesting::default_config();
     staking.fees_x_total = 0;
