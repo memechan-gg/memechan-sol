@@ -11,7 +11,7 @@ use core as core_;
 
 use endpoints::*;
 
-declare_id!("2z4gLrUo3Kci86dYoee1gRms2UzZ3pN5LHkgFSsfJTCR");
+declare_id!("5J7JoDuvucDVkSFUYDVkcmPRRrMSRwvpsuwPQSnp5Qkh");
 
 pub mod admin {
     use anchor_lang::prelude::declare_id;

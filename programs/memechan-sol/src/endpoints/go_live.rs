@@ -93,6 +93,7 @@ pub struct GoLive<'info> {
     // pub raydium_amm: AccountLoader<'info, AmmInfo>,
     /// Raydium AMM Signer
     /// CHECK: Raydium signer, checks done in cpi call to raydium
+    #[account(mut)]
     pub raydium_amm_authority: AccountInfo<'info>,
     /// Raydium LP MinT
     /// CHECK: live phase pda signer
@@ -103,6 +104,7 @@ pub struct GoLive<'info> {
     // pub pool_lp_wallet: Box<Account<'info, TokenAccount>>,
     /// Raydium Meme Token Account
     #[account(mut)]
+    /// CHECK: Checks done in cpi call to raydium
     pub raydium_meme_vault: UncheckedAccount<'info>,
     /// Raydium WSOL Token Account
     #[account(mut)]
