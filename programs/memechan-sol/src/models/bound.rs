@@ -230,3 +230,38 @@ impl BoundPool {
             + locked
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const DECIMALS_ALPHA: u128 = 100; // Example value for DECIMALS_ALPHA
+
+    #[test]
+    fn test_compute_alpha_abs_valid() {
+        // Test when left < gamma_m
+        let gamma_s = 10;
+        let gamma_m = 20;
+        let omega_m = 30;
+        let price_factor = 1;
+
+        let result = compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor);
+        assert!(result.is_ok());
+
+        // You can add more test cases here for different valid inputs
+    }
+
+    #[test]
+    fn test_compute_alpha_abs_invalid() {
+        // Test when left >= gamma_m
+        let gamma_s = 10;
+        let gamma_m = 20;
+        let omega_m = 30;
+        let price_factor = 1;
+
+        let result = compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor);
+        assert!(result.is_err());
+
+        // You can add more test cases here for different invalid inputs
+    }
+}
