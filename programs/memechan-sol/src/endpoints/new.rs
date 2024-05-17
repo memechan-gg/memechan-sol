@@ -5,6 +5,7 @@ use crate::consts::DEFAULT_PRICE_FACTOR;
 use crate::consts::MAX_MEME_TOKENS;
 use crate::consts::MAX_TICKET_TOKENS;
 use crate::consts::MEME_TOKEN_DECIMALS;
+use crate::consts::SLERF_MINT;
 use crate::err;
 use crate::models::bound::compute_alpha_abs;
 use crate::models::bound::compute_beta;
@@ -47,8 +48,8 @@ pub struct New<'info> {
     )]
     pub sol_vault: Account<'info, TokenAccount>,
     #[account(
-        constraint = sol_mint.key() == native_mint::id()
-            @ err::acc("sol mint should be native WSOL mint")
+        constraint = sol_mint.key() == SLERF_MINT
+            @ err::acc("sol mint should be the SLERF mint")
     )]
     pub sol_mint: Account<'info, Mint>,
     #[account(

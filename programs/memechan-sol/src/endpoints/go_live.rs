@@ -1,7 +1,8 @@
-use crate::consts::{MAX_TICKET_TOKENS, MEME_TOKEN_DECIMALS, RAYDIUM_PROGRAM_ID};
+use std::collections::HashSet;
+
+use crate::consts::{MAX_TICKET_TOKENS, MEME_TOKEN_DECIMALS};
 use crate::models::staking::StakingPool;
 use crate::models::OpenBook;
-use crate::raydium::models::{AmmConfig, AmmInfo, MarketState, OpenOrders, TargetOrders};
 use crate::raydium::RaydiumAmm;
 use crate::{err, raydium};
 use anchor_lang::prelude::*;
@@ -59,10 +60,6 @@ pub struct GoLive<'info> {
     pub meme_mint: Box<Account<'info, Mint>>,
     //
     /// Mint Account for WSOL
-    #[account(
-        constraint = sol_mint.key() == native_mint::id()
-            @ err::acc("sol mint should be native WSOL mint")
-    )]
     pub sol_mint: Box<Account<'info, Mint>>,
     //
     //
@@ -227,18 +224,15 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, GoLive<'info>>, nonce: u8) 
     let staking_signer_seeds = &[&staking_seeds[..]];
 
     // 1. Get Sol Supply
-    msg!("1");
     let sol_supply = accs.pool_wsol_vault.amount;
 
     // 2. Split MEME balance amounts into 80/20
-    msg!("2");
     let meme_supply = accs.pool_meme_vault.amount;
     let meme_supply_80 = MAX_TICKET_TOKENS * MEME_TOKEN_DECIMALS;
 
     let amm_meme_balance = meme_supply.checked_sub(meme_supply_80).unwrap();
 
     // 3. Initialize pool & Add liquidity to the pool
-    msg!("3");
     accs.create_raydium_pool(
         nonce,
         accs.clock.unix_timestamp as u64, // open time
@@ -246,8 +240,6 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, GoLive<'info>>, nonce: u8) 
         amm_meme_balance,                 // init_coin_amount
         staking_signer_seeds,
     )?;
-
-    msg!("4");
 
     Ok(())
 }
