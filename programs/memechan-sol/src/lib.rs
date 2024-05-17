@@ -1,6 +1,7 @@
 pub mod consts;
 pub mod endpoints;
 pub mod err;
+pub mod math;
 pub mod libraries;
 pub mod models;
 pub mod raydium;

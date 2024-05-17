@@ -1,8 +1,13 @@
 use crate::{
     consts::RAYDIUM_PROGRAM_ID,
-    models::{staking::StakingPool, OpenBook},
-    raydium,
+    models::{
+        fee_distribution::{arithmetic_fee_ratio, cumulated_lp_withdrawal, lp_tokens_to_withdraw},
+        staking::StakingPool,
+        OpenBook,
+    },
+    raydium::{self, models::AmmInfo},
 };
+
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token, TokenAccount};
 
@@ -21,28 +26,32 @@ pub struct AddFees<'info> {
     /// CHECK: pda
     #[account(seeds = [StakingPool::SIGNER_PDA_PREFIX, staking.key().as_ref()], bump)]
     pub staking_signer_pda: AccountInfo<'info>,
-    /// CHECK: done by inner call
-    #[account(mut)]
-    pub aldrin_pool_acc: AccountInfo<'info>,
-    #[account(mut)]
-    pub raydium_lp_mint: Account<'info, Mint>,
 
-    #[account(mut)]
-    pub pool_lp_wallet: Box<Account<'info, TokenAccount>>,
+    #[account(
+        mut,
+        constraint = staking_lp_wallet.mint == staking.lp_mint
+    )]
+    pub staking_lp_wallet: Box<Account<'info, TokenAccount>>,
 
     #[account(mut)]
     pub signer: Signer<'info>,
 
     // raydium
     /// CHECK: Checks done in cpi call to raydium
+    // Raydium
     #[account(mut)]
-    pub raydium_amm: AccountInfo<'info>,
+    pub raydium_amm: AccountLoader<'info, AmmInfo>,
     /// CHECK: Checks done in cpi call to raydium
     pub raydium_amm_authority: AccountInfo<'info>,
     #[account(mut)]
     pub raydium_meme_vault: Box<Account<'info, TokenAccount>>,
     #[account(mut)]
     pub raydium_quote_vault: Box<Account<'info, TokenAccount>>,
+    #[account(
+        mut,
+        constraint = raydium_lp_mint.key() == staking.lp_mint
+    )]
+    pub raydium_lp_mint: Account<'info, Mint>,
 
     // Open Book
     /// CHECK: Checks done in cpi call to raydium
@@ -95,7 +104,7 @@ impl<'info> AddFees<'info> {
             &self.market_coin_vault.key(),
             &self.market_pc_vault.key(),
             &self.market_vault_signer.key(),
-            &self.pool_lp_wallet.key(),
+            &self.staking_lp_wallet.key(),
             &self.meme_vault.key(),  // user wallet (pool)
             &self.quote_vault.key(), // user wallet (pool)
             &self.signer.key(),      // user wallet
@@ -120,7 +129,7 @@ impl<'info> AddFees<'info> {
                 self.market_coin_vault.to_account_info().clone(),
                 self.market_pc_vault.to_account_info().clone(),
                 self.market_vault_signer.to_account_info().clone(),
-                self.pool_lp_wallet.to_account_info().clone(),
+                self.staking_lp_wallet.to_account_info().clone(),
                 self.meme_vault.to_account_info().clone(),
                 self.quote_vault.to_account_info().clone(),
                 self.signer.to_account_info().clone(),
@@ -162,8 +171,26 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<
     let meme_vault_initial_amt = accs.meme_vault.amount;
     let quote_vault_initial_amt = accs.quote_vault.amount;
 
-    // TODO: Ammount of LP to withdraw should come as params
-    accs.redeem_liquidity(1, staking_signer_seeds)?;
+    let amm = accs.raydium_amm.load()?;
+
+    let cumulated_fees_meme = amm.state_data.swap_acc_coin_fee;
+    let cumulated_fees_quote = amm.state_data.swap_acc_pc_fee;
+
+    let fee_ratio = arithmetic_fee_ratio(
+        accs.raydium_meme_vault.amount,
+        cumulated_fees_meme,
+        accs.raydium_quote_vault.amount,
+        cumulated_fees_quote,
+    )?;
+
+    let lp_tokens_owned = accs.staking_lp_wallet.amount;
+
+    let cumulated_lp_withdrawal = cumulated_lp_withdrawal(fee_ratio, lp_tokens_owned)?;
+
+    let lp_tokens_to_withdraw =
+        lp_tokens_to_withdraw(cumulated_lp_withdrawal, accs.staking.lp_tokens_withdrawn)?;
+
+    accs.redeem_liquidity(lp_tokens_to_withdraw, staking_signer_seeds)?;
 
     accs.meme_vault.reload().unwrap();
     accs.quote_vault.reload().unwrap();
@@ -171,6 +198,9 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<
     let state = &mut accs.staking;
     state.fees_x_total += accs.meme_vault.amount - meme_vault_initial_amt;
     state.fees_y_total += accs.quote_vault.amount - quote_vault_initial_amt;
+
+    accs.staking.lp_tokens_withdrawn += lp_tokens_to_withdraw;
+
 
     Ok(())
 }

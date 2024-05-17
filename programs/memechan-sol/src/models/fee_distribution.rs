@@ -1,5 +1,8 @@
 use crate::err::AmmError;
-use crate::models::staking::StakingPool;
+use crate::{
+    math::{Decimal, TryAdd, TryDiv, TryMul, TryRound, TrySub},
+    models::staking::StakingPool,
+};
 use anchor_lang::prelude::*;
 
 use super::staked_lp::MemeTicket;
@@ -86,4 +89,35 @@ fn get_max_withdraw(
 fn get_withdraw_diff(user_withdrawals: u64, stake_diff: u128) -> u64 {
     let withdraw_diff_x = ((user_withdrawals as u128) * stake_diff) / PRECISION;
     withdraw_diff_x as u64
+}
+
+pub fn lp_tokens_to_withdraw(
+    cumulated_lp_withdrawal: Decimal,
+    lp_tokens_withdrawn: u64,
+) -> Result<u64> {
+    cumulated_lp_withdrawal
+        .try_sub(Decimal::from(lp_tokens_withdrawn))?
+        .try_round()
+}
+
+pub fn cumulated_lp_withdrawal(
+    arithmetic_fee_ratio: Decimal,
+    lp_tokens_owned: u64,
+) -> Result<Decimal> {
+    arithmetic_fee_ratio.try_mul(Decimal::from(lp_tokens_owned))
+}
+
+pub fn arithmetic_fee_ratio(
+    reserve_meme: u64,
+    cumulated_fees_meme: u64,
+    reserve_quote: u64,
+    cumulated_fees_quote: u64,
+) -> Result<Decimal> {
+    token_fee_ratio(reserve_meme, cumulated_fees_meme)?
+        .try_add(token_fee_ratio(reserve_quote, cumulated_fees_quote)?)?
+        .try_div(Decimal::from(2 as u64))
+}
+
+pub fn token_fee_ratio(reserve_balance: u64, cumulated_fees: u64) -> Result<Decimal> {
+    Decimal::from(cumulated_fees).try_div(Decimal::from(reserve_balance))
 }
