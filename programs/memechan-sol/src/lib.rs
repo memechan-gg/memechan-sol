@@ -48,6 +48,17 @@ pub mod memechan_sol {
         init_staking_pool::handle(ctx)
     }
 
+    pub fn new_target_config(ctx: Context<NewTargetConfig>, target_amount: u64) -> Result<()> {
+        new_target_config::handle(ctx, target_amount)
+    }
+
+    pub fn change_target_config(
+        ctx: Context<ChangeTargetConfig>,
+        target_amount: u64,
+    ) -> Result<()> {
+        change_target_config::handle(ctx, target_amount)
+    }
+
     pub fn go_live<'info>(ctx: Context<'_, '_, '_, 'info, GoLive<'info>>, nonce: u8) -> Result<()> {
         go_live::handle(ctx, nonce)
     }
