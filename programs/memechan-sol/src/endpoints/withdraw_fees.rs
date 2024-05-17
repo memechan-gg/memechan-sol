@@ -9,7 +9,7 @@ use anchor_spl::token::{Token, TokenAccount, Transfer};
 pub struct WithdrawFees<'info> {
     #[account(
         has_one = meme_vault,
-        has_one = wsol_vault,
+        has_one = quote_vault,
     )]
     pub staking: Account<'info, StakingPool>,
     #[account(
@@ -23,13 +23,13 @@ pub struct WithdrawFees<'info> {
     )]
     pub user_meme: Account<'info, TokenAccount>,
     #[account(
-        constraint = user_wsol.owner == signer.key()
+        constraint = user_quote.owner == signer.key()
     )]
-    pub user_wsol: Account<'info, TokenAccount>,
+    pub user_quote: Account<'info, TokenAccount>,
     #[account(mut)]
     pub meme_vault: Account<'info, TokenAccount>,
     #[account(mut)]
-    pub wsol_vault: Account<'info, TokenAccount>,
+    pub quote_vault: Account<'info, TokenAccount>,
     /// CHECK: pda signer
     #[account(seeds = [StakingPool::SIGNER_PDA_PREFIX, staking.key().as_ref()], bump)]
     pub staking_signer_pda: AccountInfo<'info>,
@@ -38,10 +38,10 @@ pub struct WithdrawFees<'info> {
 }
 
 impl<'info> WithdrawFees<'info> {
-    fn send_wsol_fees_to_user(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+    fn send_quote_fees_to_user(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
-            from: self.wsol_vault.to_account_info(),
-            to: self.user_wsol.to_account_info(),
+            from: self.quote_vault.to_account_info(),
+            to: self.user_quote.to_account_info(),
             authority: self.staking_signer_pda.to_account_info(),
         };
 
@@ -77,7 +77,7 @@ pub fn handle(ctx: Context<WithdrawFees>) -> Result<()> {
     let staking_signer_seeds = &[&staking_seeds[..]];
 
     lp_ticket.withdraws_meme += withdrawal.max_withdrawal_meme;
-    lp_ticket.withdraws_wsol += withdrawal.max_withdrawal_wsol;
+    lp_ticket.withdraws_quote += withdrawal.max_withdrawal_quote;
 
     token::transfer(
         accs.send_meme_fees_to_user()
@@ -86,9 +86,9 @@ pub fn handle(ctx: Context<WithdrawFees>) -> Result<()> {
     )?;
 
     token::transfer(
-        accs.send_wsol_fees_to_user()
+        accs.send_quote_fees_to_user()
             .with_signer(staking_signer_seeds),
-        withdrawal.max_withdrawal_wsol,
+        withdrawal.max_withdrawal_quote,
     )?;
 
     Ok(())

@@ -8,13 +8,13 @@ const PRECISION: u128 = 1_000_000_000_000_000;
 
 pub struct Withdrawal {
     pub max_withdrawal_meme: u64,
-    pub max_withdrawal_wsol: u64,
+    pub max_withdrawal_quote: u64,
 }
 
 pub fn calc_withdraw(fee_state: &StakingPool, lp_ticket: &MemeTicket) -> Result<Withdrawal> {
     let user_stake: u64 = lp_ticket.vesting.current_stake();
     let user_withdrawals_meme = lp_ticket.withdraws_meme;
-    let user_withdrawals_wsol = lp_ticket.withdraws_wsol;
+    let user_withdrawals_quote = lp_ticket.withdraws_quote;
 
     let max_withdrawal_meme = get_max_withdraw(
         user_withdrawals_meme,
@@ -23,8 +23,8 @@ pub fn calc_withdraw(fee_state: &StakingPool, lp_ticket: &MemeTicket) -> Result<
         fee_state.stakes_total,
     )?;
 
-    let max_withdrawal_wsol = get_max_withdraw(
-        user_withdrawals_wsol,
+    let max_withdrawal_quote = get_max_withdraw(
+        user_withdrawals_quote,
         fee_state.fees_y_total,
         user_stake,
         fee_state.stakes_total,
@@ -32,7 +32,7 @@ pub fn calc_withdraw(fee_state: &StakingPool, lp_ticket: &MemeTicket) -> Result<
 
     Ok(Withdrawal {
         max_withdrawal_meme,
-        max_withdrawal_wsol,
+        max_withdrawal_quote,
     })
 }
 
@@ -50,7 +50,7 @@ pub fn update_stake(
     let withdraw_diff_x = get_withdraw_diff(*user_withdrawals_x, stake_diff);
     *user_withdrawals_x -= withdraw_diff_x;
 
-    let user_withdrawals_y = &mut lp_ticket.withdraws_wsol;
+    let user_withdrawals_y = &mut lp_ticket.withdraws_quote;
     let withdraw_diff_y = get_withdraw_diff(*user_withdrawals_y, stake_diff);
     *user_withdrawals_y = withdraw_diff_y;
 

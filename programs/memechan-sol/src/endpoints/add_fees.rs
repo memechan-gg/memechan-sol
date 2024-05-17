@@ -11,13 +11,13 @@ pub struct AddFees<'info> {
     #[account(
         mut,
         has_one = meme_vault,
-        has_one = wsol_vault
+        has_one = quote_vault
     )]
     pub staking: Account<'info, StakingPool>,
     #[account(mut)]
     pub meme_vault: Account<'info, TokenAccount>,
     #[account(mut)]
-    pub wsol_vault: Account<'info, TokenAccount>,
+    pub quote_vault: Account<'info, TokenAccount>,
     /// CHECK: pda
     #[account(seeds = [StakingPool::SIGNER_PDA_PREFIX, staking.key().as_ref()], bump)]
     pub staking_signer_pda: AccountInfo<'info>,
@@ -42,7 +42,7 @@ pub struct AddFees<'info> {
     #[account(mut)]
     pub raydium_meme_vault: Box<Account<'info, TokenAccount>>,
     #[account(mut)]
-    pub raydium_wsol_vault: Box<Account<'info, TokenAccount>>,
+    pub raydium_quote_vault: Box<Account<'info, TokenAccount>>,
 
     // Open Book
     /// CHECK: Checks done in cpi call to raydium
@@ -87,18 +87,18 @@ impl<'info> AddFees<'info> {
             &self.raydium_amm_authority.key(),
             &self.open_orders.key(),
             &self.target_orders.key(),
-            &self.raydium_lp_mint.key(),    // lp mint
-            &self.raydium_meme_vault.key(), // coin_vault
-            &self.raydium_wsol_vault.key(), // pc_vault
+            &self.raydium_lp_mint.key(),     // lp mint
+            &self.raydium_meme_vault.key(),  // coin_vault
+            &self.raydium_quote_vault.key(), // pc_vault
             &self.market_program_id.key(),
             &self.market_account.key(),
             &self.market_coin_vault.key(),
             &self.market_pc_vault.key(),
             &self.market_vault_signer.key(),
             &self.pool_lp_wallet.key(),
-            &self.meme_vault.key(), // user wallet (pool)
-            &self.wsol_vault.key(), // user wallet (pool)
-            &self.signer.key(),     // user wallet
+            &self.meme_vault.key(),  // user wallet (pool)
+            &self.quote_vault.key(), // user wallet (pool)
+            &self.signer.key(),      // user wallet
             &self.market_event_queue.key(),
             &self.market_bids.key(),
             &self.market_asks.key(),
@@ -114,7 +114,7 @@ impl<'info> AddFees<'info> {
                 self.target_orders.to_account_info().clone(),
                 self.raydium_lp_mint.to_account_info().clone(),
                 self.raydium_meme_vault.to_account_info().clone(),
-                self.raydium_wsol_vault.to_account_info().clone(),
+                self.raydium_quote_vault.to_account_info().clone(),
                 self.market_program_id.to_account_info().clone(),
                 self.market_account.to_account_info().clone(),
                 self.market_coin_vault.to_account_info().clone(),
@@ -122,7 +122,7 @@ impl<'info> AddFees<'info> {
                 self.market_vault_signer.to_account_info().clone(),
                 self.pool_lp_wallet.to_account_info().clone(),
                 self.meme_vault.to_account_info().clone(),
-                self.wsol_vault.to_account_info().clone(),
+                self.quote_vault.to_account_info().clone(),
                 self.signer.to_account_info().clone(),
                 self.market_event_queue.to_account_info().clone(),
                 self.market_bids.to_account_info().clone(),
@@ -160,17 +160,17 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<
     let staking_signer_seeds = &[&staking_seeds[..]];
 
     let meme_vault_initial_amt = accs.meme_vault.amount;
-    let wsol_vault_initial_amt = accs.wsol_vault.amount;
+    let quote_vault_initial_amt = accs.quote_vault.amount;
 
     // TODO: Ammount of LP to withdraw should come as params
     accs.redeem_liquidity(1, staking_signer_seeds)?;
 
     accs.meme_vault.reload().unwrap();
-    accs.wsol_vault.reload().unwrap();
+    accs.quote_vault.reload().unwrap();
 
     let state = &mut accs.staking;
     state.fees_x_total += accs.meme_vault.amount - meme_vault_initial_amt;
-    state.fees_y_total += accs.wsol_vault.amount - wsol_vault_initial_amt;
+    state.fees_y_total += accs.quote_vault.amount - quote_vault_initial_amt;
 
     Ok(())
 }

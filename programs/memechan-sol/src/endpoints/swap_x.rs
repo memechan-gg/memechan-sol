@@ -24,9 +24,9 @@ pub struct SwapCoinX<'info> {
     pub user_sol: Account<'info, TokenAccount>,
     #[account(
         mut,
-        constraint = pool.sol_reserve.vault == sol_vault.key()
+        constraint = pool.quote_reserve.vault == quote_vault.key()
     )]
-    pub sol_vault: Account<'info, TokenAccount>,
+    pub quote_vault: Account<'info, TokenAccount>,
     pub owner: Signer<'info>,
     /// CHECK: pda signer
     #[account(seeds = [BoundPool::SIGNER_PDA_PREFIX, pool.key().as_ref()], bump)]
@@ -37,7 +37,7 @@ pub struct SwapCoinX<'info> {
 impl<'info> SwapCoinX<'info> {
     fn send_tokens_to_user(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
-            from: self.sol_vault.to_account_info(),
+            from: self.quote_vault.to_account_info(),
             to: self.user_sol.to_account_info(),
             authority: self.pool_signer.to_account_info(),
         };
@@ -78,7 +78,7 @@ pub fn handle(ctx: Context<SwapCoinX>, coin_in_amount: u64, coin_y_min_value: u6
     pool_state.admin_fees_sol += swap_amount.admin_fee_out;
 
     pool_state.meme_reserve.tokens += swap_amount.amount_in;
-    pool_state.sol_reserve.tokens -= swap_amount.amount_out + swap_amount.admin_fee_out;
+    pool_state.quote_reserve.tokens -= swap_amount.amount_out + swap_amount.admin_fee_out;
 
     user_ticket.amount -= coin_in_amount;
 

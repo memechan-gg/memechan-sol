@@ -43,11 +43,11 @@ pub struct GoLive<'info> {
     pub pool_meme_vault: Box<Account<'info, TokenAccount>>,
     #[account(
         mut,
-        constraint = staking.wsol_vault == pool_wsol_vault.key()
+        constraint = staking.quote_vault == pool_quote_vault.key()
     )]
     //
     /// Staking Pool WSOL vault
-    pub pool_wsol_vault: Box<Account<'info, TokenAccount>>,
+    pub pool_quote_vault: Box<Account<'info, TokenAccount>>,
     //
     //
     //
@@ -60,7 +60,7 @@ pub struct GoLive<'info> {
     pub meme_mint: Box<Account<'info, Mint>>,
     //
     /// Mint Account for WSOL
-    pub sol_mint: Box<Account<'info, Mint>>,
+    pub quote_mint: Box<Account<'info, Mint>>,
     //
     //
     //
@@ -106,7 +106,7 @@ pub struct GoLive<'info> {
     /// Raydium WSOL Token Account
     /// CHECK: Checks done in cpi call to raydium
     #[account(mut)]
-    pub raydium_wsol_vault: UncheckedAccount<'info>,
+    pub raydium_quote_vault: UncheckedAccount<'info>,
     /// CHECK: Checks done in cpi call to raydium
     pub amm_config: UncheckedAccount<'info>,
     /// CHECK: Checks done in cpi call to raydium
@@ -154,11 +154,11 @@ impl<'info> GoLive<'info> {
             &self.raydium_amm.key(),
             &self.raydium_amm_authority.key(),
             &self.open_orders.key(),
-            &self.raydium_lp_mint.key(),    // lp mint
-            &self.meme_mint.key(),          // coin mint
-            &self.sol_mint.key(),           // pc_mint
-            &self.raydium_meme_vault.key(), // coin_vault
-            &self.raydium_wsol_vault.key(), // pc_vault
+            &self.raydium_lp_mint.key(),     // lp mint
+            &self.meme_mint.key(),           // coin mint
+            &self.quote_mint.key(),          // pc_mint
+            &self.raydium_meme_vault.key(),  // coin_vault
+            &self.raydium_quote_vault.key(), // pc_vault
             &self.target_orders.key(),
             &self.amm_config.key(),
             &self.fee_destination_info.key(),
@@ -166,7 +166,7 @@ impl<'info> GoLive<'info> {
             &self.market_account.key(),
             &self.staking_pool_signer_pda.key(), // user/signer
             &self.pool_meme_vault.key(),
-            &self.pool_wsol_vault.key(),
+            &self.pool_quote_vault.key(),
             &self.user_destination_lp_token_ata.key(),
         );
         solana_program::program::invoke_signed(
@@ -181,9 +181,9 @@ impl<'info> GoLive<'info> {
                 self.open_orders.to_account_info().clone(), // 6. `[writable]` AMM open orders Account
                 self.raydium_lp_mint.to_account_info().clone(), // 7. `[writable]` AMM lp mint Account
                 self.meme_mint.to_account_info().clone(),       // 8. `[]` AMM coin mint Account
-                self.sol_mint.to_account_info().clone(),        // 9. `[]` AMM pc mint Account
+                self.quote_mint.to_account_info().clone(),      // 9. `[]` AMM pc mint Account
                 self.raydium_meme_vault.to_account_info().clone(), // 10. `[writable]` AMM coin vault Account. Must be non zero, owned by $authority.
-                self.raydium_wsol_vault.to_account_info().clone(), // 11. `[writable]` AMM pc vault Account. Must be non zero, owned by $authority.
+                self.raydium_quote_vault.to_account_info().clone(), // 11. `[writable]` AMM pc vault Account. Must be non zero, owned by $authority.
                 self.target_orders.to_account_info().clone(), // 12. `[writable]` AMM target orders Account. To store plan orders informations.
                 self.amm_config.to_account_info().clone(), // 13. `[]` AMM config Account, derived from `find_program_address(&[&&AMM_CONFIG_SEED])`.
                 self.fee_destination_info.to_account_info().clone(), // 14. `[]` AMM create pool fee destination Account
@@ -191,7 +191,7 @@ impl<'info> GoLive<'info> {
                 self.market_account.to_account_info().clone(), // 16. `[writable]` Market Account. Market program is the owner.
                 self.staking_pool_signer_pda.to_account_info().clone(), // 17. `[writable, singer]` User wallet Account
                 self.pool_meme_vault.to_account_info().clone(), // 18. `[]` User token coin Account
-                self.pool_wsol_vault.to_account_info().clone(), // 19. '[]` User token pc Account
+                self.pool_quote_vault.to_account_info().clone(), // 19. '[]` User token pc Account
                 self.user_destination_lp_token_ata.to_account_info().clone(), // 20. `[writable]` User destination lp token ATA Account
             ],
             seeds,
@@ -224,7 +224,7 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, GoLive<'info>>, nonce: u8) 
     let staking_signer_seeds = &[&staking_seeds[..]];
 
     // 1. Get Sol Supply
-    let sol_supply = accs.pool_wsol_vault.amount;
+    let quote_supply = accs.pool_quote_vault.amount;
 
     // 2. Split MEME balance amounts into 80/20
     let meme_supply = accs.pool_meme_vault.amount;
@@ -236,7 +236,7 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, GoLive<'info>>, nonce: u8) 
     accs.create_raydium_pool(
         nonce,
         accs.clock.unix_timestamp as u64, // open time
-        sol_supply,                       // init_pc_amount
+        quote_supply,                     // init_pc_amount
         amm_meme_balance,                 // init_coin_amount
         staking_signer_seeds,
     )?;

@@ -17,7 +17,6 @@ use crate::models::Reserve;
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::program_option::COption;
 use anchor_spl::token::spl_token::instruction::AuthorityType::MintTokens;
-use anchor_spl::token::spl_token::native_mint;
 use anchor_spl::token::{self, Mint, SetAuthority, Token, TokenAccount};
 
 #[derive(Accounts)]
@@ -28,7 +27,7 @@ pub struct New<'info> {
         init,
         payer = sender,
         space = BoundPool::space(),
-        seeds = [BoundPool::POOL_PREFIX, meme_mint.key().as_ref(), sol_mint.key().as_ref()],
+        seeds = [BoundPool::POOL_PREFIX, meme_mint.key().as_ref(), quote_mint.key().as_ref()],
         bump
     )]
     pub pool: Account<'info, BoundPool>,
@@ -41,32 +40,32 @@ pub struct New<'info> {
     )]
     pub meme_mint: Account<'info, Mint>,
     #[account(
-        constraint = sol_vault.mint == sol_mint.key()
+        constraint = quote_vault.mint == quote_mint.key()
             @ err::acc("ticket vault must be of ticket mint"),
-        constraint = sol_vault.owner == pool_signer.key()
+        constraint = quote_vault.owner == pool_signer.key()
             @ err::acc("ticket vault authority must match pool pda"),
     )]
-    pub sol_vault: Account<'info, TokenAccount>,
+    pub quote_vault: Account<'info, TokenAccount>,
     #[account(
-        constraint = sol_mint.key() == SLERF_MINT
+        constraint = quote_mint.key() == SLERF_MINT
             @ err::acc("sol mint should be the SLERF mint")
     )]
-    pub sol_mint: Account<'info, Mint>,
+    pub quote_mint: Account<'info, Mint>,
     #[account(
-        constraint = admin_sol_vault.mint == sol_mint.key()
+        constraint = admin_quote_vault.mint == quote_mint.key()
             @ err::acc("admin sol vault must be of sol mint"),
-        constraint = admin_sol_vault.owner == crate::admin::id()
+        constraint = admin_quote_vault.owner == crate::admin::id()
             @ err::acc("admin sol vault authority must match admin"),
     )]
-    pub admin_sol_vault: Account<'info, TokenAccount>,
+    pub admin_quote_vault: Account<'info, TokenAccount>,
     #[account(
         mut,
-        constraint = launch_vault.mint == meme_mint.key()
+        constraint = meme_vault.mint == meme_mint.key()
             @ err::acc("admin ticket vault must be of ticket mint"),
-        constraint = launch_vault.owner == pool_signer.key()
-            @ err::acc("launch vault authority must match admin"),
+        constraint = meme_vault.owner == pool_signer.key()
+            @ err::acc("Meme vault authority must match admin"),
     )]
-    pub launch_vault: Account<'info, TokenAccount>,
+    pub meme_vault: Account<'info, TokenAccount>,
     /// CHECK: pool_pda
     #[account(seeds = [BoundPool::SIGNER_PDA_PREFIX, pool.key().as_ref()], bump)]
     pub pool_signer: AccountInfo<'info>,
@@ -78,7 +77,7 @@ impl<'info> New<'info> {
     fn mint_meme_tokens(&self) -> CpiContext<'_, '_, '_, 'info, token::MintTo<'info>> {
         let cpi_accounts = token::MintTo {
             mint: self.meme_mint.to_account_info(),
-            to: self.launch_vault.to_account_info(),
+            to: self.meme_vault.to_account_info(),
             authority: self.pool_signer.to_account_info(),
         };
 
@@ -130,11 +129,11 @@ pub fn handle(ctx: Context<New>) -> Result<()> {
     .unwrap();
 
     let pool = &mut accs.pool;
-    pool.admin_vault_sol = accs.admin_sol_vault.key();
-    pool.sol_reserve = Reserve {
+    pool.admin_vault_sol = accs.admin_quote_vault.key();
+    pool.quote_reserve = Reserve {
         tokens: 0,
-        mint: accs.sol_mint.key(),
-        vault: accs.sol_vault.key(),
+        mint: accs.quote_mint.key(),
+        vault: accs.quote_vault.key(),
     };
     pool.fees = Fees {
         fee_in_percent: FEE,
@@ -157,7 +156,7 @@ pub fn handle(ctx: Context<New>) -> Result<()> {
 
     pool.meme_reserve.tokens = MAX_TICKET_TOKENS * MEME_TOKEN_DECIMALS;
     pool.meme_reserve.mint = accs.meme_mint.key();
-    pool.meme_reserve.vault = accs.launch_vault.key();
+    pool.meme_reserve.vault = accs.meme_vault.key();
     pool.locked = false;
 
     Ok(())
