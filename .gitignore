@@ -8,3 +8,7 @@ test-ledger
 
 #jetbrains
 **/.idea
+.vscode
+
+!target/idl/*
+!target/types/*

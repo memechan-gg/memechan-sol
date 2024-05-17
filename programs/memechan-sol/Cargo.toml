@@ -14,10 +14,20 @@ cpi = ["no-entrypoint"]
 no-entrypoint = []
 no-idl = []
 no-log-ix-name = []
+localnet = []
+devnet = []
+mainnet = []
 
 [dependencies]
+num-integer = "0.1.46"
+solana-program = "1.16.25"
 anchor-lang = "0.29.0"
 anchor-spl = "0.29.0"
-num-integer = "0.1.46"
 uint = "0.9.5"
-amm = { path = "../../deps/amm", features = ["cpi"] }
+# serum_dex = { git = "https://github.com/openbook-dex/program.git", features = ["no-entrypoint"] }
+bytemuck = "*"
+
+
+# amm = { path = "../../deps/amm", features = ["cpi"] }
+# amm = { git = "https://github.com/aldrin-labs/amm.git", features = ["cpi"] }
+

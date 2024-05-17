@@ -22,12 +22,25 @@ import {
   Signer,
   SystemProgram,
 } from "@solana/web3.js";
-import { airdrop, memechan, payer, provider, admin, solMint, amm, sleep } from "./helpers";
+import {
+  airdrop,
+  memechan,
+  payer,
+  provider,
+  admin,
+  solMint,
+  amm,
+  sleep,
+} from "./helpers";
 import { createProgramToll, programTollAddress } from "./amm";
 import { BN } from "@project-serum/anchor";
 import { AmmPool } from "./pool";
 import { Staking } from "./staking";
 import { MemeTicket } from "./ticket";
+import { Token, WSOL } from "@raydium-io/raydium-sdk";
+import { createMarket } from "./raydium/openbook";
+
+const RAYDIUM_PROGRAM_ID = new PublicKey("TODO");
 
 export interface SwapYArgs {
   user: Keypair;
@@ -50,13 +63,42 @@ export interface SwapXArgs {
 
 export interface GoLiveArgs {
   pool: PublicKey;
-  user: Keypair;
-  poolSignerPda: PublicKey;
+  staking: PublicKey;
+  poolMemeVault: PublicKey;
+  poolWsolVault: PublicKey;
+  adminVaultSol: PublicKey;
+  memeTicket: PublicKey;
+  boundPoolSignerPda: PublicKey;
+  stakingPoolSignerPda: PublicKey;
+  memeMint: PublicKey;
+  solMint: PublicKey;
+  raydiumLpMint: PublicKey;
+  signer: Keypair;
+  raydiumAmm: PublicKey;
+  raydiumAmmAuthority: PublicKey;
+  raydiumMemeVault: PublicKey;
+  raydiumWsolVault: PublicKey;
+  ammConfig: PublicKey;
+  feeDestination: PublicKey;
+  userDestinationLpTokenAta: PublicKey;
+  openOrders: PublicKey;
+  targetOrders: PublicKey;
+  marketAccount: PublicKey;
 }
 
+// pub rent: Sysvar<'info, Rent>,
+// pub clock: Sysvar<'info, Clock>,
+// pub ata_program: Program<'info, AssociatedToken>,
+// pub market_program_id: Program<'info, OpenBook>,
+// pub token_program: Program<'info, Token>,
+// pub system_program: Program<'info, System>,
 
 export class BoundPool {
-  private constructor(public id: PublicKey, public admin: Keypair, public solVault: PublicKey) {
+  private constructor(
+    public id: PublicKey,
+    public admin: Keypair,
+    public solVault: PublicKey
+  ) {
     //
   }
 
@@ -78,12 +120,14 @@ export class BoundPool {
       6
     );
 
-    const adminSolVault = (await getOrCreateAssociatedTokenAccount(
-      provider.connection,
-      payer,
-      solMint,
-      adminAuthority
-    )).address;
+    const adminSolVault = (
+      await getOrCreateAssociatedTokenAccount(
+        provider.connection,
+        payer,
+        solMint,
+        adminAuthority
+      )
+    ).address;
 
     const poolSolVaultid = Keypair.generate();
     const poolSolVault = await createAccount(
@@ -142,6 +186,19 @@ export class BoundPool {
     return BoundPool.signerFrom(this.id);
   }
 
+  public associatedPda(marketAccount: PublicKey, seed: string): PublicKey {
+    const pda = PublicKey.findProgramAddressSync(
+      [
+        RAYDIUM_PROGRAM_ID.toBytes(),
+        marketAccount.toBytes(),
+        Buffer.from(TARGET_ASSOCIATED_SEED),
+      ],
+      RAYDIUM_PROGRAM_ID
+    )[0];
+
+    return pda;
+  }
+
   public static async airdropLiquidityTokens(
     mint: PublicKey,
     wallet: PublicKey,
@@ -151,9 +208,7 @@ export class BoundPool {
     return mintTo(provider.connection, payer, mint, wallet, authority, amount);
   }
 
-  public async swap_y(
-    input: Partial<SwapYArgs>
-  ): Promise<MemeTicket> {
+  public async swap_y(input: Partial<SwapYArgs>): Promise<MemeTicket> {
     const user = input.user ?? Keypair.generate();
     await airdrop(user.publicKey);
 
@@ -164,12 +219,14 @@ export class BoundPool {
     const sol_in = input.solAmountIn ?? 1 * 1e9;
     const meme_out = input.memeTokensOut ?? 1;
 
-    const userSolAcc = input.userSolAcc ?? await createWrappedNativeAccount(
-      provider.connection,
-      payer,
-      user.publicKey,
-      500 * 10e9
-    );
+    const userSolAcc =
+      input.userSolAcc ??
+      (await createWrappedNativeAccount(
+        provider.connection,
+        payer,
+        user.publicKey,
+        500 * 10e9
+      ));
 
     await memechan.methods
       .swapY(new BN(sol_in), new BN(meme_out))
@@ -186,12 +243,10 @@ export class BoundPool {
       .signers([user, id])
       .rpc();
 
-    return new MemeTicket(id.publicKey)
+    return new MemeTicket(id.publicKey);
   }
 
-  public async swap_x(
-    input: Partial<SwapXArgs>
-  ): Promise<void> {
+  public async swap_x(input: Partial<SwapXArgs>): Promise<void> {
     const user = input.user;
 
     const pool = input.pool ?? this.id;
@@ -220,24 +275,108 @@ export class BoundPool {
   public async go_live(
     input: Partial<GoLiveArgs>
   ): Promise<[AmmPool, Staking]> {
-    const user = input.user ?? Keypair.generate();
-    await airdrop(user.publicKey);
+    const signer = input.signer ?? Keypair.generate();
+    await airdrop(signer.publicKey);
+
+    // Bonding Pool
+    const pool = input.pool ?? this.id;
+    const poolSigner = input.boundPoolSignerPda ?? this.signerPda();
+
+    const stakingId = Keypair.generate().publicKey;
+    const stakingSigner =
+      input.stakingPoolSignerPda ?? Staking.signerFrom(stakingId);
+
+    const poolInfo = await memechan.account.boundPool.fetch(pool);
+
+    const poolMemeVault = input.poolMemeVault ?? poolInfo.poolMemeVault;
+    const poolWsolVault = input.poolMemeVault ?? poolInfo.solReserve.mint;
+    const adminVaultSol = input.poolMemeVault ?? poolInfo.adminVaultSol;
+
+    const memeTicket = input.memeTicket ?? Keypair.generate().publicKey;
+
+    const memeMint = input.memeMint ?? poolInfo.memeMint;
+    const solMint = input.solMint ?? poolInfo.solReserve.mint;
+
+    const Meme: Token = new Token(
+      TOKEN_PROGRAM_ID,
+      memeMint,
+      Token.WSOL.decimals
+    );
+    const WSOL: Token = new Token(
+      TOKEN_PROGRAM_ID,
+      solMint,
+      Token.WSOL.decimals
+    );
+
+    // Openbook
+    let { txids, marketId: marketAccount } = await createMarket({
+      baseToken: Meme,
+      quoteToken: WSOL,
+      wallet: signer,
+      connection: provider.connection,
+    });
+
+    const openOrders = this.associatedPda(
+      marketAccount,
+      OPEN_ORDER_ASSOCIATED_SEED
+    );
+
+    const targetOrders = this.associatedPda(
+      marketAccount,
+      TARGET_ASSOCIATED_SEED
+    );
+
+    // Raydium
+    // TODO..
+
+    // signer: Keypair;
+    // pool: PublicKey;
+    // staking: PublicKey;
+    // boundPoolSignerPda: PublicKey;
+    // stakingPoolSignerPda: PublicKey;
+    // poolMemeVault: PublicKey;
+    // poolWsolVault: PublicKey;
+    // adminVaultSol: PublicKey;
+    // memeTicket: PublicKey;
+    // memeMint: PublicKey;
+    // solMint: PublicKey;
+
+    // raydiumLpMint: PublicKey; <-- here!
+    // raydiumAmm: PublicKey;
+    // raydiumAmmAuthority: PublicKey;
+    // raydiumMemeVault: PublicKey;
+    // raydiumWsolVault: PublicKey;
+    // ammConfig: PublicKey;
+    // feeDestination: PublicKey;
+    // userDestinationLpTokenAta: PublicKey;
+
+    const vaults = await Promise.all(
+      [poolInfo.memeMint, poolInfo.solReserve.mint].map(async (mint) => {
+        const kp = Keypair.generate();
+        await createAccount(
+          provider.connection,
+          payer,
+          mint,
+          ammPoolSigner,
+          kp
+        );
+        return {
+          isSigner: false,
+          isWritable: true,
+          pubkey: kp.publicKey,
+        };
+      })
+    );
+
     const ammId = Keypair.generate();
 
-    const pool = input.pool ?? this.id;
-    const poolSigner = input.poolSignerPda ?? this.signerPda();
     const ammPoolSigner = AmmPool.signerFrom(ammId.publicKey);
 
     const adminTicketId = Keypair.generate();
 
-    const stakingId = Keypair.generate();
-    const stakingSigner = Staking.signerFrom(stakingId.publicKey);
-
-    const poolInfo = await memechan.account.boundPool.fetch(pool);
-
     const lpMint = await createMint(
       provider.connection,
-      user,
+      signer,
       ammPoolSigner,
       null,
       9
@@ -246,33 +385,14 @@ export class BoundPool {
     const lpTokenWalletId = Keypair.generate();
     const lpTokenWallet = await createAccount(
       provider.connection,
-      user,
+      signer,
       lpMint,
       poolSigner,
       lpTokenWalletId
     );
 
+    const stakingMemeVaultId = Keypair.generate();
 
-    let tollAuthority = stakingSigner;
-
-    const toll = await programTollAddress(tollAuthority);
-    try {
-      const info = await amm.account.programToll.fetch(toll);
-      tollAuthority = info.authority;
-    } catch {
-      await createProgramToll(tollAuthority);
-    }
-
-    const aldrinProgramTollWalletId = Keypair.generate()
-    const aldrinProgramTollWallet = await createAccount(
-      provider.connection,
-      payer,
-      lpMint,
-      tollAuthority,
-      aldrinProgramTollWalletId
-    );
-
-    const stakingMemeVaultId = Keypair.generate()
     const stakingMemeVault = await createAccount(
       provider.connection,
       payer,
@@ -285,7 +405,7 @@ export class BoundPool {
     const userSolAcc = await createWrappedNativeAccount(
       provider.connection,
       payer,
-      user.publicKey,
+      signer.publicKey,
       1e9,
       nkey
     );
@@ -295,23 +415,10 @@ export class BoundPool {
       payer,
       userSolAcc,
       stakingSigner,
-      user
-    )
+      signer
+    );
 
     await sleep(1000);
-
-    const vaults = await Promise.all(
-      [poolInfo.memeMint, poolInfo.solReserve.mint].map(async (mint) => {
-
-        const kp = Keypair.generate();
-        await createAccount(provider.connection, payer, mint, ammPoolSigner, kp);
-        return {
-          isSigner: false,
-          isWritable: true,
-          pubkey: kp.publicKey,
-        };
-      })
-    );
 
     await memechan.methods
       .goLive()
@@ -341,15 +448,11 @@ export class BoundPool {
       .signers([user, ammId, adminTicketId, stakingId])
       .rpc();
 
-
-    return [new AmmPool(ammId.publicKey, tollAuthority), new Staking(stakingId.publicKey)]
+    return [
+      new AmmPool(ammId.publicKey, tollAuthority),
+      new Staking(stakingId.publicKey),
+    ];
   }
-
-
-
-
-
-
 
   // public async redeemLiquidity(
   //   input: Partial<RedeemLiquidityArgs>
@@ -495,3 +598,18 @@ export class BoundPool {
   // }
 }
 
+// Pubkey::find_program_address(
+//   &[
+//       &info_id.to_bytes(),
+//       &market_address.to_bytes(),
+//       &associated_seed,
+//   ],
+//   program_id,
+// )
+
+// public static derivePda(programId: PublicKey, publicKey: PublicKey): PublicKey {
+//   return PublicKey.findProgramAddressSync(
+//     [Buffer.from("signer"), publicKey.toBytes()],
+//     memechan.programId
+//   )[0];
+// }

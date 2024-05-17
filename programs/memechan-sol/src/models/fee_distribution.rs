@@ -1,7 +1,8 @@
 use crate::err::AmmError;
-use crate::staked_lp::MemeTicket;
-use crate::staking::StakingPool;
+use crate::models::staking::StakingPool;
 use anchor_lang::prelude::*;
+
+use super::staked_lp::MemeTicket;
 
 const PRECISION: u128 = 1_000_000_000_000_000;
 
@@ -10,10 +11,7 @@ pub struct Withdrawal {
     pub max_withdrawal_wsol: u64,
 }
 
-pub fn calc_withdraw(
-    fee_state: &Account<StakingPool>,
-    lp_ticket: &Account<MemeTicket>,
-) -> Result<Withdrawal> {
+pub fn calc_withdraw(fee_state: &StakingPool, lp_ticket: &MemeTicket) -> Result<Withdrawal> {
     let user_stake: u64 = lp_ticket.vesting.current_stake();
     let user_withdrawals_meme = lp_ticket.withdraws_meme;
     let user_withdrawals_wsol = lp_ticket.withdraws_wsol;
@@ -39,8 +37,8 @@ pub fn calc_withdraw(
 }
 
 pub fn update_stake(
-    state: &mut Account<StakingPool>,
-    lp_ticket: &mut Account<MemeTicket>,
+    state: &mut StakingPool,
+    lp_ticket: &mut MemeTicket,
     user_old_stake: u64,
     user_stake_diff: u64,
 ) -> Result<Withdrawal> {

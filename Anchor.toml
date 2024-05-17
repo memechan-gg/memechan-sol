@@ -5,14 +5,17 @@ seeds = false
 skip-lint = false
 
 [programs.localnet]
-amm = "8MGDvwp4baAJ4y7rv3wYVw7g1cWVXehuhVoTes68jGxn"
-memechan_sol = "3LpdC7WHSrw2d6mWm3Enfvpzy1u5zoHkysyH1WxdmpPB"
+memechan_sol = "GpZkFVSF2DBW7P4S3jDde7pydU2WBE3GiiHpRyqt1zcj"
+
+[programs.devnet]
+memechan_sol = "GpZkFVSF2DBW7P4S3jDde7pydU2WBE3GiiHpRyqt1zcj"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "localnet"
+cluster = "https://api.devnet.solana.com"
+# cluster = "localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]

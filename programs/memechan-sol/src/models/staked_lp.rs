@@ -16,6 +16,8 @@ pub struct MemeTicket {
 }
 
 impl MemeTicket {
+    pub const ADMIN_TICKET_PREFIX: &'static [u8; 12] = b"admin_ticket";
+
     pub fn space() -> usize {
         let discriminant = 8;
         let owner = 32;
