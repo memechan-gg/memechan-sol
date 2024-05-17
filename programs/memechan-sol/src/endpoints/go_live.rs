@@ -2,6 +2,7 @@ use crate::consts::{MAX_TICKET_TOKENS, MEME_TOKEN_DECIMALS, RAYDIUM_PROGRAM_ID};
 use crate::models::staking::StakingPool;
 use crate::models::OpenBook;
 use crate::raydium::models::{AmmConfig, AmmInfo, MarketState, OpenOrders, TargetOrders};
+use crate::raydium::RaydiumAmm;
 use crate::{err, raydium};
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
@@ -70,16 +71,16 @@ pub struct GoLive<'info> {
     //
     /// Open Orders Account
     /// CHECK: Checks done in cpi call to raydium
-    #[account(zero)]
-    pub open_orders: AccountLoader<'info, OpenOrders>,
+    #[account(mut)]
+    pub open_orders: UncheckedAccount<'info>,
     /// Target Orders Account
     /// CHECK: Checks done in cpi call to raydium
-    #[account(zero)]
-    pub target_orders: AccountLoader<'info, TargetOrders>,
+    #[account(mut)]
+    pub target_orders: UncheckedAccount<'info>,
     /// Market Orders Account
     /// CHECK: Checks done in cpi call to raydium
-    #[account(zero)]
-    pub market_account: AccountLoader<'info, MarketState>,
+    #[account(mut)]
+    pub market_account: UncheckedAccount<'info>,
     //
     //
     //
@@ -88,26 +89,30 @@ pub struct GoLive<'info> {
     /// Raydium AMM Account
     /// CHECK: Checks done in cpi call to raydium
     #[account(mut)]
-    pub raydium_amm: AccountLoader<'info, AmmInfo>,
+    pub raydium_amm: UncheckedAccount<'info>,
     // pub raydium_amm: AccountLoader<'info, AmmInfo>,
     /// Raydium AMM Signer
     /// CHECK: Raydium signer, checks done in cpi call to raydium
     pub raydium_amm_authority: AccountInfo<'info>,
     /// Raydium LP MinT
+    /// CHECK: live phase pda signer
     #[account(mut)]
-    pub raydium_lp_mint: Box<Account<'info, Mint>>,
+    pub raydium_lp_mint: UncheckedAccount<'info>,
     /// Raydium LP Token Account
     // #[account(mut)]
     // pub pool_lp_wallet: Box<Account<'info, TokenAccount>>,
     /// Raydium Meme Token Account
     #[account(mut)]
-    pub raydium_meme_vault: Box<Account<'info, TokenAccount>>,
+    /// CHECK: Checks done in cpi call to raydium
+    pub raydium_meme_vault: UncheckedAccount<'info>,
     /// Raydium WSOL Token Account
     #[account(mut)]
-    pub raydium_wsol_vault: Box<Account<'info, TokenAccount>>,
     /// CHECK: Checks done in cpi call to raydium
-    pub amm_config: AccountLoader<'info, AmmConfig>,
+    pub raydium_wsol_vault: UncheckedAccount<'info>,
     /// CHECK: Checks done in cpi call to raydium
+    pub amm_config: UncheckedAccount<'info>,
+    /// CHECK: Checks done in cpi call to raydium
+    #[account(mut)]
     pub fee_destination_info: AccountInfo<'info>,
     /// CHECK: Checks done in cpi call to raydium
     #[account(mut)]
@@ -118,6 +123,7 @@ pub struct GoLive<'info> {
     pub clock: Sysvar<'info, Clock>,
     //
     // Programs
+    pub raydium_program: Program<'info, RaydiumAmm>,
     /// CHECK: Checks done in cpi call to raydium
     pub ata_program: Program<'info, AssociatedToken>,
     // Checked by raydium account
@@ -133,10 +139,9 @@ impl<'info> GoLive<'info> {
         open_time: u64,
         init_pc_amount: u64,
         init_coin_amount: u64,
-        signer_seeds: &[&[&[u8]]; 1],
     ) -> Result<()> {
         let instruction = raydium::initialize2(
-            &RAYDIUM_PROGRAM_ID,
+            &self.raydium_program.key(),
             // Params
             nonce,
             open_time,
@@ -165,32 +170,31 @@ impl<'info> GoLive<'info> {
             &self.pool_wsol_vault.key(),
             &self.user_destination_lp_token_ata.key(),
         );
-        solana_program::program::invoke_signed(
+        solana_program::program::invoke(
             &instruction,
             &[
-                self.token_program.to_account_info().clone(),
-                self.ata_program.to_account_info().clone(),
-                self.system_program.to_account_info().clone(),
-                self.rent.to_account_info().clone(),
-                self.raydium_amm.to_account_info().clone(),
-                self.raydium_amm_authority.to_account_info().clone(),
-                self.open_orders.to_account_info().clone(),
-                self.raydium_lp_mint.to_account_info().clone(),
-                self.meme_mint.to_account_info().clone(),
-                self.sol_mint.to_account_info().clone(),
-                self.raydium_meme_vault.to_account_info().clone(),
-                self.raydium_wsol_vault.to_account_info().clone(),
-                self.target_orders.to_account_info().clone(),
-                self.amm_config.to_account_info().clone(),
-                self.fee_destination_info.to_account_info().clone(),
-                self.market_program_id.to_account_info().clone(),
-                self.market_account.to_account_info().clone(),
-                self.signer.to_account_info().clone(),
-                self.pool_meme_vault.to_account_info().clone(),
-                self.pool_wsol_vault.to_account_info().clone(),
-                self.user_destination_lp_token_ata.to_account_info().clone(),
+                self.token_program.to_account_info().clone(), // 0. `[]` Spl Token program id
+                self.ata_program.to_account_info().clone(),   // 1. `[]` Associated Token program id
+                self.system_program.to_account_info().clone(), // 2. `[]` Sys program id
+                self.rent.to_account_info().clone(),          // 3. `[]` Rent program id
+                self.raydium_amm.to_account_info().clone(), // 4. `[writable]` New AMM Account to create.
+                self.raydium_amm_authority.to_account_info().clone(), // 5. `[]` $authority derived from `create_program_address(&[AUTHORITY_AMM, &[nonce]])`.
+                self.open_orders.to_account_info().clone(), // 6. `[writable]` AMM open orders Account
+                self.raydium_lp_mint.to_account_info().clone(), // 7. `[writable]` AMM lp mint Account
+                self.meme_mint.to_account_info().clone(),       // 8. `[]` AMM coin mint Account
+                self.sol_mint.to_account_info().clone(),        // 9. `[]` AMM pc mint Account
+                self.raydium_meme_vault.to_account_info().clone(), // 10. `[writable]` AMM coin vault Account. Must be non zero, owned by $authority.
+                self.raydium_wsol_vault.to_account_info().clone(), // 11. `[writable]` AMM pc vault Account. Must be non zero, owned by $authority.
+                self.target_orders.to_account_info().clone(), // 12. `[writable]` AMM target orders Account. To store plan orders informations.
+                self.amm_config.to_account_info().clone(), // 13. `[]` AMM config Account, derived from `find_program_address(&[&&AMM_CONFIG_SEED])`.
+                self.fee_destination_info.to_account_info().clone(), // 14. `[]` AMM create pool fee destination Account
+                self.market_program_id.to_account_info().clone(),    // 15. `[]` Market program id
+                self.market_account.to_account_info().clone(), // 16. `[writable]` Market Account. Market program is the owner.
+                self.signer.to_account_info().clone(), // 17. `[writable, singer]` User wallet Account
+                self.pool_meme_vault.to_account_info().clone(), // 18. `[]` User token coin Account
+                self.pool_wsol_vault.to_account_info().clone(), // 19. '[]` User token pc Account
+                self.user_destination_lp_token_ata.to_account_info().clone(), // 20. `[writable]` User destination lp token ATA Account
             ],
-            signer_seeds,
         )?;
 
         Ok(())
@@ -237,7 +241,6 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, GoLive<'info>>, nonce: u8) 
         accs.clock.unix_timestamp as u64, // open time
         sol_supply,                       // init_pc_amount
         amm_meme_balance,                 // init_coin_amount
-        staking_signer_seeds,
     )?;
 
     msg!("4");
