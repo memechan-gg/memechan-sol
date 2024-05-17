@@ -28,7 +28,7 @@ pub struct InitStakingPool<'info> {
     #[account(
         mut,
         close = signer,
-        has_one = admin_vault_sol
+        has_one = admin_vault_quote
     )]
     pub pool: Box<Account<'info, BoundPool>>,
     /// CHECK: bound-curve phase pda signer
@@ -49,9 +49,9 @@ pub struct InitStakingPool<'info> {
     /// Bonding Pool Admin Vault
     #[account(
         mut,
-        constraint = pool.admin_vault_sol == admin_vault_sol.key()
+        constraint = pool.admin_vault_quote == admin_vault_quote.key()
     )]
-    pub admin_vault_sol: Box<Account<'info, TokenAccount>>,
+    pub admin_vault_quote: Box<Account<'info, TokenAccount>>,
     //
     //
     //
@@ -155,7 +155,7 @@ impl<'info> InitStakingPool<'info> {
     fn send_admin_fee_sol(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
             from: self.pool_quote_vault.to_account_info(),
-            to: self.admin_vault_sol.to_account_info(),
+            to: self.admin_vault_quote.to_account_info(),
             authority: self.bound_pool_signer_pda.to_account_info(),
         };
 
@@ -181,10 +181,10 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, InitStakingPool<'info>>) ->
 
     meme_ticket.setup(accs.pool.key(), admin::id(), accs.pool.admin_fees_meme);
 
-    if accs.pool.admin_fees_sol != 0 {
+    if accs.pool.admin_fees_quote != 0 {
         token::transfer(
             accs.send_admin_fee_sol().with_signer(bp_signer_seeds),
-            accs.pool.admin_fees_sol,
+            accs.pool.admin_fees_quote,
         )
         .unwrap();
     };

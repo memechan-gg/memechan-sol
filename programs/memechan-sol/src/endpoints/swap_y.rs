@@ -68,7 +68,7 @@ pub fn handle(ctx: Context<SwapCoinY>, coin_in_amount: u64, coin_x_min_value: u6
 
     let pool = &mut accs.pool;
 
-    pool.admin_fees_sol += swap_amount.admin_fee_in;
+    pool.admin_fees_quote += swap_amount.admin_fee_in;
     pool.admin_fees_meme += swap_amount.admin_fee_out;
 
     pool.quote_reserve.tokens += swap_amount.amount_in;

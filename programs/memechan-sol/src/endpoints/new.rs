@@ -129,7 +129,7 @@ pub fn handle(ctx: Context<New>) -> Result<()> {
     .unwrap();
 
     let pool = &mut accs.pool;
-    pool.admin_vault_sol = accs.admin_quote_vault.key();
+    pool.admin_vault_quote = accs.admin_quote_vault.key();
     pool.quote_reserve = Reserve {
         tokens: 0,
         mint: accs.quote_mint.key(),
