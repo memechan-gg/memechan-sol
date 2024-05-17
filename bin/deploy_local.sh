@@ -1,9 +1,10 @@
 solana config set --url localhost
 
 solana airdrop 1000
-solana airdrop 1000 GpZkFVSF2DBW7P4S3jDde7pydU2WBE3GiiHpRyqt1zcj
 
-solana program deploy tests/programs/openbook.so  --keypair keypairs/kp.json # openbook: 6jXACiuWwGjc2Hq7rzz7mLGZZnAjAgS6noCYtB31xx4u
-solana program deploy tests/programs/raydium.so  --keypair keypairs/kp.json # raydium: EA68RLWrCRtwbiudgb25mHrFzuLBfCEVVhHEeuFF9sC6
+# solana program deploy tests/programs/openbook.so --program-id keypairs/openbook.json # openbook: 5LwV4JK4ExCPJGJqhJLEQcHPeVsUX1omRo97jH6BvymW
+# solana program deploy tests/programs/raydium.so --program-id keypairs/raydium.json # raydium: FszPLAESehPmaW69NAGBLzRLFNFNjPQXNCfSEac8nst
 
-anchor deploy
+solana-test-validator --bpf-program 5LwV4JK4ExCPJGJqhJLEQcHPeVsUX1omRo97jH6BvymW tests/programs/devnet/openbook.so --bpf-program FszPLAESehPmaW69NAGBLzRLFNFNjPQXNCfSEac8nsA tests/devnet/programs/raydium.so
+
+anchor deploy  --program-name memechan_sol --program-keypair keypairs/kp.json

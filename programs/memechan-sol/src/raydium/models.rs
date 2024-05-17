@@ -3,6 +3,9 @@ use anchor_lang::prelude::*;
 use bytemuck::{Pod, Zeroable};
 use solana_program::pubkey::Pubkey;
 
+pub const TEN_THOUSAND: u64 = 10000;
+pub const MAX_ORDER_LIMIT: usize = 10;
+
 #[account(zero_copy)]
 #[repr(C)]
 #[derive(Debug, Default, PartialEq)]
@@ -158,4 +161,120 @@ unsafe impl Pod for StateData {}
 pub(crate) struct LastOrderDistance {
     pub last_order_numerator: u64,
     pub last_order_denominator: u64,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Default, AnchorDeserialize, AnchorSerialize, Zeroable, Pod)]
+pub struct TargetOrder {
+    pub price: u64,
+    pub vol: u64,
+}
+
+#[account(zero_copy(unsafe))]
+#[repr(C)]
+pub struct TargetOrders {
+    pub owner: [u64; 4],
+    pub buy_orders: [TargetOrder; 50],
+    pub padding1: [u64; 8],
+    pub target_x: u128,
+    pub target_y: u128,
+    pub plan_x_buy: u128,
+    pub plan_y_buy: u128,
+    pub plan_x_sell: u128,
+    pub plan_y_sell: u128,
+    pub placed_x: u128,
+    pub placed_y: u128,
+    pub calc_pnl_x: u128,
+    pub calc_pnl_y: u128,
+    pub sell_orders: [TargetOrder; 50],
+    pub padding2: [u64; 6],
+    pub replace_buy_client_id: [u64; MAX_ORDER_LIMIT],
+    pub replace_sell_client_id: [u64; MAX_ORDER_LIMIT],
+    pub last_order_numerator: u64,
+    pub last_order_denominator: u64,
+
+    pub plan_orders_cur: u64,
+    pub place_orders_cur: u64,
+
+    pub valid_buy_order_num: u64,
+    pub valid_sell_order_num: u64,
+
+    pub padding3: [u64; 10],
+
+    pub free_slot_bits: u128,
+}
+
+#[account(zero_copy(unsafe))]
+#[repr(packed)]
+pub struct OpenOrders {
+    pub account_flags: u64, // Initialized, OpenOrders
+    pub market: [u64; 4],
+    pub owner: [u64; 4],
+
+    pub native_coin_free: u64,
+    pub native_coin_total: u64,
+
+    pub native_pc_free: u64,
+    pub native_pc_total: u64,
+
+    pub free_slot_bits: u128,
+    pub is_bid_bits: u128,
+    pub orders: [u128; 128],
+    // Using Option<NonZeroU64> in a pod type requires nightly
+    pub client_order_ids: [u64; 128],
+    pub referrer_rebates_accrued: u64,
+}
+
+#[account(zero_copy(unsafe))]
+#[repr(C)]
+pub struct MarketState {
+    // 0
+    pub account_flags: u64, // Initialized, Market
+
+    // 1
+    pub own_address: [u64; 4],
+
+    // 5
+    pub vault_signer_nonce: u64,
+    // 6
+    pub coin_mint: [u64; 4],
+    // 10
+    pub pc_mint: [u64; 4],
+
+    // 14
+    pub coin_vault: [u64; 4],
+    // 18
+    pub coin_deposits_total: u64,
+    // 19
+    pub coin_fees_accrued: u64,
+
+    // 20
+    pub pc_vault: [u64; 4],
+    // 24
+    pub pc_deposits_total: u64,
+    // 25
+    pub pc_fees_accrued: u64,
+
+    // 26
+    pub pc_dust_threshold: u64,
+
+    // 27
+    pub req_q: [u64; 4],
+    // 31
+    pub event_q: [u64; 4],
+
+    // 35
+    pub bids: [u64; 4],
+    // 39
+    pub asks: [u64; 4],
+
+    // 43
+    pub coin_lot_size: u64,
+    // 44
+    pub pc_lot_size: u64,
+
+    // 45
+    pub fee_rate_bps: u64,
+    // 46
+    pub referrer_rebates_accrued: u64,
 }

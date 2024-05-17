@@ -5,10 +5,10 @@ seeds = false
 skip-lint = false
 
 [programs.localnet]
-memechan_sol = "GpZkFVSF2DBW7P4S3jDde7pydU2WBE3GiiHpRyqt1zcj"
+memechan_sol = "CXkuDmMcnCAme9aMHzDqhnyuXvD7q6UUBFMupuVxLPZt"
 
 [programs.devnet]
-memechan_sol = "GpZkFVSF2DBW7P4S3jDde7pydU2WBE3GiiHpRyqt1zcj"
+memechan_sol = "CXkuDmMcnCAme9aMHzDqhnyuXvD7q6UUBFMupuVxLPZt"
 
 [registry]
 url = "https://api.apr.dev"

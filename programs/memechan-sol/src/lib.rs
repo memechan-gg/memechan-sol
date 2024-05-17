@@ -11,7 +11,7 @@ use core as core_;
 
 use endpoints::*;
 
-declare_id!("GpZkFVSF2DBW7P4S3jDde7pydU2WBE3GiiHpRyqt1zcj");
+declare_id!("CXkuDmMcnCAme9aMHzDqhnyuXvD7q6UUBFMupuVxLPZt");
 
 pub mod admin {
     use anchor_lang::prelude::declare_id;
@@ -40,6 +40,12 @@ pub mod memechan_sol {
         coin_x_min_value: u64,
     ) -> Result<()> {
         swap_y::handle(ctx, coin_in_amount, coin_x_min_value)
+    }
+
+    pub fn init_staking_pool<'info>(
+        ctx: Context<'_, '_, '_, 'info, InitStakingPool<'info>>,
+    ) -> Result<()> {
+        init_staking_pool::handle(ctx)
     }
 
     pub fn go_live<'info>(ctx: Context<'_, '_, '_, 'info, GoLive<'info>>, nonce: u8) -> Result<()> {
