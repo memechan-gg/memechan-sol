@@ -26,6 +26,15 @@ pub mod memechan_sol {
         new::handle(ctx)
     }
 
+    pub fn create_metadata(
+        ctx: Context<CreateMetadata>,
+        name: String,
+        symbol: String,
+        uri: String,
+    ) -> Result<()> {
+        create_metadata::handle(ctx, name, symbol, uri)
+    }
+
     pub fn swap_x(
         ctx: Context<SwapCoinX>,
         coin_in_amount: u64,

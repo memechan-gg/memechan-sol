@@ -12,9 +12,6 @@ use super::{fees::Fees, mist, Reserve, SwapAmount};
 #[account]
 pub struct BoundPool {
     pub meme_reserve: Reserve,
-    // pub meme_amt: u64,
-    // pub meme_mint: Pubkey,
-    // pub pool_meme_vault: Pubkey,
     pub quote_reserve: Reserve,
     pub admin_fees_meme: u64,
     pub admin_fees_quote: u64,
@@ -29,7 +26,7 @@ pub struct Config {
     pub alpha_abs: u128, // |alpha|, because alpha is negative
     pub beta: u128,
     pub price_factor: u64,
-    // In sui denomination
+    // In quote denomination
     pub gamma_s: u64,
     // In raw denomination
     pub gamma_m: u64, // DEFAULT_MAX_M * DECIMALS_M = 900_000_000_000_000

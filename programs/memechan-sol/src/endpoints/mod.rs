@@ -1,6 +1,7 @@
 pub mod add_fees;
 pub mod bound_merge_tickets;
 pub mod close_ticket;
+pub mod create_metadata;
 pub mod go_live;
 pub mod init_staking_pool;
 pub mod new;
@@ -13,6 +14,7 @@ pub mod withdraw_fees;
 pub use add_fees::*;
 pub use bound_merge_tickets::*;
 pub use close_ticket::*;
+pub use create_metadata::*;
 pub use go_live::*;
 pub use init_staking_pool::*;
 pub use new::*;
