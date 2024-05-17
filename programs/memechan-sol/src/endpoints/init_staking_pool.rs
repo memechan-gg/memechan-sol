@@ -1,6 +1,5 @@
 use crate::consts::{MAX_TICKET_TOKENS, MEME_TOKEN_DECIMALS};
 use crate::err;
-use crate::err::AmmError;
 use crate::libraries::MulDiv;
 use crate::models::bound::BoundPool;
 use crate::models::fees::{LAUNCH_FEE, PRECISION};
@@ -11,9 +10,8 @@ use crate::{admin, vesting};
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token;
-use anchor_spl::token::spl_token::instruction::AuthorityType;
 use anchor_spl::token::spl_token::native_mint;
-use anchor_spl::token::{Mint, SetAuthority, Token, TokenAccount, Transfer};
+use anchor_spl::token::{Mint, Token, TokenAccount, Transfer};
 
 // const SOL_THRESHOLD: u64 = 300; // TODO: add
 
@@ -93,6 +91,18 @@ pub struct InitStakingPool<'info> {
     /// CHECK: live phase pda signer
     #[account(mut, seeds = [StakingPool::SIGNER_PDA_PREFIX, staking.key().as_ref()], bump)]
     pub staking_pool_signer_pda: AccountInfo<'info>,
+
+    #[account(
+        mut,
+        constraint = staking_meme_vault.owner == staking_pool_signer_pda.key()
+    )]
+    pub staking_meme_vault: Box<Account<'info, TokenAccount>>,
+    #[account(
+        mut,
+        constraint = staking_wsol_vault.owner == staking_pool_signer_pda.key()
+    )]
+    /// Bonding Pool WSOL vault
+    pub staking_wsol_vault: Box<Account<'info, TokenAccount>>,
     //
     /// Meme Ticket Account of Admin
     #[account(
@@ -122,13 +132,21 @@ pub struct InitStakingPool<'info> {
 }
 
 impl<'info> InitStakingPool<'info> {
-    fn set_vault_authority_ctx(
-        &self,
-        account: AccountInfo<'info>,
-    ) -> CpiContext<'_, '_, '_, 'info, SetAuthority<'info>> {
-        let cpi_accounts = SetAuthority {
-            current_authority: self.bound_pool_signer_pda.to_account_info(),
-            account_or_mint: account,
+    fn token_transfer_meme_ctx(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+        let cpi_accounts = Transfer {
+            from: self.pool_meme_vault.to_account_info(),
+            to: self.staking_meme_vault.to_account_info(),
+            authority: self.bound_pool_signer_pda.to_account_info(),
+        };
+        let cpi_program = self.token_program.to_account_info();
+        CpiContext::new(cpi_program, cpi_accounts)
+    }
+
+    fn token_transfer_wsol_ctx(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+        let cpi_accounts = Transfer {
+            from: self.pool_wsol_vault.to_account_info(),
+            to: self.staking_wsol_vault.to_account_info(),
+            authority: self.bound_pool_signer_pda.to_account_info(),
         };
         let cpi_program = self.token_program.to_account_info();
         CpiContext::new(cpi_program, cpi_accounts)
@@ -189,21 +207,29 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, InitStakingPool<'info>>) ->
     )
     .unwrap();
 
+    accs.pool_wsol_vault.reload().unwrap();
+
     // 3. Transfer pool_wsol_vault
     msg!("3");
+    msg!(
+        "Amount of wSOL to transfer {:?}",
+        accs.pool_wsol_vault.amount
+    );
 
-    token::set_authority(
-        accs.set_vault_authority_ctx(accs.pool_wsol_vault.to_account_info())
-            .with_signer(bp_signer_seeds),
-        AuthorityType::AccountOwner,
-        Some(accs.staking_pool_signer_pda.key()),
+    token::transfer(
+        accs.token_transfer_wsol_ctx().with_signer(bp_signer_seeds),
+        accs.pool_wsol_vault.amount,
     )
     .unwrap();
-    token::set_authority(
-        accs.set_vault_authority_ctx(accs.pool_meme_vault.to_account_info())
-            .with_signer(bp_signer_seeds),
-        AuthorityType::AccountOwner,
-        Some(accs.staking_pool_signer_pda.key()),
+
+    msg!(
+        "Amount of Meme to transfer {:?}",
+        accs.pool_meme_vault.amount
+    );
+
+    token::transfer(
+        accs.token_transfer_meme_ctx().with_signer(bp_signer_seeds),
+        accs.pool_meme_vault.amount,
     )
     .unwrap();
 
@@ -211,9 +237,9 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, InitStakingPool<'info>>) ->
     msg!("4");
     let staking = &mut accs.staking;
 
-    staking.meme_vault = accs.pool_meme_vault.key();
+    staking.meme_vault = accs.staking_meme_vault.key();
     staking.meme_mint = accs.meme_mint.key();
-    staking.wsol_vault = accs.pool_wsol_vault.key();
+    staking.wsol_vault = accs.staking_wsol_vault.key();
     staking.stakes_total = MAX_TICKET_TOKENS * MEME_TOKEN_DECIMALS;
     staking.vesting_config = vesting::default_config();
     staking.fees_x_total = 0;
