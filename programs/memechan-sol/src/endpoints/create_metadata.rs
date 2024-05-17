@@ -13,14 +13,9 @@ use anchor_spl::token::{Mint, Token};
 pub struct CreateMetadata<'info> {
     #[account(mut)]
     pub sender: Signer<'info>,
-    #[account(
-        init,
-        payer = sender,
-        space = BoundPool::space(),
-    )]
     pub pool: Account<'info, BoundPool>,
     #[account(
-        mut,
+        mut, // todo: might not need
         constraint = meme_mint.mint_authority == COption::Some(pool_signer.key())
             @ err::acc("meme mint authority must be the pool signer"),
         constraint = meme_mint.freeze_authority == COption::None
