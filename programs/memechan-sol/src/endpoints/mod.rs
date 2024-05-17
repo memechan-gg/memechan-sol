@@ -1,9 +1,11 @@
 pub mod add_fees;
 pub mod bound_merge_tickets;
+mod change_target_config;
 pub mod close_ticket;
 pub mod go_live;
 pub mod init_staking_pool;
 pub mod new;
+mod new_target_config;
 pub mod staking_merge_tickets;
 pub mod swap_x;
 pub mod swap_y;
