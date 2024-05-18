@@ -84,19 +84,6 @@ impl<'info> New<'info> {
         let cpi_program = self.token_program.to_account_info();
         CpiContext::new(cpi_program, cpi_accounts)
     }
-
-    fn set_mint_authority(
-        &self,
-        mint: &Account<'info, Mint>,
-    ) -> CpiContext<'_, '_, '_, 'info, SetAuthority<'info>> {
-        let cpi_accounts = SetAuthority {
-            current_authority: self.pool_signer.to_account_info(),
-            account_or_mint: mint.to_account_info(),
-        };
-
-        let cpi_program = self.token_program.to_account_info();
-        CpiContext::new(cpi_program, cpi_accounts)
-    }
 }
 
 pub fn handle(ctx: Context<New>) -> Result<()> {
@@ -117,14 +104,6 @@ pub fn handle(ctx: Context<New>) -> Result<()> {
     token::mint_to(
         accs.mint_meme_tokens().with_signer(signer_seeds),
         MAX_MEME_TOKENS * MEME_TOKEN_DECIMALS,
-    )
-    .unwrap();
-
-    token::set_authority(
-        accs.set_mint_authority(&accs.meme_mint)
-            .with_signer(signer_seeds),
-        MintTokens,
-        None,
     )
     .unwrap();
 
