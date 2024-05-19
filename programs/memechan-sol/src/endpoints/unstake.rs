@@ -11,7 +11,7 @@ pub struct Unstake<'info> {
     #[account(
         mut,
         has_one = meme_vault,
-        has_one = wsol_vault,
+        has_one = quote_vault,
     )]
     staking: Account<'info, StakingPool>,
     #[account(
@@ -27,13 +27,13 @@ pub struct Unstake<'info> {
     user_meme: Account<'info, TokenAccount>,
     #[account(
         mut,
-        constraint = user_wsol.owner == signer.key()
+        constraint = user_quote.owner == signer.key()
     )]
-    user_wsol: Account<'info, TokenAccount>,
+    user_quote: Account<'info, TokenAccount>,
     #[account(mut)]
     meme_vault: Account<'info, TokenAccount>,
     #[account(mut)]
-    wsol_vault: Account<'info, TokenAccount>,
+    quote_vault: Account<'info, TokenAccount>,
     signer: Signer<'info>,
     /// CHECK: checked by AMM
     #[account(seeds = [StakingPool::SIGNER_PDA_PREFIX, staking.key().as_ref()], bump)]
@@ -42,10 +42,10 @@ pub struct Unstake<'info> {
 }
 
 impl<'info> Unstake<'info> {
-    fn send_wsol_to_user(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+    fn send_quote_to_user(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
-            from: self.wsol_vault.to_account_info(),
-            to: self.user_wsol.to_account_info(),
+            from: self.quote_vault.to_account_info(),
+            to: self.user_quote.to_account_info(),
             authority: self.staking_signer_pda.to_account_info(),
         };
 
@@ -101,8 +101,8 @@ pub fn handle(ctx: Context<Unstake>, release_amount: u64) -> Result<()> {
     )?;
 
     token::transfer(
-        accs.send_wsol_to_user().with_signer(staking_signer_seeds),
-        withdrawal.max_withdrawal_wsol,
+        accs.send_quote_to_user().with_signer(staking_signer_seeds),
+        withdrawal.max_withdrawal_quote,
     )?;
 
     Ok(())

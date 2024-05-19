@@ -1,6 +1,7 @@
 pub mod consts;
 pub mod endpoints;
 pub mod err;
+pub mod math;
 pub mod libraries;
 pub mod models;
 pub mod raydium;
@@ -24,6 +25,15 @@ pub mod memechan_sol {
 
     pub fn new(ctx: Context<New>) -> Result<()> {
         new::handle(ctx)
+    }
+
+    pub fn create_metadata(
+        ctx: Context<CreateMetadata>,
+        name: String,
+        symbol: String,
+        uri: String,
+    ) -> Result<()> {
+        create_metadata::handle(ctx, name, symbol, uri)
     }
 
     pub fn swap_x(
