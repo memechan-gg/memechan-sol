@@ -45,3 +45,6 @@ pub const OPENBOOK_PROGRAM_ID: Pubkey =
 #[cfg(feature = "mainnet")]
 pub const OPENBOOK_PROGRAM_ID: Pubkey =
     solana_program::pubkey!("srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX"); // Mainnet
+
+pub const ADMIN_KEY: Pubkey =
+    solana_program::pubkey!("srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX");
