@@ -13,6 +13,7 @@ use crate::models::bound::BoundPool;
 use crate::models::bound::Config;
 use crate::models::fees::Fees;
 use crate::models::fees::FEE;
+use crate::models::target_config::TargetConfig;
 use crate::models::Reserve;
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::program_option::COption;
@@ -66,6 +67,10 @@ pub struct New<'info> {
             @ err::acc("Meme vault authority must match admin"),
     )]
     pub meme_vault: Account<'info, TokenAccount>,
+    #[account(
+        constraint = target_config.token_mint == quote_mint.key()
+    )]
+    pub target_config: Account<'info, TargetConfig>,
     /// CHECK: pool_pda
     #[account(seeds = [BoundPool::SIGNER_PDA_PREFIX, pool.key().as_ref()], bump)]
     pub pool_signer: AccountInfo<'info>,
@@ -140,7 +145,8 @@ pub fn handle(ctx: Context<New>) -> Result<()> {
         fee_out_percent: FEE,
     };
 
-    let gamma_s = DEFAULT_MAX_S;
+    let gamma_s = (accs.target_config.token_target_amount
+        / 10u64.pow(accs.quote_mint.decimals as u32)) as u128;
     let gamma_m = DEFAULT_MAX_M;
     let omega_m = DEFAULT_MAX_M_LP;
     let price_factor = DEFAULT_PRICE_FACTOR;
