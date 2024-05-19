@@ -28,7 +28,7 @@ pub struct InitStakingPool<'info> {
     #[account(
         mut,
         close = signer,
-        has_one = admin_vault_sol
+        has_one = admin_vault_quote
     )]
     pub pool: Box<Account<'info, BoundPool>>,
     /// CHECK: bound-curve phase pda signer
@@ -42,16 +42,16 @@ pub struct InitStakingPool<'info> {
     pub pool_meme_vault: Box<Account<'info, TokenAccount>>,
     #[account(
         mut,
-        constraint = pool.sol_reserve.vault == pool_wsol_vault.key()
+        constraint = pool.quote_reserve.vault == pool_quote_vault.key()
     )]
     /// Bonding Pool WSOL vault
-    pub pool_wsol_vault: Box<Account<'info, TokenAccount>>,
+    pub pool_quote_vault: Box<Account<'info, TokenAccount>>,
     /// Bonding Pool Admin Vault
     #[account(
         mut,
-        constraint = pool.admin_vault_sol == admin_vault_sol.key()
+        constraint = pool.admin_vault_quote == admin_vault_quote.key()
     )]
-    pub admin_vault_sol: Box<Account<'info, TokenAccount>>,
+    pub admin_vault_quote: Box<Account<'info, TokenAccount>>,
     //
     //
     //
@@ -66,10 +66,10 @@ pub struct InitStakingPool<'info> {
     pub meme_mint: Box<Account<'info, Mint>>,
     /// Mint Account for WSOL
     #[account(
-        constraint = sol_mint.key() == native_mint::id()
+        constraint = quote_mint.key() == native_mint::id()
             @ err::acc("sol mint should be native WSOL mint")
     )]
-    pub sol_mint: Box<Account<'info, Mint>>,
+    pub quote_mint: Box<Account<'info, Mint>>,
     //
     //
     //
@@ -99,10 +99,10 @@ pub struct InitStakingPool<'info> {
     pub staking_meme_vault: Box<Account<'info, TokenAccount>>,
     #[account(
         mut,
-        constraint = staking_wsol_vault.owner == staking_pool_signer_pda.key()
+        constraint = staking_quote_vault.owner == staking_pool_signer_pda.key()
     )]
     /// Bonding Pool WSOL vault
-    pub staking_wsol_vault: Box<Account<'info, TokenAccount>>,
+    pub staking_quote_vault: Box<Account<'info, TokenAccount>>,
     //
     /// Meme Ticket Account of Admin
     #[account(
@@ -142,10 +142,10 @@ impl<'info> InitStakingPool<'info> {
         CpiContext::new(cpi_program, cpi_accounts)
     }
 
-    fn token_transfer_wsol_ctx(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+    fn token_transfer_quote_ctx(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
-            from: self.pool_wsol_vault.to_account_info(),
-            to: self.staking_wsol_vault.to_account_info(),
+            from: self.pool_quote_vault.to_account_info(),
+            to: self.staking_quote_vault.to_account_info(),
             authority: self.bound_pool_signer_pda.to_account_info(),
         };
         let cpi_program = self.token_program.to_account_info();
@@ -154,8 +154,8 @@ impl<'info> InitStakingPool<'info> {
 
     fn send_admin_fee_sol(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
-            from: self.pool_wsol_vault.to_account_info(),
-            to: self.admin_vault_sol.to_account_info(),
+            from: self.pool_quote_vault.to_account_info(),
+            to: self.admin_vault_quote.to_account_info(),
             authority: self.bound_pool_signer_pda.to_account_info(),
         };
 
@@ -181,44 +181,44 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, InitStakingPool<'info>>) ->
 
     meme_ticket.setup(accs.pool.key(), admin::id(), accs.pool.admin_fees_meme);
 
-    if accs.pool.admin_fees_sol != 0 {
+    if accs.pool.admin_fees_quote != 0 {
         token::transfer(
             accs.send_admin_fee_sol().with_signer(bp_signer_seeds),
-            accs.pool.admin_fees_sol,
+            accs.pool.admin_fees_quote,
         )
         .unwrap();
     };
 
     // 1. Verify if we reached the threshold of SUI amount raised
     msg!("1");
-    accs.pool_wsol_vault.reload().unwrap();
-    let sol_supply = accs.pool_wsol_vault.amount;
+    accs.pool_quote_vault.reload().unwrap();
+    let quote_supply = accs.pool_quote_vault.amount;
     // TODO: Add back
-    // if sol_supply != SOL_THRESHOLD * 10_u64.checked_pow(native_mint::DECIMALS as u32).unwrap() {
+    // if quote_supply != SOL_THRESHOLD * 10_u64.checked_pow(native_mint::DECIMALS as u32).unwrap() {
     //     return Err(error!(AmmError::InvariantViolation));
     // }
 
     // 2. Collect live fees
     msg!("2");
-    let live_fee_amt = sol_supply.mul_div_ceil(LAUNCH_FEE, PRECISION).unwrap();
+    let live_fee_amt = quote_supply.mul_div_ceil(LAUNCH_FEE, PRECISION).unwrap();
     token::transfer(
         accs.send_admin_fee_sol().with_signer(bp_signer_seeds),
         live_fee_amt,
     )
     .unwrap();
 
-    accs.pool_wsol_vault.reload().unwrap();
+    accs.pool_quote_vault.reload().unwrap();
 
-    // 3. Transfer pool_wsol_vault
+    // 3. Transfer pool_quote_vault
     msg!("3");
     msg!(
         "Amount of wSOL to transfer {:?}",
-        accs.pool_wsol_vault.amount
+        accs.pool_quote_vault.amount
     );
 
     token::transfer(
-        accs.token_transfer_wsol_ctx().with_signer(bp_signer_seeds),
-        accs.pool_wsol_vault.amount,
+        accs.token_transfer_quote_ctx().with_signer(bp_signer_seeds),
+        accs.pool_quote_vault.amount,
     )
     .unwrap();
 
@@ -239,11 +239,12 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, InitStakingPool<'info>>) ->
 
     staking.meme_vault = accs.staking_meme_vault.key();
     staking.meme_mint = accs.meme_mint.key();
-    staking.wsol_vault = accs.staking_wsol_vault.key();
+    staking.quote_vault = accs.staking_quote_vault.key();
     staking.stakes_total = MAX_TICKET_TOKENS * MEME_TOKEN_DECIMALS;
     staking.vesting_config = vesting::default_config();
     staking.fees_x_total = 0;
     staking.fees_y_total = 0;
+    staking.lp_tokens_withdrawn = 0;
     staking.pool = accs.pool.key();
 
     msg!("5");

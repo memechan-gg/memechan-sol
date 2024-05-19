@@ -3,6 +3,7 @@ pub mod fee_distribution;
 pub mod fees;
 pub mod staked_lp;
 pub mod staking;
+pub mod target_config;
 
 use anchor_lang::prelude::*;
 
@@ -35,6 +36,7 @@ pub struct SwapAmount {
     pub admin_fee_out: u64,
 }
 
+// TODO: remove
 fn mist(sui: u64) -> u64 {
     WSOL_DECIMALS * sui
 }

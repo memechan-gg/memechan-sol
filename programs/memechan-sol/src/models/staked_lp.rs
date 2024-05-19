@@ -10,7 +10,7 @@ pub struct MemeTicket {
     pub pool: Pubkey,
     pub amount: u64,
     pub withdraws_meme: u64,
-    pub withdraws_wsol: u64,
+    pub withdraws_quote: u64,
     pub until_timestamp: i64,
     pub vesting: VestingData,
 }
@@ -24,7 +24,7 @@ impl MemeTicket {
         let pool = 32;
         let amount = 8;
         let withdraws_meme = 8;
-        let withdraws_wsol = 8;
+        let withdraws_quote = 8;
         let until_timestamp = 8;
         let vesting = mem::size_of::<VestingData>();
 
@@ -33,7 +33,7 @@ impl MemeTicket {
             + pool
             + amount
             + withdraws_meme
-            + withdraws_wsol
+            + withdraws_quote
             + until_timestamp
             + vesting
     }
@@ -47,7 +47,7 @@ impl MemeTicket {
         self.owner = owner;
         self.amount = amount;
         self.withdraws_meme = 0;
-        self.withdraws_wsol = 0;
+        self.withdraws_quote = 0;
         self.until_timestamp = Clock::get().unwrap().unix_timestamp + LOCK_TIME;
         msg!(&self.until_timestamp.to_string());
         self.vesting = VestingData {

@@ -45,3 +45,13 @@ pub const OPENBOOK_PROGRAM_ID: Pubkey =
 #[cfg(feature = "mainnet")]
 pub const OPENBOOK_PROGRAM_ID: Pubkey =
     solana_program::pubkey!("srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX"); // Mainnet
+
+#[cfg(not(feature = "mainnet"))]
+pub const SLERF_MINT: Pubkey =
+    solana_program::pubkey!("So11111111111111111111111111111111111111112"); // Devnet - can use any
+#[cfg(feature = "mainnet")]
+pub const SLERF_MINT: Pubkey =
+    solana_program::pubkey!("7BgBvyjrZX1YKz4oh9mjb8ZScatkkwb8DzFx7LoiVkM3"); // Mainnet
+
+pub const ADMIN_KEY: Pubkey =
+    solana_program::pubkey!("srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX");

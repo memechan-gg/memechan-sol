@@ -12,9 +12,9 @@ pub struct SwapCoinY<'info> {
     pool: Account<'info, BoundPool>,
     #[account(
         mut,
-        constraint = pool.sol_reserve.vault == sol_vault.key()
+        constraint = pool.quote_reserve.vault == quote_vault.key()
     )]
-    sol_vault: Account<'info, TokenAccount>,
+    quote_vault: Account<'info, TokenAccount>,
     #[account(
         mut,
         constraint = user_sol.mint == native_mint::id()
@@ -36,7 +36,7 @@ impl<'info> SwapCoinY<'info> {
     fn send_user_tokens(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
             from: self.user_sol.to_account_info(),
-            to: self.sol_vault.to_account_info(),
+            to: self.quote_vault.to_account_info(),
             authority: self.owner.to_account_info(),
         };
 
@@ -68,10 +68,10 @@ pub fn handle(ctx: Context<SwapCoinY>, coin_in_amount: u64, coin_x_min_value: u6
 
     let pool = &mut accs.pool;
 
-    pool.admin_fees_sol += swap_amount.admin_fee_in;
+    pool.admin_fees_quote += swap_amount.admin_fee_in;
     pool.admin_fees_meme += swap_amount.admin_fee_out;
 
-    pool.sol_reserve.tokens += swap_amount.amount_in;
+    pool.quote_reserve.tokens += swap_amount.amount_in;
     pool.meme_reserve.tokens -= swap_amount.amount_out + swap_amount.admin_fee_out;
 
     if pool.meme_reserve.tokens == 0 {

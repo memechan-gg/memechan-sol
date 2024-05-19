@@ -7,8 +7,11 @@ pub struct StakingPool {
     pub pool: Pubkey,
     pub meme_vault: Pubkey,
     pub meme_mint: Pubkey,
-    pub wsol_vault: Pubkey,
+    pub lp_vault: Pubkey,
+    pub lp_mint: Pubkey,
+    pub quote_vault: Pubkey,
     pub vesting_config: VestingConfig,
+    pub lp_tokens_withdrawn: u64,
     pub stakes_total: u64,
     pub fees_x_total: u64,
     pub fees_y_total: u64,
@@ -23,7 +26,9 @@ impl StakingPool {
         let pool = 32;
         let meme_vault = 32;
         let meme_mint = 32;
-        let wsol_vault = 32;
+        let lp_vault = 32;
+        let lp_mint = 32;
+        let quote_vault = 32;
         let vesting_config = mem::size_of::<VestingConfig>();
         let stakes_total = 8;
         let fees_x_total = 8;
@@ -33,7 +38,9 @@ impl StakingPool {
             + pool
             + meme_vault
             + meme_mint
-            + wsol_vault
+            + lp_vault
+            + lp_mint
+            + quote_vault
             + vesting_config
             + stakes_total
             + fees_x_total
