@@ -185,10 +185,10 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<
 
     let lp_tokens_owned = accs.staking_lp_wallet.amount;
 
-    let cumulated_lp_withdrawal = cumulated_lp_withdrawal(fee_ratio, lp_tokens_owned)?;
+    let cumulated_lp_withdrawal = cumulated_lp_withdrawal(&fee_ratio, lp_tokens_owned)?;
 
     let lp_tokens_to_withdraw =
-        lp_tokens_to_withdraw(cumulated_lp_withdrawal, accs.staking.lp_tokens_withdrawn)?;
+        lp_tokens_to_withdraw(&cumulated_lp_withdrawal, accs.staking.lp_tokens_withdrawn)?;
 
     accs.redeem_liquidity(lp_tokens_to_withdraw, staking_signer_seeds)?;
 
@@ -200,7 +200,6 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<
     state.fees_y_total += accs.quote_vault.amount - quote_vault_initial_amt;
 
     accs.staking.lp_tokens_withdrawn += lp_tokens_to_withdraw;
-
 
     Ok(())
 }
