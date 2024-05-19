@@ -54,4 +54,4 @@ pub const SLERF_MINT: Pubkey =
     solana_program::pubkey!("7BgBvyjrZX1YKz4oh9mjb8ZScatkkwb8DzFx7LoiVkM3"); // Mainnet
 
 pub const ADMIN_KEY: Pubkey =
-    solana_program::pubkey!("srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX");
+    solana_program::pubkey!("8RSDaghj3qZLBNvRBiN5oULX66dgng9pW2HxHubpR8TW");
