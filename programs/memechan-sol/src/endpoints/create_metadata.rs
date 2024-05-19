@@ -7,6 +7,9 @@ use anchor_spl::metadata::mpl_token_metadata::types::Creator;
 use anchor_spl::metadata::mpl_token_metadata::types::DataV2;
 use anchor_spl::metadata::CreateMetadataAccountsV3;
 use anchor_spl::metadata::Metadata;
+use anchor_spl::token;
+use anchor_spl::token::spl_token::instruction::AuthorityType::MintTokens;
+use anchor_spl::token::SetAuthority;
 use anchor_spl::token::{Mint, Token};
 
 #[derive(Accounts)]
@@ -69,7 +72,28 @@ impl<'info> CreateMetadata<'info> {
             None,  // collection_details
         )?;
 
+        token::set_authority(
+            self.set_mint_authority(&self.meme_mint)
+                .with_signer(&[seeds]),
+            MintTokens,
+            None,
+        )
+        .unwrap();
+
         Ok(())
+    }
+
+    fn set_mint_authority(
+        &self,
+        mint: &Account<'info, Mint>,
+    ) -> CpiContext<'_, '_, '_, 'info, SetAuthority<'info>> {
+        let cpi_accounts = SetAuthority {
+            current_authority: self.pool_signer.to_account_info(),
+            account_or_mint: mint.to_account_info(),
+        };
+
+        let cpi_program = self.token_program.to_account_info();
+        CpiContext::new(cpi_program, cpi_accounts)
     }
 
     fn create_metadata_account_v3(
