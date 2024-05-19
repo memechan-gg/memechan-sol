@@ -1,8 +1,8 @@
 pub mod consts;
 pub mod endpoints;
 pub mod err;
-pub mod math;
 pub mod libraries;
+pub mod math;
 pub mod models;
 pub mod raydium;
 pub mod vesting;
@@ -23,8 +23,8 @@ pub mod admin {
 pub mod memechan_sol {
     use super::*;
 
-    pub fn new(ctx: Context<New>) -> Result<()> {
-        new::handle(ctx)
+    pub fn new(ctx: Context<NewPool>) -> Result<()> {
+        new_pool::handle(ctx)
     }
 
     pub fn create_metadata(
