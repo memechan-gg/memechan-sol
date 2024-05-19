@@ -30,6 +30,7 @@ impl StakingPool {
         let lp_mint = 32;
         let quote_vault = 32;
         let vesting_config = mem::size_of::<VestingConfig>();
+        let lp_tokens_withdrawn = 8;
         let stakes_total = 8;
         let fees_x_total = 8;
         let fees_y_total = 8;
@@ -42,6 +43,7 @@ impl StakingPool {
             + lp_mint
             + quote_vault
             + vesting_config
+            + lp_tokens_withdrawn
             + stakes_total
             + fees_x_total
             + fees_y_total
