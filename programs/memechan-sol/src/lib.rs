@@ -12,7 +12,7 @@ use core as core_;
 
 use endpoints::*;
 
-declare_id!("5J7JoDuvucDVkSFUYDVkcmPRRrMSRwvpsuwPQSnp5Qkh");
+declare_id!("HvGgKbPfar5eUAnE5gnq5NvFdJRMVo39PFjJ4Hhe5FGk");
 
 pub mod admin {
     use anchor_lang::prelude::declare_id;
@@ -56,6 +56,17 @@ pub mod memechan_sol {
         ctx: Context<'_, '_, '_, 'info, InitStakingPool<'info>>,
     ) -> Result<()> {
         init_staking_pool::handle(ctx)
+    }
+
+    pub fn new_target_config(ctx: Context<NewTargetConfig>, target_amount: u64) -> Result<()> {
+        new_target_config::handle(ctx, target_amount)
+    }
+
+    pub fn change_target_config(
+        ctx: Context<ChangeTargetConfig>,
+        target_amount: u64,
+    ) -> Result<()> {
+        change_target_config::handle(ctx, target_amount)
     }
 
     pub fn go_live<'info>(ctx: Context<'_, '_, '_, 'info, GoLive<'info>>, nonce: u8) -> Result<()> {

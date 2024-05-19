@@ -1,10 +1,12 @@
 pub mod add_fees;
 pub mod bound_merge_tickets;
+pub mod change_target_config;
 pub mod close_ticket;
 pub mod create_metadata;
 pub mod go_live;
 pub mod init_staking_pool;
 pub mod new;
+pub mod new_target_config;
 pub mod staking_merge_tickets;
 pub mod swap_x;
 pub mod swap_y;
@@ -13,11 +15,13 @@ pub mod withdraw_fees;
 
 pub use add_fees::*;
 pub use bound_merge_tickets::*;
+pub use change_target_config::*;
 pub use close_ticket::*;
 pub use create_metadata::*;
 pub use go_live::*;
 pub use init_staking_pool::*;
 pub use new::*;
+pub use new_target_config::*;
 pub use staking_merge_tickets::*;
 pub use swap_x::*;
 pub use swap_y::*;

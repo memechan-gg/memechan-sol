@@ -3,6 +3,7 @@ pub mod fee_distribution;
 pub mod fees;
 pub mod staked_lp;
 pub mod staking;
+pub mod target_config;
 
 use anchor_lang::prelude::*;
 
