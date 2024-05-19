@@ -21,7 +21,7 @@ use anchor_spl::token::spl_token::instruction::AuthorityType::MintTokens;
 use anchor_spl::token::{self, Mint, SetAuthority, Token, TokenAccount};
 
 #[derive(Accounts)]
-pub struct New<'info> {
+pub struct NewPool<'info> {
     #[account(mut)]
     pub sender: Signer<'info>,
     #[account(
@@ -78,7 +78,7 @@ pub struct New<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-impl<'info> New<'info> {
+impl<'info> NewPool<'info> {
     fn mint_meme_tokens(&self) -> CpiContext<'_, '_, '_, 'info, token::MintTo<'info>> {
         let cpi_accounts = token::MintTo {
             mint: self.meme_mint.to_account_info(),
@@ -91,7 +91,7 @@ impl<'info> New<'info> {
     }
 }
 
-pub fn handle(ctx: Context<New>) -> Result<()> {
+pub fn handle(ctx: Context<NewPool>) -> Result<()> {
     let accs = ctx.accounts;
 
     if accs.meme_mint.supply != 0 {
