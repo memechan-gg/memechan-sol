@@ -36,6 +36,7 @@ pub struct SwapAmount {
     pub admin_fee_out: u64,
 }
 
+// TODO: remove
 fn mist(sui: u64) -> u64 {
     WSOL_DECIMALS * sui
 }
