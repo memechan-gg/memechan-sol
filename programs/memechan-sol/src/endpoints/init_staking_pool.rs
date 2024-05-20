@@ -1,4 +1,4 @@
-use crate::consts::{MAX_TICKET_TOKENS, MEME_TOKEN_DECIMALS};
+use crate::consts::{MAX_TICKET_TOKENS, MEME_TOKEN_DECIMALS, SLERF_MINT};
 use crate::err;
 use crate::libraries::MulDiv;
 use crate::models::bound::BoundPool;
@@ -10,7 +10,6 @@ use crate::{admin, vesting};
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token;
-use anchor_spl::token::spl_token::native_mint;
 use anchor_spl::token::{Mint, Token, TokenAccount, Transfer};
 
 // const SOL_THRESHOLD: u64 = 300; // TODO: add
@@ -66,8 +65,8 @@ pub struct InitStakingPool<'info> {
     pub meme_mint: Box<Account<'info, Mint>>,
     /// Mint Account for WSOL
     #[account(
-        constraint = quote_mint.key() == native_mint::id()
-            @ err::acc("sol mint should be native WSOL mint")
+        constraint = quote_mint.key() == SLERF_MINT
+            @ err::acc("Quote mint should be native SLERF mint")
     )]
     pub quote_mint: Box<Account<'info, Mint>>,
     //

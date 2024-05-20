@@ -1,13 +1,10 @@
-use std::collections::HashSet;
-
 use crate::consts::{MAX_TICKET_TOKENS, MEME_TOKEN_DECIMALS};
 use crate::models::staking::StakingPool;
 use crate::models::OpenBook;
+use crate::raydium;
 use crate::raydium::RaydiumAmm;
-use crate::{err, raydium};
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
-use anchor_spl::token::spl_token::native_mint;
 use anchor_spl::token::{Mint, SetAuthority, Token, TokenAccount};
 
 #[derive(Accounts)]

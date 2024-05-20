@@ -1,9 +1,9 @@
+use crate::consts::SLERF_MINT;
 use crate::err;
 use crate::err::AmmError;
 use crate::models::bound::BoundPool;
 use crate::models::staked_lp::MemeTicket;
 use anchor_lang::prelude::*;
-use anchor_spl::token::spl_token::native_mint;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 
 #[derive(Accounts)]
@@ -18,8 +18,8 @@ pub struct SwapCoinX<'info> {
     pub meme_ticket: Account<'info, MemeTicket>,
     #[account(
         mut,
-        constraint = user_sol.mint == native_mint::id()
-            @ err::acc("sol mint should be native WSOL mint")
+        constraint = user_sol.mint == SLERF_MINT
+            @ err::acc("Quote mint should be SLERF mint")
     )]
     pub user_sol: Account<'info, TokenAccount>,
     #[account(
