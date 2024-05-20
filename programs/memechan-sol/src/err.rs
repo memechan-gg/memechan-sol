@@ -44,6 +44,8 @@ pub enum AmmError {
     NotEnoughTokensToRelease,
     BondingCurveMustBeNegativelySloped,
     BondingCurveInterceptMustBePositive,
+    EGammaSAboveRelativeLimit,
+    EScaleTooLow,
 }
 
 #[allow(dead_code)]
