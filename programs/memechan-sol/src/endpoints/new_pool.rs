@@ -48,14 +48,14 @@ pub struct NewPool<'info> {
     pub quote_vault: Account<'info, TokenAccount>,
     #[account(
         constraint = quote_mint.key() == SLERF_MINT
-            @ err::acc("sol mint should be the SLERF mint")
+            @ err::acc("Quote mint should be the SLERF mint")
     )]
     pub quote_mint: Account<'info, Mint>,
     #[account(
         constraint = admin_quote_vault.mint == quote_mint.key()
-            @ err::acc("admin sol vault must be of sol mint"),
+            @ err::acc("Admin quote vault must be of SLERF mint"),
         constraint = admin_quote_vault.owner == crate::admin::id()
-            @ err::acc("admin sol vault authority must match admin"),
+            @ err::acc("Admin quote vault authority must match admin"),
     )]
     pub admin_quote_vault: Account<'info, TokenAccount>,
     #[account(
@@ -141,6 +141,7 @@ pub fn handle(ctx: Context<NewPool>) -> Result<()> {
         decimals: Decimals {
             alpha: decimals,
             beta: decimals,
+            quote: accs.quote_mint.decimals as u64,
         },
     };
 

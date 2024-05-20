@@ -87,8 +87,7 @@ impl TryRound<u64> for Decimal {
             .ok_or(DecimalError::MathOverflow)?
             .checked_div(Self::wad())
             .ok_or(DecimalError::MathOverflow)?;
-        Ok(u64::try_from(rounded_val)
-            .map_err(|_| DecimalError::MathOverflow)?)
+        Ok(u64::try_from(rounded_val).map_err(|_| DecimalError::MathOverflow)?)
     }
 
     fn try_ceil(&self) -> Result<u64> {
@@ -115,10 +114,7 @@ impl fmt::Display for Decimal {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut scaled_val = self.0.to_string();
         if scaled_val.len() <= consts::SCALE {
-            scaled_val.insert_str(
-                0,
-                &vec!["0"; consts::SCALE - scaled_val.len()].join(""),
-            );
+            scaled_val.insert_str(0, &vec!["0"; consts::SCALE - scaled_val.len()].join(""));
             scaled_val.insert_str(0, "0.");
         } else {
             scaled_val.insert(scaled_val.len() - consts::SCALE, '.');
@@ -362,10 +358,7 @@ mod test {
                     // We use scaled exponent to calculate decimal from
                     // scaled value to avoid having to using floating point
                     // numbers
-                    Decimal::from_scaled_val(u128::pow(
-                        10,
-                        scaled_exponent as u32,
-                    ))
+                    Decimal::from_scaled_val(u128::pow(10, scaled_exponent as u32))
                 } else {
                     // When the scaled exponent is above 38 we are better off
                     // calculating the decimal from a u128 to avoid overflowing
@@ -428,9 +421,7 @@ mod test {
         let b = Decimal::from(10_000_000_000_000_000_000_u64);
 
         assert_eq!(
-            Decimal::from(
-                100_000_000_000_000_000_000_000_000_000_000_000_000_u128
-            ),
+            Decimal::from(100_000_000_000_000_000_000_000_000_000_000_000_000_u128),
             a.try_mul(b).unwrap()
         );
     }
@@ -443,9 +434,7 @@ mod test {
         let d = Decimal::from(2_u64);
 
         assert_eq!(
-            Decimal::from(
-                340_282_366_920_938_463_426_481_119_284_349_108_225_u128
-            ),
+            Decimal::from(340_282_366_920_938_463_426_481_119_284_349_108_225_u128),
             a.try_mul(b).expect("to mul").try_div(c).expect("to div")
         );
         assert_eq!(

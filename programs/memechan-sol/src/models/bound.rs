@@ -4,7 +4,7 @@ use num_integer::Roots;
 use solana_program::pubkey::Pubkey;
 use std::{cmp::min, mem};
 
-use super::{fees::Fees, mist, Reserve, SwapAmount};
+use super::{fees::Fees, Reserve, SwapAmount};
 
 #[account]
 pub struct BoundPool {
@@ -22,6 +22,7 @@ pub struct BoundPool {
 pub struct Decimals {
     pub alpha: u128,
     pub beta: u128,
+    pub quote: u64,
 }
 
 #[derive(AnchorDeserialize, AnchorSerialize, Copy, Clone, Debug, Eq, PartialEq, Default)]
@@ -59,7 +60,7 @@ impl BoundPool {
 
         let p = &self.config;
 
-        let max_delta_s = (p.gamma_s_mist()) - s_t0;
+        let max_delta_s = (p.gamma_s * p.decimals.quote) - s_t0;
 
         let admin_fee_in = self.fees.get_fee_in_amount(delta_s).unwrap();
         let is_max = delta_s - admin_fee_in >= max_delta_s;
@@ -126,52 +127,46 @@ impl BoundPool {
         let s_a = s_a as u128;
         let s_b = s_b as u128;
 
-        let decimals_alpha = self.config.decimals.alpha;
-        let decimals_beta = self.config.decimals.beta;
+        let alpha_abs = self.config.alpha_abs;
+        let beta = self.config.beta;
+        let alpha_decimals = self.config.decimals.alpha;
+        let beta_decimals = self.config.decimals.beta;
 
-        let alpha_abs = &self.config.alpha_abs;
-        let beta = &self.config.beta;
+        let left = beta * DECIMALS_S * 2 * alpha_decimals * (s_b - s_a);
+        let right = alpha_abs * beta_decimals * ((s_b * s_b) - (s_a * s_a));
+        let denom = 2 * alpha_decimals * beta_decimals * (DECIMALS_S * DECIMALS_S);
 
-        let left = *beta * (s_b - s_a) / (decimals_beta * DECIMALS_S);
-        let pow_decimals = DECIMALS_S * DECIMALS_S;
-        let right = *alpha_abs * ((s_b * s_b) / pow_decimals - (s_a * s_a) / pow_decimals)
-            / (2 * decimals_alpha);
-
-        (left - right) as u64
+        ((left - right) / denom) as u64
     }
 
     pub fn compute_delta_s(&self, s_b: u64, delta_m: u64) -> u64 {
-        let decimals_alpha = self.config.decimals.alpha;
-        let decimals_beta = self.config.decimals.beta;
-
         let s_b = s_b as u128;
         let delta_m = delta_m as u128;
 
         let alpha_abs = self.config.alpha_abs;
         let beta = self.config.beta;
+        let alpha_decimals = self.config.decimals.alpha;
+        let beta_decimals = self.config.decimals.beta;
 
-        let b_hat_abs = ((2 * beta * decimals_alpha * DECIMALS_S)
-            - (2 * alpha_abs * s_b * decimals_beta))
-            / (decimals_alpha * decimals_beta * DECIMALS_S);
+        let a1 = 2 * beta * alpha_decimals * DECIMALS_S - 2 * alpha_abs * s_b * beta_decimals;
+        let b1 = beta_decimals * beta_decimals * DECIMALS_S;
+        let c1 = 8 * delta_m * alpha_abs;
 
-        // SQRT
-        let sqrt_term = ((((b_hat_abs * b_hat_abs) * decimals_alpha) + (8 * delta_m * alpha_abs))
-            / decimals_alpha)
-            .sqrt();
+        let a = (a1.pow(2) * alpha_decimals + c1 * b1.pow(2)).sqrt();
 
-        let num = sqrt_term - b_hat_abs;
+        let b = (alpha_decimals * b1.pow(2)).sqrt();
 
-        ((num * decimals_alpha * DECIMALS_S) / (2 * alpha_abs)) as u64
+        let c = 2 * beta * alpha_decimals * DECIMALS_S - 2 * alpha_abs * s_b * beta_decimals;
+        let d = alpha_decimals * beta_decimals * DECIMALS_S;
+
+        let num = (a * d - c * b) * DECIMALS_S * alpha_decimals;
+        let denom = (2 * alpha_abs) * (b * d);
+
+        (num / denom) as u64
     }
 
     fn balances(&self) -> (u64, u64) {
         (self.meme_reserve.tokens, self.quote_reserve.tokens)
-    }
-}
-
-impl Config {
-    fn gamma_s_mist(&self) -> u64 {
-        mist(self.gamma_s)
     }
 }
 
