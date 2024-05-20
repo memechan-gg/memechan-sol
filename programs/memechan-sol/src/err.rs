@@ -24,6 +24,7 @@ pub enum AmmError {
     /// wrong token mints
     #[msg("Provided mints are not available on the pool")]
     InvalidTokenMints,
+    MathOverflow,
     MulDivOverflow,
     DivideByZero,
     ZeroInAmt,

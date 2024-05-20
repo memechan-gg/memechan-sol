@@ -1,4 +1,4 @@
-use crate::{consts::DECIMALS_S, err::AmmError};
+use crate::{consts::DECIMALS_S, err::AmmError, models::CheckedMath};
 use anchor_lang::prelude::*;
 use num_integer::Roots;
 use solana_program::pubkey::Pubkey;
@@ -7,6 +7,7 @@ use std::{cmp::min, mem};
 use super::{fees::Fees, Reserve, SwapAmount};
 
 #[account]
+#[derive(Default)]
 pub struct BoundPool {
     pub meme_reserve: Reserve,
     pub quote_reserve: Reserve,
@@ -70,13 +71,12 @@ impl BoundPool {
         let delta_m = if is_max {
             m_t0
         } else {
-            self.compute_delta_m(s_t0, s_t0 + net_delta_s)
+            self.compute_delta_m(s_t0, s_t0 + net_delta_s)?
         };
 
         let admin_fee_out = self.fees.get_fee_out_amount(delta_m).unwrap();
         let net_delta_m = delta_m - admin_fee_out;
 
-        //assert!(net_delta_m >= min_delta_m, errors::slippage());
         if net_delta_m < min_delta_m {
             return Err(error!(AmmError::SlippageExceeded));
         }
@@ -123,7 +123,7 @@ impl BoundPool {
         })
     }
 
-    pub fn compute_delta_m(&self, s_a: u64, s_b: u64) -> u64 {
+    pub fn compute_delta_m(&self, s_a: u64, s_b: u64) -> Result<u64> {
         let s_a = s_a as u128;
         let s_b = s_b as u128;
 
@@ -132,11 +132,15 @@ impl BoundPool {
         let alpha_decimals = self.config.decimals.alpha;
         let beta_decimals = self.config.decimals.beta;
 
-        let left = beta * DECIMALS_S * 2 * alpha_decimals * (s_b - s_a);
-        let right = alpha_abs * beta_decimals * ((s_b * s_b) - (s_a * s_a));
-        let denom = 2 * alpha_decimals * beta_decimals * (DECIMALS_S * DECIMALS_S);
-
-        ((left - right) / denom) as u64
+        match delta_m1_strategy(alpha_abs, beta, alpha_decimals, beta_decimals, s_a, s_b) {
+            Some(delta_m) => return Ok(delta_m as u64),
+            None => {
+                match delta_m2_strategy(alpha_abs, beta, alpha_decimals, beta_decimals, s_a, s_b) {
+                    Some(delta_m) => return Ok(delta_m as u64),
+                    None => return Err(error!(AmmError::MathOverflow)),
+                }
+            }
+        }
     }
 
     pub fn compute_delta_s(&self, s_b: u64, delta_m: u64) -> u64 {
@@ -314,8 +318,59 @@ impl BoundPool {
     }
 }
 
+fn delta_m1_strategy(
+    alpha_abs: u128,
+    beta: u128,
+    alpha_decimals: u128,
+    beta_decimals: u128,
+    s_a: u128,
+    s_b: u128,
+) -> Option<u128> {
+    let left = (beta * 2)
+        .checked_mul(DECIMALS_S)
+        .checked_mul(alpha_decimals)
+        .checked_mul(s_b - s_a);
+
+    let right = alpha_abs
+        .checked_mul(beta_decimals)
+        .checked_mul_(s_b.checked_pow(2).checked_sub_(s_a.checked_pow(2)));
+
+    let denom = (2 * alpha_decimals)
+        .checked_mul(beta_decimals)
+        .checked_mul_(DECIMALS_S.checked_pow(2));
+
+    left.checked_sub_(right).checked_div_(denom)
+}
+
+fn delta_m2_strategy(
+    alpha_abs: u128,
+    beta: u128,
+    alpha_decimals: u128,
+    beta_decimals: u128,
+    s_a: u128,
+    s_b: u128,
+) -> Option<u128> {
+    let left_num = (s_b.checked_sub(s_a)).checked_mul(beta);
+    let left_denom = beta_decimals.checked_mul(DECIMALS_S);
+
+    let left = left_num.checked_div_(left_denom);
+
+    let right = s_b
+        .checked_pow(2)
+        .checked_sub_(s_a.checked_pow(2))
+        .checked_div_(DECIMALS_S.checked_pow(2))
+        .checked_mul(alpha_abs)
+        .checked_div(2 * alpha_decimals);
+
+    left.checked_sub_(right)
+}
+
 #[cfg(test)]
 mod tests {
+    use std::fs::File;
+
+    use csv::ReaderBuilder;
+
     use super::*;
 
     pub const DEFAULT_DECIMALS_ALPHA: u128 = 1_000_000;
@@ -602,5 +657,66 @@ mod tests {
             .for_each(|(expected, actual)| assert_eq!(&actual, expected));
 
         Ok(())
+    }
+
+    #[test]
+    fn test_compute_delta_m() -> Result<()> {
+        let filename = "../../data/delta_m.csv";
+        let expected_delta_ms = read_csv_column(filename);
+
+        let gamma_s: u128 = 30_000;
+        let gamma_m: u128 = 900_000_000_000_000;
+        let omega_m: u128 = 200_000_000_000_000;
+        let price_factor = 2;
+
+        let (alpha, alpha_decimals) = compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor)?;
+        let beta = compute_beta(gamma_s, gamma_m, omega_m, price_factor, alpha_decimals)?;
+
+        let pool = BoundPool {
+            config: Config {
+                alpha_abs: alpha,
+                beta,
+                price_factor,
+                gamma_s: gamma_s as u64,
+                gamma_m: gamma_m as u64,
+                omega_m: omega_m as u64,
+                decimals: Decimals {
+                    alpha: DEFAULT_DECIMALS_ALPHA,
+                    beta: DEFAULT_DECIMALS_BETA,
+                    quote: 1_000_000_000,
+                },
+            },
+            ..Default::default()
+        };
+
+        let mut s_a = 0;
+
+        for expected in expected_delta_ms.iter() {
+            let actual = pool.compute_delta_m(s_a * 1_000_000_000, (s_a + 1) * 1_000_000_000)?;
+
+            assert_eq!(expected, &actual);
+
+            s_a += 1;
+        }
+
+        Ok(())
+    }
+
+    fn read_csv_column(filename: &str) -> Vec<u64> {
+        // Open the CSV file
+        let file = File::open(filename).unwrap();
+        let mut rdr = ReaderBuilder::new().from_reader(file);
+
+        // Read the first column into a vector
+        let mut column_data = Vec::new();
+        for result in rdr.records() {
+            let record = result.unwrap();
+            if let Some(column) = record.get(0) {
+                let value: u64 = column.parse().unwrap();
+                column_data.push(value);
+            }
+        }
+
+        column_data
     }
 }

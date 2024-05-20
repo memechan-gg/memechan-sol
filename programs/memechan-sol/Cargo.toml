@@ -27,7 +27,6 @@ uint = "0.9.5"
 # serum_dex = { git = "https://github.com/openbook-dex/program.git", features = ["no-entrypoint"] }
 bytemuck = "*"
 
-
-# amm = { path = "../../deps/amm", features = ["cpi"] }
-# amm = { git = "https://github.com/aldrin-labs/amm.git", features = ["cpi"] }
+[dev-dependencies]
+csv = "1.1"
 
