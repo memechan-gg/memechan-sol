@@ -331,13 +331,25 @@ fn delta_m1_strategy(
         .checked_mul(alpha_decimals)
         .checked_mul(s_b - s_a);
 
+    if let None = left {
+        return None;
+    }
+
     let right = alpha_abs
         .checked_mul(beta_decimals)
         .checked_mul_(s_b.checked_pow(2).checked_sub_(s_a.checked_pow(2)));
 
+    if let None = right {
+        return None;
+    }
+
     let denom = (2 * alpha_decimals)
         .checked_mul(beta_decimals)
         .checked_mul_(DECIMALS_S.checked_pow(2));
+
+    if let None = denom {
+        return None;
+    }
 
     left.checked_sub_(right).checked_div_(denom)
 }
@@ -351,9 +363,22 @@ fn delta_m2_strategy(
     s_b: u128,
 ) -> Option<u128> {
     let left_num = (s_b.checked_sub(s_a)).checked_mul(beta);
+
+    if let None = left_num {
+        return None;
+    }
+
     let left_denom = beta_decimals.checked_mul(DECIMALS_S);
 
+    if let None = left_denom {
+        return None;
+    }
+
     let left = left_num.checked_div_(left_denom);
+
+    if let None = left {
+        return None;
+    }
 
     let right = s_b
         .checked_pow(2)
@@ -361,6 +386,10 @@ fn delta_m2_strategy(
         .checked_div_(DECIMALS_S.checked_pow(2))
         .checked_mul(alpha_abs)
         .checked_div(2 * alpha_decimals);
+
+    if let None = right {
+        return None;
+    }
 
     left.checked_sub_(right)
 }
