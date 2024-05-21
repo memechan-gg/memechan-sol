@@ -24,6 +24,7 @@ pub enum AmmError {
     /// wrong token mints
     #[msg("Provided mints are not available on the pool")]
     InvalidTokenMints,
+    MathOverflow,
     MulDivOverflow,
     DivideByZero,
     ZeroInAmt,
@@ -44,6 +45,8 @@ pub enum AmmError {
     NotEnoughTokensToRelease,
     BondingCurveMustBeNegativelySloped,
     BondingCurveInterceptMustBePositive,
+    EGammaSAboveRelativeLimit,
+    EScaleTooLow,
 }
 
 #[allow(dead_code)]

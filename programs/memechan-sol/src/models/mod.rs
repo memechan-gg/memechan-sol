@@ -6,8 +6,7 @@ pub mod staking;
 pub mod target_config;
 
 use anchor_lang::prelude::*;
-
-use crate::consts::WSOL_DECIMALS;
+use num_integer::Roots;
 
 #[derive(AnchorDeserialize, AnchorSerialize, Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct TokenLimit {
@@ -36,11 +35,6 @@ pub struct SwapAmount {
     pub admin_fee_out: u64,
 }
 
-// TODO: remove
-fn mist(sui: u64) -> u64 {
-    WSOL_DECIMALS * sui
-}
-
 #[derive(Clone)]
 pub struct OpenBook;
 
@@ -50,5 +44,111 @@ impl anchor_lang::Id for OpenBook {
         solana_program::pubkey!("EoTcMgcDRTJVZDMZWBoU6rhYHZfkNTVEAfz3uUJRcYGj")
         // Mainnet
         // solana_program::pubkey!("srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX")
+    }
+}
+
+pub trait CheckedMath {
+    fn checked_add(&self, num: u128) -> Self;
+
+    fn checked_mul(&self, num: u128) -> Self;
+
+    fn checked_sub(&self, num: u128) -> Self;
+
+    fn checked_div(&self, num: u128) -> Self;
+
+    fn checked_pow(&self, num: u32) -> Self;
+
+    fn checked_add_(&self, num: Option<u128>) -> Self;
+
+    fn checked_mul_(&self, num: Option<u128>) -> Self;
+
+    fn checked_sub_(&self, num: Option<u128>) -> Self;
+
+    fn checked_div_(&self, num: Option<u128>) -> Self;
+
+    fn sqrt(&self) -> Self;
+}
+
+impl CheckedMath for Option<u128> {
+    fn checked_add(&self, num: u128) -> Self {
+        match self {
+            None => None,
+            Some(num_) => num_.checked_add(num),
+        }
+    }
+
+    fn checked_mul(&self, num: u128) -> Self {
+        match self {
+            None => None,
+            Some(num_) => num_.checked_mul(num),
+        }
+    }
+
+    fn checked_sub(&self, num: u128) -> Self {
+        match self {
+            None => None,
+            Some(num_) => num_.checked_sub(num),
+        }
+    }
+
+    fn checked_div(&self, num: u128) -> Self {
+        match self {
+            None => None,
+            Some(num_) => num_.checked_div(num),
+        }
+    }
+
+    fn checked_pow(&self, num: u32) -> Self {
+        match self {
+            None => None,
+            Some(num_) => num_.checked_pow(num),
+        }
+    }
+
+    fn checked_add_(&self, num: Option<u128>) -> Self {
+        match self {
+            None => None,
+            Some(num_) => match num {
+                None => None,
+                Some(num__) => num_.checked_add(num__),
+            },
+        }
+    }
+
+    fn checked_sub_(&self, num: Option<u128>) -> Self {
+        match self {
+            None => None,
+            Some(num_) => match num {
+                None => None,
+                Some(num__) => num_.checked_sub(num__),
+            },
+        }
+    }
+
+    fn checked_mul_(&self, num: Option<u128>) -> Self {
+        match self {
+            None => None,
+            Some(num_) => match num {
+                None => None,
+                Some(num__) => num_.checked_mul(num__),
+            },
+        }
+    }
+
+    fn checked_div_(&self, num: Option<u128>) -> Self {
+        match self {
+            None => None,
+            Some(num_) => match num {
+                None => None,
+                Some(num__) => num_.checked_div(num__),
+            },
+        }
+    }
+
+    fn sqrt(&self) -> Self {
+        match self {
+            None => None,
+            Some(num_) => Some((*num_).sqrt()),
+        }
     }
 }
