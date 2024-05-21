@@ -515,7 +515,7 @@ fn delta_s2_strategy(
     first_term.checked_sub_(second_term).checked_add(s_b)
 }
 
-fn delta_m1_strategy(
+fn delta_m2_strategy(
     alpha_abs: u128,
     beta: u128,
     alpha_decimals: u128,
@@ -551,7 +551,7 @@ fn delta_m1_strategy(
     left.checked_sub_(right).checked_div_(denom)
 }
 
-fn delta_m2_strategy(
+fn delta_m1_strategy(
     alpha_abs: u128,
     beta: u128,
     alpha_decimals: u128,
@@ -909,6 +909,49 @@ mod tests {
                 decimals: Decimals {
                     alpha: DEFAULT_DECIMALS_ALPHA,
                     beta: DEFAULT_DECIMALS_BETA,
+                    quote: 1_000_000_000,
+                },
+            },
+            ..Default::default()
+        };
+
+        let mut s_a = 0;
+
+        for expected in expected_delta_ms.iter() {
+            let actual = pool.compute_delta_m(s_a * 1_000_000_000, (s_a + 1) * 1_000_000_000)?;
+
+            assert_eq!(expected, &actual);
+
+            s_a += 1;
+        }
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_compute_delta_m_2() -> Result<()> {
+        let filename = "../../data/delta_m_2.csv";
+        let expected_delta_ms = read_csv_column(filename);
+
+        let gamma_s: u128 = 10;
+        let gamma_m: u128 = 900_000_000_000_000;
+        let omega_m: u128 = 200_000_000_000_000;
+        let price_factor = 2;
+
+        let (alpha, alpha_decimals) = compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor)?;
+        let beta = compute_beta(gamma_s, gamma_m, omega_m, price_factor, alpha_decimals)?;
+
+        let pool = BoundPool {
+            config: Config {
+                alpha_abs: alpha,
+                beta,
+                price_factor,
+                gamma_s: gamma_s as u64,
+                gamma_m: gamma_m as u64,
+                omega_m: omega_m as u64,
+                decimals: Decimals {
+                    alpha: alpha_decimals,
+                    beta: alpha_decimals,
                     quote: 1_000_000_000,
                 },
             },
