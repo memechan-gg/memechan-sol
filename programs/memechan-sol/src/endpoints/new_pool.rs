@@ -1,6 +1,5 @@
 use crate::consts::DEFAULT_MAX_M;
 use crate::consts::DEFAULT_MAX_M_LP;
-use crate::consts::DEFAULT_MAX_S;
 use crate::consts::DEFAULT_PRICE_FACTOR;
 use crate::consts::MAX_MEME_TOKENS;
 use crate::consts::MAX_TICKET_TOKENS;
@@ -11,14 +10,14 @@ use crate::models::bound::compute_alpha_abs;
 use crate::models::bound::compute_beta;
 use crate::models::bound::BoundPool;
 use crate::models::bound::Config;
+use crate::models::bound::Decimals;
 use crate::models::fees::Fees;
 use crate::models::fees::FEE;
 use crate::models::target_config::TargetConfig;
 use crate::models::Reserve;
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::program_option::COption;
-use anchor_spl::token::spl_token::instruction::AuthorityType::MintTokens;
-use anchor_spl::token::{self, Mint, SetAuthority, Token, TokenAccount};
+use anchor_spl::token::{self, Mint, Token, TokenAccount};
 
 #[derive(Accounts)]
 pub struct NewPool<'info> {
@@ -49,14 +48,14 @@ pub struct NewPool<'info> {
     pub quote_vault: Account<'info, TokenAccount>,
     #[account(
         constraint = quote_mint.key() == SLERF_MINT
-            @ err::acc("sol mint should be the SLERF mint")
+            @ err::acc("Quote mint should be the SLERF mint")
     )]
     pub quote_mint: Account<'info, Mint>,
     #[account(
         constraint = admin_quote_vault.mint == quote_mint.key()
-            @ err::acc("admin sol vault must be of sol mint"),
+            @ err::acc("Admin quote vault must be of SLERF mint"),
         constraint = admin_quote_vault.owner == crate::admin::id()
-            @ err::acc("admin sol vault authority must match admin"),
+            @ err::acc("Admin quote vault authority must match admin"),
     )]
     pub admin_quote_vault: Account<'info, TokenAccount>,
     #[account(
@@ -130,13 +129,20 @@ pub fn handle(ctx: Context<NewPool>) -> Result<()> {
     let omega_m = DEFAULT_MAX_M_LP;
     let price_factor = DEFAULT_PRICE_FACTOR;
 
+    let (alpha_abs, decimals) = compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor)?;
+
     pool.config = Config {
-        alpha_abs: compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor).unwrap(),
-        beta: compute_beta(gamma_s, gamma_m, omega_m, price_factor).unwrap(),
+        alpha_abs,
+        beta: compute_beta(gamma_s, gamma_m, omega_m, price_factor, decimals)?,
         gamma_s: gamma_s as u64,
         gamma_m: gamma_m as u64,
         omega_m: omega_m as u64,
         price_factor,
+        decimals: Decimals {
+            alpha: decimals,
+            beta: decimals,
+            quote: accs.quote_mint.decimals as u64,
+        },
     };
 
     pool.meme_reserve.tokens = MAX_TICKET_TOKENS * MEME_TOKEN_DECIMALS;

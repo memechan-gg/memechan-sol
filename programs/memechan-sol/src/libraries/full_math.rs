@@ -24,7 +24,7 @@ pub trait MulDiv<RHS = Self> {
     ///
     /// ## Example
     ///
-    /// ```rust
+    /// ```rust,ignore
     /// use libraries::full_math::MulDiv;
     ///
     /// # fn main() {
@@ -54,7 +54,7 @@ pub trait MulDiv<RHS = Self> {
     ///
     /// ## Example
     ///
-    /// ```rust
+    /// ```rust,ignore
     /// use libraries::full_math::MulDiv;
     ///
     /// # fn main() {

@@ -23,7 +23,7 @@ pub mod admin {
 pub mod memechan_sol {
     use super::*;
 
-    pub fn new(ctx: Context<NewPool>) -> Result<()> {
+    pub fn new_pool(ctx: Context<NewPool>) -> Result<()> {
         new_pool::handle(ctx)
     }
 
