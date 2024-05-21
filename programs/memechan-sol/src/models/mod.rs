@@ -6,8 +6,7 @@ pub mod staking;
 pub mod target_config;
 
 use anchor_lang::prelude::*;
-
-use crate::consts::WSOL_DECIMALS;
+use num_integer::Roots;
 
 #[derive(AnchorDeserialize, AnchorSerialize, Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct TokenLimit {
@@ -66,6 +65,8 @@ pub trait CheckedMath {
     fn checked_sub_(&self, num: Option<u128>) -> Self;
 
     fn checked_div_(&self, num: Option<u128>) -> Self;
+
+    fn sqrt(&self) -> Self;
 }
 
 impl CheckedMath for Option<u128> {
@@ -141,6 +142,13 @@ impl CheckedMath for Option<u128> {
                 None => None,
                 Some(num__) => num_.checked_div(num__),
             },
+        }
+    }
+
+    fn sqrt(&self) -> Self {
+        match self {
+            None => None,
+            Some(num_) => Some((*num_).sqrt()),
         }
     }
 }

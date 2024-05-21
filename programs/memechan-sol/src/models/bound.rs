@@ -102,9 +102,9 @@ impl BoundPool {
         let net_delta_m = min(delta_m - admin_fee_in, max_delta_m);
 
         let delta_s = if is_max {
-            s_b // TODO: confirm
+            s_b
         } else {
-            self.compute_delta_s(s_b, net_delta_m)
+            self.compute_delta_s(s_b, net_delta_m)?
         };
 
         let admin_fee_out = self.fees.get_fee_out_amount(delta_s).unwrap();
@@ -143,7 +143,7 @@ impl BoundPool {
         }
     }
 
-    pub fn compute_delta_s(&self, s_b: u64, delta_m: u64) -> u64 {
+    pub fn compute_delta_s(&self, s_b: u64, delta_m: u64) -> Result<u64> {
         let s_b = s_b as u128;
         let delta_m = delta_m as u128;
 
@@ -152,21 +152,20 @@ impl BoundPool {
         let alpha_decimals = self.config.decimals.alpha;
         let beta_decimals = self.config.decimals.beta;
 
-        let a1 = 2 * beta * alpha_decimals * DECIMALS_S - 2 * alpha_abs * s_b * beta_decimals;
-        let b1 = beta_decimals * beta_decimals * DECIMALS_S;
-        let c1 = 8 * delta_m * alpha_abs;
-
-        let a = (a1.pow(2) * alpha_decimals + c1 * b1.pow(2)).sqrt();
-
-        let b = (alpha_decimals * b1.pow(2)).sqrt();
-
-        let c = 2 * beta * alpha_decimals * DECIMALS_S - 2 * alpha_abs * s_b * beta_decimals;
-        let d = alpha_decimals * beta_decimals * DECIMALS_S;
-
-        let num = (a * d - c * b) * DECIMALS_S * alpha_decimals;
-        let denom = (2 * alpha_abs) * (b * d);
-
-        (num / denom) as u64
+        match delta_s1_strategy(alpha_abs, beta, alpha_decimals, beta_decimals, s_b, delta_m) {
+            Some(delta_s) => Ok(delta_s as u64),
+            None => match delta_s2_strategy(
+                alpha_abs,
+                beta,
+                alpha_decimals,
+                beta_decimals,
+                s_b,
+                delta_m,
+            ) {
+                Some(delta_s) => Ok(delta_s as u64),
+                None => Err(error!(AmmError::MathOverflow)),
+            },
+        }
     }
 
     fn balances(&self) -> (u64, u64) {
@@ -316,6 +315,204 @@ impl BoundPool {
             + config
             + locked
     }
+}
+
+fn delta_s1_strategy(
+    alpha_abs: u128,
+    beta: u128,
+    alpha_decimals: u128,
+    beta_decimals: u128,
+    s_b: u128,
+    delta_m: u128,
+) -> Option<u128> {
+    // a1 = 2 * beta * alpha_decimals * DECIMALS_S - 2 * alpha_abs * s_b * beta_decimals;
+    let a1 = (2 * beta)
+        .checked_mul(alpha_decimals)
+        .checked_mul(DECIMALS_S)
+        .checked_sub_((2 * alpha_abs).checked_mul(s_b).checked_mul(beta_decimals));
+
+    if let None = a1 {
+        return None;
+    }
+
+    // b1 = beta_decimals * beta_decimals * DECIMALS_S;
+    let b1 = beta_decimals.checked_pow(2).checked_mul(DECIMALS_S);
+
+    if let None = b1 {
+        return None;
+    }
+
+    // c1 = 8 * delta_m * alpha_abs;
+    let c1 = (8 * alpha_abs).checked_mul(delta_m);
+
+    if let None = c1 {
+        return None;
+    }
+
+    // a = (a1.pow(2) * alpha_decimals + c1 * b1.pow(2)).sqrt();
+    let a = a1
+        .checked_pow(2)
+        .checked_mul(alpha_decimals)
+        .checked_add_(b1.checked_pow(2).checked_mul_(c1))
+        .sqrt();
+
+    if let None = a {
+        return None;
+    }
+
+    // b = (alpha_decimals * b1.pow(2)).sqrt();
+    let b = b1.checked_pow(2).checked_mul(alpha_decimals).sqrt();
+
+    if let None = b {
+        return None;
+    }
+
+    // u = 2 * beta * alpha_decimals * DECIMALS_S - 2 * alpha_abs * s_b * beta_decimals;
+    let u = (2 * beta)
+        .checked_mul(alpha_decimals)
+        .checked_mul(DECIMALS_S)
+        .checked_sub_((2 * alpha_abs).checked_mul(s_b).checked_mul(beta_decimals));
+
+    if let None = u {
+        return None;
+    }
+
+    // v = alpha_decimals * beta_decimals * DECIMALS_S;
+    let v = alpha_decimals
+        .checked_mul(beta_decimals)
+        .checked_mul(DECIMALS_S);
+
+    if let None = v {
+        return None;
+    }
+
+    // num = (a * v - u * b) * DECIMALS_S * alpha_decimals;
+    let num = a
+        .checked_mul_(v)
+        .checked_sub_(u.checked_mul_(b))
+        .checked_mul(DECIMALS_S)
+        .checked_mul(alpha_decimals);
+
+    if let None = num {
+        return None;
+    }
+
+    // denom = (2 * alpha_abs) * (b * v);
+    let denom = b.checked_mul_(v).checked_mul(2 * alpha_abs);
+
+    if let None = denom {
+        return None;
+    }
+
+    // delta_s = num / denom
+    num.checked_div_(denom)
+}
+
+fn multiply_until_overflow(nums: Vec<u128>) -> (u128, Vec<u128>) {
+    fn helper(nums: &[u128], current_product: u128) -> (u128, Vec<u128>) {
+        if nums.is_empty() {
+            return (current_product, vec![]);
+        }
+
+        let next = nums[0];
+        if let Some(result) = current_product.checked_mul(next) {
+            helper(&nums[1..], result)
+        } else {
+            (current_product, nums.to_vec())
+        }
+    }
+
+    if nums.is_empty() {
+        return (1, vec![]);
+    }
+
+    helper(&nums, 1)
+}
+
+fn delta_s2_strategy(
+    alpha_abs: u128,
+    beta: u128,
+    alpha_decimals: u128,
+    beta_decimals: u128,
+    s_b: u128,
+    delta_m: u128,
+) -> Option<u128> {
+    // u = 2 * beta * alpha_decimals * DECIMALS_S - 2 * alpha_abs * s_b * beta_decimals;
+    let u = (2 * beta)
+        .checked_mul(alpha_decimals)
+        .checked_mul(DECIMALS_S)
+        .checked_sub_((2 * alpha_abs).checked_mul(s_b).checked_mul(beta_decimals));
+
+    if let None = u {
+        return None;
+    }
+
+    let w = (8 * alpha_abs).checked_mul(delta_m);
+
+    if let None = w {
+        return None;
+    }
+
+    // First = a / (D_beta * sqrt(D_alpha) * 2 * alpha_abs)
+    // Where, a = sqrt( u^2 * D_alpha + wv^2 )
+    // <=> a = u * sqrt(D_alpha) + sqrt( w * D_alpha^2 * D_beta^2 * D_S^2)
+    // In relation to the second term we want to maximize precision without risking overflow
+    // therefore we use `multiply_until_overflow` which multiply the terms inside the square root until
+    // before it hits overflow
+
+    let first_num_1 = u.checked_mul(alpha_decimals.sqrt());
+
+    if let None = first_num_1 {
+        return None;
+    }
+
+    let (maxed_elem, remaining_elems) = multiply_until_overflow(vec![
+        w.unwrap(),
+        alpha_decimals,
+        beta_decimals,
+        DECIMALS_S,
+        alpha_decimals,
+        beta_decimals,
+        DECIMALS_S,
+    ]);
+
+    // Once we hit a maxed value we scale it down with the square root
+    let maxed_elem_sqrt = Some(maxed_elem.sqrt());
+
+    // And multiply against the remaining factor. The remaining factor is the product of
+    // all the square roots of the remaining elements
+    let remaining_factor = remaining_elems
+        .iter()
+        .try_fold(1u128, |acc, &num| acc.checked_mul(num.sqrt()));
+
+    let first_num_2 = maxed_elem_sqrt.checked_mul_(remaining_factor);
+
+    if let None = first_num_2 {
+        return None;
+    }
+
+    let first_num = first_num_1.checked_add_(first_num_2);
+    let first_denom = beta_decimals
+        .checked_mul(alpha_decimals.sqrt())
+        .checked_mul(2 * alpha_abs);
+
+    let first_term = first_num.checked_div_(first_denom);
+
+    if let None = first_term {
+        return None;
+    }
+
+    let second_term = beta
+        .checked_mul(DECIMALS_S)
+        .checked_div(beta_decimals)
+        .checked_mul(alpha_decimals)
+        .checked_div(alpha_abs);
+
+    if let None = second_term {
+        return None;
+    }
+
+    first_term.checked_sub_(second_term).checked_add(s_b)
 }
 
 fn delta_m1_strategy(
