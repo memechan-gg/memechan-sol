@@ -12,11 +12,11 @@ use core as core_;
 
 use endpoints::*;
 
-declare_id!("BDRDLhqbfEQx2LZQ9Js7k1Dt1S9AArTw44q1rM96YrwC");
+declare_id!("3dKJG4mqodZQxDsmDbVsnPMVxSiBQz3EsA73cai41J3a");
 
 pub mod admin {
     use anchor_lang::prelude::declare_id;
-    declare_id!("8RSDaghj3qZLBNvRBiN5oULX66dgng9pW2HxHubpR8TW");
+    declare_id!("8SvkUtJZCyJwSQGkiszwcRcPv7c8pPSr8GVEppGNN7DV");
 }
 
 #[program]
