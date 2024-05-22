@@ -523,6 +523,7 @@ fn delta_m2_strategy(
     s_a: u128,
     s_b: u128,
 ) -> Option<u128> {
+    println!("STRATEGY 2");
     let left = (beta * 2)
         .checked_mul(DECIMALS_S)
         .checked_mul(alpha_decimals)
@@ -588,11 +589,18 @@ fn delta_m1_strategy(
         return None;
     }
 
+    // println!("left: {:?}", left.unwrap());
+    // println!("right: {:?}", right.unwrap());
+    // println!("left- right: {:?}", left.checked_sub_(right).unwrap());
+
+    // panic!();
+
     left.checked_sub_(right)
 }
 
 #[cfg(test)]
 mod tests {
+    use proptest::*;
     use std::fs::File;
 
     use csv::ReaderBuilder;
@@ -971,6 +979,51 @@ mod tests {
         Ok(())
     }
 
+    #[test]
+    fn test_compute_delta_m_3() -> Result<()> {
+        let filename = "../../data/delta_m_3.csv";
+        let expected_delta_ms = read_csv_column(filename);
+
+        let gamma_s: u128 = 1_000;
+        let gamma_m: u128 = 800_000_000_000_000;
+        let omega_m: u128 = 200_000_000_000_000;
+        let price_factor = 2;
+
+        let (alpha, alpha_decimals) = compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor)?;
+        let beta = compute_beta(gamma_s, gamma_m, omega_m, price_factor, alpha_decimals)?;
+
+        let pool = BoundPool {
+            config: Config {
+                alpha_abs: alpha,
+                beta,
+                price_factor,
+                gamma_s: gamma_s as u64,
+                gamma_m: gamma_m as u64,
+                omega_m: omega_m as u64,
+                decimals: Decimals {
+                    alpha: alpha_decimals,
+                    beta: alpha_decimals,
+                    quote: 1_000_000_000,
+                },
+            },
+            ..Default::default()
+        };
+
+        let mut s_a = 0;
+
+        for expected in expected_delta_ms.iter() {
+            let actual = pool.compute_delta_m(s_a * 1_000_000_000, (s_a + 1) * 1_000_000_000)?;
+
+            println!("{:?}", actual);
+
+            assert_eq!(expected, &actual);
+
+            s_a += 1;
+        }
+
+        Ok(())
+    }
+
     fn read_csv_column(filename: &str) -> Vec<u64> {
         // Open the CSV file
         let file = File::open(filename).unwrap();
@@ -987,5 +1040,122 @@ mod tests {
         }
 
         column_data
+    }
+
+    pub fn check_slope_(gamma_m: u128, omega_m: u128, price_factor: u64) -> bool {
+        if price_factor as u128 * omega_m >= gamma_m {
+            false
+        } else {
+            true
+        }
+    }
+
+    pub fn check_intercept_(gamma_m: u128, omega_m: u128, price_factor: u64) -> bool {
+        if 2 * gamma_m <= omega_m * (price_factor as u128) {
+            false
+        } else {
+            true
+        }
+    }
+
+    pub fn check_scale_and_gamma_s_rel(
+        gamma_s: u128,
+        gamma_m: u128,
+        omega_m: u128,
+        price_factor: u64,
+    ) -> bool {
+        let left = omega_m * (price_factor as u128);
+
+        let num = 2 * (gamma_m - left);
+        let denom = gamma_s * gamma_s;
+
+        if num <= denom {
+            return false;
+        }
+
+        let num_scale = compute_scale(num);
+        let denom_scale = compute_scale(denom);
+
+        let net_scale = num_scale - denom_scale;
+
+        match net_scale {
+            0..=4 => return false,
+            5 => return true,
+            6 => return true,
+            7 => return true,
+            8 => return true,
+            9 => return true,
+            10 => return true,
+            11 => return true,
+            12 => return true,
+            _ => return true,
+        }
+    }
+
+    proptest! {
+        #[test]
+        fn successfully_returns_positive_exponent(
+            gamma_s in 1_000..10_000_000_u128,
+            gamma_m in 100_000_000_u128..900_000_000_000_000_000_u128,
+            omega_m in 100_000_000_u128..900_000_000_000_000_000_u128,
+            price_factor in 1..4u128
+        ) {
+            let price_factor = price_factor as u64;
+
+            if check_slope_(gamma_m, omega_m, price_factor) == false {
+                return Ok(())
+            }
+
+            if check_intercept_(gamma_m, omega_m, price_factor) == false {
+                return Ok(())
+            }
+
+            if check_scale_and_gamma_s_rel(gamma_s, gamma_m, omega_m, price_factor) == false {
+                return Ok(())
+            }
+
+            let (alpha, alpha_decimals) = compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor)?;
+            let beta = compute_beta(gamma_s, gamma_m, omega_m, price_factor, alpha_decimals)?;
+
+            let pool = BoundPool {
+                config: Config {
+                    alpha_abs: alpha,
+                    beta,
+                    price_factor,
+                    gamma_s: gamma_s as u64,
+                    gamma_m: gamma_m as u64,
+                    omega_m: omega_m as u64,
+                    decimals: Decimals {
+                        alpha: alpha_decimals,
+                        beta: alpha_decimals,
+                        quote: 1_000_000_000,
+                    },
+                },
+                ..Default::default()
+            };
+
+            let mut s_a = 0;
+
+            let delta_s = 1000;
+
+            for _ in (0..gamma_s).step_by(delta_s) {
+                let actual = pool.compute_delta_m(s_a * 1_000_000_000, (s_a + delta_s as u64) * 1_000_000_000);
+
+                if actual.is_err() {
+                    println!("s_a: {:?}", s_a);
+                    println!("s_b: {:?}", s_a + delta_s as u64);
+                    println!("gamma_s: {:?}", gamma_s);
+                    println!("gamma_m: {:?}", gamma_m);
+                    println!("omega_m: {:?}", omega_m);
+                    println!("price_factor: {:?}", price_factor);
+
+                    panic!();
+                }
+
+                assert!(actual.unwrap() != 0);
+
+                s_a += 1;
+            }
+        }
     }
 }
