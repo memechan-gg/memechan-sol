@@ -110,7 +110,15 @@ pub struct GoLive<'info> {
     #[account(mut)]
     pub fee_destination_info: AccountInfo<'info>,
     /// CHECK: Checks done in cpi call to raydium
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [
+            staking_pool_signer_pda.key().as_ref(),
+            ata_program.key().as_ref(),
+            raydium_lp_mint.key().as_ref(),
+        ],
+        bump
+    )]
     pub user_destination_lp_token_ata: AccountInfo<'info>,
     //
     // Sysvars
@@ -196,17 +204,6 @@ impl<'info> GoLive<'info> {
 
         Ok(())
     }
-
-    pub fn set_lp_wallet_authority(&self) -> CpiContext<'_, '_, '_, 'info, SetAuthority<'info>> {
-        todo!()
-        // let cpi_accounts = SetAuthority {
-        //     current_authority: self.bound_pool_signer_pda.to_account_info(),
-        //     account_or_mint: self.pool_meme_vault.to_account_info(), // this should be LP vault and not meme vault
-        // };
-
-        // let cpi_program = self.token_program.to_account_info();
-        // CpiContext::new(cpi_program, cpi_accounts)
-    }
 }
 
 pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, GoLive<'info>>, nonce: u8) -> Result<()> {
@@ -240,7 +237,7 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, GoLive<'info>>, nonce: u8) 
 
     // Add LP vault and mint to staking pool
     accs.staking.lp_mint = accs.raydium_lp_mint.key();
-    accs.staking.lp_vault = accs.user_destination_lp_token_ata.key(); // TODO: Confirm
+    accs.staking.lp_vault = accs.user_destination_lp_token_ata.key();
 
     Ok(())
 }

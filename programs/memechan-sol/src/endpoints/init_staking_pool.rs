@@ -1,5 +1,6 @@
 use crate::consts::{MAX_TICKET_TOKENS, MEME_TOKEN_DECIMALS, SLERF_MINT};
 use crate::err;
+use crate::err::AmmError;
 use crate::libraries::MulDiv;
 use crate::models::bound::BoundPool;
 use crate::models::fees::{LAUNCH_FEE, PRECISION};
@@ -11,8 +12,6 @@ use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token;
 use anchor_spl::token::{Mint, Token, TokenAccount, Transfer};
-
-// const SOL_THRESHOLD: u64 = 300; // TODO: add
 
 #[derive(Accounts)]
 pub struct InitStakingPool<'info> {
@@ -26,8 +25,8 @@ pub struct InitStakingPool<'info> {
     /// Bonding Pool account
     #[account(
         mut,
-        close = signer,
-        has_one = admin_vault_quote
+        has_one = admin_vault_quote,
+        constraint = pool.locked
     )]
     pub pool: Box<Account<'info, BoundPool>>,
     /// CHECK: bound-curve phase pda signer
@@ -192,10 +191,11 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, InitStakingPool<'info>>) ->
     msg!("1");
     accs.pool_quote_vault.reload().unwrap();
     let quote_supply = accs.pool_quote_vault.amount;
-    // TODO: Add back
-    // if quote_supply != SOL_THRESHOLD * 10_u64.checked_pow(native_mint::DECIMALS as u32).unwrap() {
-    //     return Err(error!(AmmError::InvariantViolation));
-    // }
+    let target_token_amt = accs.pool.config.gamma_s;
+    let quote_decimals = accs.pool.config.decimals.quote as u32;
+    if quote_supply != target_token_amt * 10_u64.checked_pow(quote_decimals).unwrap() {
+        return Err(error!(AmmError::InvariantViolation));
+    }
 
     // 2. Collect live fees
     msg!("2");
