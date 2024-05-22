@@ -91,5 +91,11 @@ pub fn handle(ctx: Context<WithdrawFees>) -> Result<()> {
         withdrawal.max_withdrawal_quote,
     )?;
 
+    msg!(
+        "fees_meme: {} fees_quote: {}",
+        withdrawal.max_withdrawal_meme,
+        withdrawal.max_withdrawal_quote,
+    );
+
     Ok(())
 }
