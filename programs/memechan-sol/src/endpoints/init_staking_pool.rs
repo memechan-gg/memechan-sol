@@ -1,4 +1,4 @@
-use crate::consts::{MAX_TICKET_TOKENS, MEME_TOKEN_DECIMALS, SLERF_MINT};
+use crate::consts::{ADMIN_KEY, MAX_TICKET_TOKENS, MEME_TOKEN_DECIMALS, SLERF_MINT};
 use crate::err;
 use crate::err::AmmError;
 use crate::libraries::MulDiv;
@@ -7,7 +7,7 @@ use crate::models::fees::{LAUNCH_FEE, PRECISION};
 use crate::models::staked_lp::MemeTicket;
 use crate::models::staking::StakingPool;
 use crate::models::OpenBook;
-use crate::{admin, vesting};
+use crate::vesting;
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token;
@@ -177,7 +177,7 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, InitStakingPool<'info>>) ->
     msg!("0");
     let meme_ticket = &mut accs.meme_ticket;
 
-    meme_ticket.setup(accs.pool.key(), admin::id(), accs.pool.admin_fees_meme);
+    meme_ticket.setup(accs.pool.key(), ADMIN_KEY.key(), accs.pool.admin_fees_meme);
 
     if accs.pool.admin_fees_quote != 0 {
         token::transfer(
@@ -192,8 +192,14 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, InitStakingPool<'info>>) ->
     accs.pool_quote_vault.reload().unwrap();
     let quote_supply = accs.pool_quote_vault.amount;
     let target_token_amt = accs.pool.config.gamma_s;
-    let quote_decimals = accs.pool.config.decimals.quote as u32;
-    if quote_supply != target_token_amt * 10_u64.checked_pow(quote_decimals).unwrap() {
+    let quote_decimals = accs.pool.config.decimals.quote;
+    msg!(
+        "quote {}, supply {}, decimals {}",
+        quote_supply,
+        target_token_amt,
+        quote_decimals
+    );
+    if quote_supply != target_token_amt * quote_decimals {
         return Err(error!(AmmError::InvariantViolation));
     }
 

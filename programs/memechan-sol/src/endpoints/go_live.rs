@@ -110,15 +110,7 @@ pub struct GoLive<'info> {
     #[account(mut)]
     pub fee_destination_info: AccountInfo<'info>,
     /// CHECK: Checks done in cpi call to raydium
-    #[account(
-        mut,
-        seeds = [
-            staking_pool_signer_pda.key().as_ref(),
-            ata_program.key().as_ref(),
-            raydium_lp_mint.key().as_ref(),
-        ],
-        bump
-    )]
+    #[account(mut)]
     pub user_destination_lp_token_ata: AccountInfo<'info>,
     //
     // Sysvars
@@ -226,6 +218,7 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, GoLive<'info>>, nonce: u8) 
 
     let amm_meme_balance = meme_supply.checked_sub(meme_supply_80).unwrap();
 
+    msg!("3");
     // 3. Initialize pool & Add liquidity to the pool
     accs.create_raydium_pool(
         nonce,
@@ -235,6 +228,8 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, GoLive<'info>>, nonce: u8) 
         staking_signer_seeds,
     )?;
 
+    msg!("4");
+    // 4. Setup staking
     // Add LP vault and mint to staking pool
     accs.staking.lp_mint = accs.raydium_lp_mint.key();
     accs.staking.lp_vault = accs.user_destination_lp_token_ata.key();
