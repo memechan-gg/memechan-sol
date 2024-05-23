@@ -171,7 +171,7 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<
     let meme_vault_initial_amt = accs.meme_vault.amount;
     let quote_vault_initial_amt = accs.quote_vault.amount;
 
-    let amm = AmmInfo::load_checked(&accs.raydium_amm, &RAYDIUM_PROGRAM_ID).unwrap();
+    let amm = AmmInfo::load_checked(&accs.raydium_amm.clone(), &RAYDIUM_PROGRAM_ID).unwrap();
 
     let cumulated_fees_meme = amm.state_data.swap_acc_coin_fee;
     let cumulated_fees_quote = amm.state_data.swap_acc_pc_fee;
