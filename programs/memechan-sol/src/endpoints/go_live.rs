@@ -196,17 +196,6 @@ impl<'info> GoLive<'info> {
 
         Ok(())
     }
-
-    pub fn set_lp_wallet_authority(&self) -> CpiContext<'_, '_, '_, 'info, SetAuthority<'info>> {
-        todo!()
-        // let cpi_accounts = SetAuthority {
-        //     current_authority: self.bound_pool_signer_pda.to_account_info(),
-        //     account_or_mint: self.pool_meme_vault.to_account_info(), // this should be LP vault and not meme vault
-        // };
-
-        // let cpi_program = self.token_program.to_account_info();
-        // CpiContext::new(cpi_program, cpi_accounts)
-    }
 }
 
 pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, GoLive<'info>>, nonce: u8) -> Result<()> {
@@ -229,6 +218,7 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, GoLive<'info>>, nonce: u8) 
 
     let amm_meme_balance = meme_supply.checked_sub(meme_supply_80).unwrap();
 
+    msg!("3");
     // 3. Initialize pool & Add liquidity to the pool
     accs.create_raydium_pool(
         nonce,
@@ -238,9 +228,11 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, GoLive<'info>>, nonce: u8) 
         staking_signer_seeds,
     )?;
 
+    msg!("4");
+    // 4. Setup staking
     // Add LP vault and mint to staking pool
     accs.staking.lp_mint = accs.raydium_lp_mint.key();
-    accs.staking.lp_vault = accs.user_destination_lp_token_ata.key(); // TODO: Confirm
+    accs.staking.lp_vault = accs.user_destination_lp_token_ata.key();
 
     Ok(())
 }
