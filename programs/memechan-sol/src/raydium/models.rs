@@ -98,7 +98,7 @@ pub struct AmmInfo {
     pub padding2: [u64; 2],
 }
 
-impl anchor_lang::Owner for RaydiumAmm {
+impl anchor_lang::Owner for AmmInfo {
     fn owner() -> Pubkey {
         RAYDIUM_PROGRAM_ID
     }
