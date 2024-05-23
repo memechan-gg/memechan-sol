@@ -47,6 +47,9 @@ pub enum AmmError {
     BondingCurveInterceptMustBePositive,
     EGammaSAboveRelativeLimit,
     EScaleTooLow,
+    InvalidAmmAccountOwner,
+    ExpectedAccount,
+    InvalidStatus,
 }
 
 #[allow(dead_code)]

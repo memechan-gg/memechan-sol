@@ -27,7 +27,6 @@ pub struct AddFees<'info> {
     /// CHECK: pda
     #[account(seeds = [StakingPool::SIGNER_PDA_PREFIX, staking.key().as_ref()], bump)]
     pub staking_signer_pda: AccountInfo<'info>,
-
     #[account(
         mut,
         constraint = staking_lp_wallet.mint == staking.lp_mint
@@ -38,10 +37,10 @@ pub struct AddFees<'info> {
     pub signer: Signer<'info>,
 
     // raydium
-    /// CHECK: Checks done in cpi call to raydium
+    /// CHECK: Checks are done by us and in cpi call to raydium
     // Raydium
     #[account(mut)]
-    pub raydium_amm: AccountLoader<'info, AmmInfo>,
+    pub raydium_amm: AccountInfo<'info>,
     /// CHECK: Checks done in cpi call to raydium
     pub raydium_amm_authority: AccountInfo<'info>,
     #[account(mut)]
@@ -172,7 +171,7 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<
     let meme_vault_initial_amt = accs.meme_vault.amount;
     let quote_vault_initial_amt = accs.quote_vault.amount;
 
-    let amm = accs.raydium_amm.load()?;
+    let amm = AmmInfo::load_checked(&accs.raydium_amm, &RAYDIUM_PROGRAM_ID).unwrap();
 
     let cumulated_fees_meme = amm.state_data.swap_acc_coin_fee;
     let cumulated_fees_quote = amm.state_data.swap_acc_pc_fee;
