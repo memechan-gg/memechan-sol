@@ -105,5 +105,12 @@ pub fn handle(ctx: Context<Unstake>, release_amount: u64) -> Result<()> {
         withdrawal.max_withdrawal_quote,
     )?;
 
+    msg!(
+        "unstake for: {} fees_meme: {} fees_quote: {}",
+        release_amount,
+        withdrawal.max_withdrawal_meme,
+        withdrawal.max_withdrawal_quote,
+    );
+
     Ok(())
 }
