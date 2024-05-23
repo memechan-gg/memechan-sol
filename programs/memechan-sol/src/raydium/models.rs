@@ -1,3 +1,5 @@
+use crate::consts::RAYDIUM_PROGRAM_ID;
+use crate::raydium::RaydiumAmm;
 use anchor_lang::prelude::borsh::{self, BorshSerialize};
 use anchor_lang::prelude::*;
 use bytemuck::{Pod, Zeroable};
@@ -94,6 +96,12 @@ pub struct AmmInfo {
     pub client_order_id: u64,
     /// padding
     pub padding2: [u64; 2],
+}
+
+impl anchor_lang::Owner for RaydiumAmm {
+    fn owner() -> Pubkey {
+        RAYDIUM_PROGRAM_ID
+    }
 }
 
 #[repr(C)]

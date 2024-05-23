@@ -8,6 +8,7 @@ use crate::{
     raydium::{self, models::AmmInfo},
 };
 
+use crate::raydium::RaydiumAmm;
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token, TokenAccount};
 
@@ -78,16 +79,16 @@ pub struct AddFees<'info> {
     /// CHECK: Checks done in cpi call to raydium
     #[account(mut)]
     pub market_asks: AccountInfo<'info>,
-
     // Programs
     pub token_program: Program<'info, Token>,
+    pub raydium_program: Program<'info, RaydiumAmm>,
     pub market_program_id: Program<'info, OpenBook>,
 }
 
 impl<'info> AddFees<'info> {
     pub fn redeem_liquidity(&self, amount: u64, signer_seeds: &[&[&[u8]]; 1]) -> Result<()> {
         let instruction = raydium::withdraw(
-            &RAYDIUM_PROGRAM_ID,
+            &self.raydium_program.key(),
             // params
             amount,
             // accounts
