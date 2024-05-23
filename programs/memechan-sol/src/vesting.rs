@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 
-const DEFAULT_CLIFF: i64 = 172800000; // 48 hours; TODO: test
-const DEFAULT_LINEAR: i64 = 1209600000; // 14 days; TODO: test
+const DEFAULT_CLIFF: i64 = 172_800; // 48 hours; TODO: test
+const DEFAULT_LINEAR: i64 = 1_209_600; // 14 days; TODO: test
 
 #[derive(AnchorDeserialize, AnchorSerialize, Copy, Clone, Debug, Eq, PartialEq, Default)]
 pub struct VestingConfig {
