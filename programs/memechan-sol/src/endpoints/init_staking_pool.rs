@@ -25,6 +25,7 @@ pub struct InitStakingPool<'info> {
     /// Bonding Pool account
     #[account(
         mut,
+        close = signer,
         has_one = admin_vault_quote,
         constraint = pool.locked
     )]
