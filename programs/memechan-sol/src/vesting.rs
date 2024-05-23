@@ -45,7 +45,7 @@ impl VestingData {
         to_release
     }
 
-    pub fn release(mut self, amount: u64) {
+    pub fn release(&mut self, amount: u64) {
         self.released += amount;
     }
 

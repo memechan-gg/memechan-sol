@@ -8,6 +8,7 @@ use crate::{
     raydium::{self, models::AmmInfo},
 };
 
+use crate::raydium::RaydiumAmm;
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token, TokenAccount};
 
@@ -26,10 +27,9 @@ pub struct AddFees<'info> {
     /// CHECK: pda
     #[account(seeds = [StakingPool::SIGNER_PDA_PREFIX, staking.key().as_ref()], bump)]
     pub staking_signer_pda: AccountInfo<'info>,
-
     #[account(
         mut,
-        constraint = staking_lp_wallet.mint == staking.lp_mint
+        constraint = staking_lp_wallet.key() == staking.lp_vault
     )]
     pub staking_lp_wallet: Box<Account<'info, TokenAccount>>,
 
@@ -37,10 +37,10 @@ pub struct AddFees<'info> {
     pub signer: Signer<'info>,
 
     // raydium
-    /// CHECK: Checks done in cpi call to raydium
+    /// CHECK: Checks are done by us and in cpi call to raydium
     // Raydium
     #[account(mut)]
-    pub raydium_amm: AccountLoader<'info, AmmInfo>,
+    pub raydium_amm: AccountInfo<'info>,
     /// CHECK: Checks done in cpi call to raydium
     pub raydium_amm_authority: AccountInfo<'info>,
     #[account(mut)]
@@ -78,16 +78,16 @@ pub struct AddFees<'info> {
     /// CHECK: Checks done in cpi call to raydium
     #[account(mut)]
     pub market_asks: AccountInfo<'info>,
-
     // Programs
     pub token_program: Program<'info, Token>,
+    pub raydium_program: Program<'info, RaydiumAmm>,
     pub market_program_id: Program<'info, OpenBook>,
 }
 
 impl<'info> AddFees<'info> {
-    pub fn redeem_liquidity(&self, amount: u64, signer_seeds: &[&[&[u8]]; 1]) -> Result<()> {
+    pub fn redeem_liquidity(&self, amount: u64, signer_seeds: &[&[&[u8]]]) -> Result<()> {
         let instruction = raydium::withdraw(
-            &RAYDIUM_PROGRAM_ID,
+            &self.raydium_program.key(),
             // params
             amount,
             // accounts
@@ -105,9 +105,9 @@ impl<'info> AddFees<'info> {
             &self.market_pc_vault.key(),
             &self.market_vault_signer.key(),
             &self.staking_lp_wallet.key(),
-            &self.meme_vault.key(),  // user wallet (pool)
-            &self.quote_vault.key(), // user wallet (pool)
-            &self.signer.key(),      // user wallet
+            &self.meme_vault.key(),         // user wallet (pool)
+            &self.quote_vault.key(),        // user wallet (pool)
+            &self.staking_signer_pda.key(), // user wallet
             &self.market_event_queue.key(),
             &self.market_bids.key(),
             &self.market_asks.key(),
@@ -132,7 +132,7 @@ impl<'info> AddFees<'info> {
                 self.staking_lp_wallet.to_account_info().clone(),
                 self.meme_vault.to_account_info().clone(),
                 self.quote_vault.to_account_info().clone(),
-                self.signer.to_account_info().clone(),
+                self.staking_signer_pda.to_account_info().clone(),
                 self.market_event_queue.to_account_info().clone(),
                 self.market_bids.to_account_info().clone(),
                 self.market_asks.to_account_info().clone(),
@@ -171,10 +171,13 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<
     let meme_vault_initial_amt = accs.meme_vault.amount;
     let quote_vault_initial_amt = accs.quote_vault.amount;
 
-    let amm = accs.raydium_amm.load()?;
+    let amm_info = &accs.raydium_amm.clone();
+    let amm = AmmInfo::load_checked(amm_info, &RAYDIUM_PROGRAM_ID).unwrap();
 
     let cumulated_fees_meme = amm.state_data.swap_acc_coin_fee;
     let cumulated_fees_quote = amm.state_data.swap_acc_pc_fee;
+
+    drop(amm);
 
     let fee_ratio = arithmetic_fee_ratio(
         accs.raydium_meme_vault.amount,
