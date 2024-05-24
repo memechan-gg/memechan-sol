@@ -18,6 +18,7 @@ pub struct CreateMetadata<'info> {
     pub sender: Signer<'info>,
     pub pool: Account<'info, BoundPool>,
     #[account(
+        mut,
         constraint = meme_mint.mint_authority == COption::Some(pool_signer.key())
             @ err::acc("meme mint authority must be the pool signer"),
         constraint = meme_mint.freeze_authority == COption::None

@@ -25,7 +25,7 @@ pub struct AddFees<'info> {
     #[account(mut)]
     pub quote_vault: Account<'info, TokenAccount>,
     /// CHECK: pda
-    #[account(seeds = [StakingPool::SIGNER_PDA_PREFIX, staking.key().as_ref()], bump)]
+    #[account(mut, seeds = [StakingPool::SIGNER_PDA_PREFIX, staking.key().as_ref()], bump)]
     pub staking_signer_pda: AccountInfo<'info>,
     #[account(
         mut,
@@ -52,7 +52,6 @@ pub struct AddFees<'info> {
         constraint = raydium_lp_mint.key() == staking.lp_mint
     )]
     pub raydium_lp_mint: Account<'info, Mint>,
-
     // Open Book
     /// CHECK: Checks done in cpi call to raydium
     #[account(mut)]
