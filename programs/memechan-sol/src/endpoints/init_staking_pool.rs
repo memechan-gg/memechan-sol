@@ -252,7 +252,8 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, InitStakingPool<'info>>) ->
     staking.vesting_config = vesting::default_config();
     staking.fees_x_total = 0;
     staking.fees_y_total = 0;
-    staking.lp_tokens_withdrawn = 0;
+    staking.raydium_fees.last_cum_quote_fees = 0;
+    staking.raydium_fees.last_cum_meme_fees = 0;
     staking.pool = accs.pool.key();
 
     msg!("5");
