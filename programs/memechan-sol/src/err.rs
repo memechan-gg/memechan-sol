@@ -51,6 +51,7 @@ pub enum AmmError {
     ExpectedAccount,
     InvalidStatus,
     CantUnstakeBeforeCliff,
+    NoFeesToAdd,
 }
 
 #[allow(dead_code)]
