@@ -21,3 +21,7 @@ Used math lib from Raydium, thanks for that.
 - anchor clean
 - anchor build
 - anchor deploy  --program-name memechan_sol --program-keypair keypairs/kp.json
+
+# Proptesting
+To collect the logs from proptests
+`cargo test --package memechan-sol --lib --all-features -- models::bound::tests::successfully_returns_positive_exponent --exact --show-output >> output.txt`
