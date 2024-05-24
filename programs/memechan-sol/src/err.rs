@@ -50,6 +50,7 @@ pub enum AmmError {
     InvalidAmmAccountOwner,
     ExpectedAccount,
     InvalidStatus,
+    CantUnstakeBeforeCliff,
 }
 
 #[allow(dead_code)]
