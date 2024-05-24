@@ -1,12 +1,39 @@
+use crate::err::AmmError;
 use anchor_lang::prelude::borsh::{self, BorshSerialize};
-use anchor_lang::{prelude::*, Owners};
-use bytemuck::{Pod, Zeroable};
+use anchor_lang::prelude::*;
+use bytemuck::{from_bytes, from_bytes_mut, Pod, Zeroable};
 use solana_program::pubkey::Pubkey;
-
-use crate::consts::{RAYDIUM_PROGRAM_ID, RAYDIUM_PROGRAM_ID_};
+use std::cell::{Ref, RefMut};
+use std::mem::size_of;
 
 pub const TEN_THOUSAND: u64 = 10000;
 pub const MAX_ORDER_LIMIT: usize = 10;
+
+pub trait Loadable: Pod {
+    fn load_mut<'a>(account: &'a AccountInfo) -> Result<RefMut<'a, Self>> {
+        // TODO verify if this checks for size
+        Ok(RefMut::map(account.try_borrow_mut_data()?, |data| {
+            from_bytes_mut(data)
+        }))
+    }
+    fn load<'a>(account: &'a AccountInfo) -> Result<Ref<'a, Self>> {
+        Ok(Ref::map(account.try_borrow_data()?, |data| {
+            from_bytes(data)
+        }))
+    }
+
+    fn load_from_bytes(data: &[u8]) -> Result<&Self> {
+        Ok(from_bytes(data))
+    }
+}
+
+macro_rules! impl_loadable {
+    ($type_name:ident) => {
+        unsafe impl Zeroable for $type_name {}
+        unsafe impl Pod for $type_name {}
+        impl Loadable for $type_name {}
+    };
+}
 
 #[account(zero_copy)]
 #[repr(C)]
@@ -24,15 +51,8 @@ pub struct AmmConfig {
     pub create_pool_fee: u64,
 }
 
-impl Owners for AmmInfo {
-    fn owners() -> &'static [Pubkey] {
-        RAYDIUM_PROGRAM_ID_
-    }
-}
-
-#[account(zero_copy)]
 #[repr(C)]
-#[derive(Default, PartialEq)]
+#[derive(Clone, Copy, Default, PartialEq)]
 pub struct AmmInfo {
     /// Initialized status.
     pub status: u64,
@@ -102,6 +122,28 @@ pub struct AmmInfo {
     pub client_order_id: u64,
     /// padding
     pub padding2: [u64; 2],
+}
+
+impl_loadable!(AmmInfo);
+
+impl AmmInfo {
+    #[inline]
+    pub fn load_checked<'a>(
+        account: &'a AccountInfo,
+        program_id: &Pubkey,
+    ) -> Result<Ref<'a, Self>> {
+        if account.owner != program_id {
+            return Err(AmmError::InvalidAmmAccountOwner.into());
+        }
+        if account.data_len() != size_of::<Self>() {
+            return Err(AmmError::ExpectedAccount.into());
+        }
+        let data = Self::load(account)?;
+        if data.status == 0u64 {
+            return Err(AmmError::InvalidStatus.into());
+        }
+        Ok(data)
+    }
 }
 
 #[repr(C)]

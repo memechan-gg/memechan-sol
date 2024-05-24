@@ -1,7 +1,14 @@
 use anchor_lang::prelude::*;
 
-const DEFAULT_CLIFF: i64 = 172800000; // 48 hours; TODO: test
-const DEFAULT_LINEAR: i64 = 1209600000; // 14 days; TODO: test
+#[cfg(not(feature = "mainnet"))]
+const DEFAULT_CLIFF: i64 = 180; // 3 minutes; TODO: test
+#[cfg(feature = "mainnet")]
+const DEFAULT_CLIFF: i64 = 172_800; // 48 hours;
+
+#[cfg(not(feature = "mainnet"))]
+const DEFAULT_LINEAR: i64 = 3600; // 1 hour; TODO: test
+#[cfg(feature = "mainnet")]
+const DEFAULT_LINEAR: i64 = 1_209_600; // 14 days;
 
 #[derive(AnchorDeserialize, AnchorSerialize, Copy, Clone, Debug, Eq, PartialEq, Default)]
 pub struct VestingConfig {
@@ -45,7 +52,7 @@ impl VestingData {
         to_release
     }
 
-    pub fn release(mut self, amount: u64) {
+    pub fn release(&mut self, amount: u64) {
         self.released += amount;
     }
 

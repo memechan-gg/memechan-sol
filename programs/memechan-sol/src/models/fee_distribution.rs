@@ -24,14 +24,16 @@ pub fn calc_withdraw(fee_state: &StakingPool, lp_ticket: &MemeTicket) -> Result<
         fee_state.fees_x_total,
         user_stake,
         fee_state.stakes_total,
-    )?;
+    )
+    .unwrap_or(0);
 
     let max_withdrawal_quote = get_max_withdraw(
         user_withdrawals_quote,
         fee_state.fees_y_total,
         user_stake,
         fee_state.stakes_total,
-    )?;
+    )
+    .unwrap_or(0);
 
     Ok(Withdrawal {
         max_withdrawal_meme,

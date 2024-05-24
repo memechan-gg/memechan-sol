@@ -70,9 +70,13 @@ pub fn handle(ctx: Context<Unstake>, release_amount: u64) -> Result<()> {
 
     let vesting_data = accs.meme_ticket.vesting;
     let vesting_config = accs.staking.vesting_config;
+    let current_ts = Clock::get()?.unix_timestamp;
 
-    let amount_available_to_release =
-        vesting_data.to_release(&vesting_config, Clock::get()?.unix_timestamp);
+    if vesting_config.cliff_ts > current_ts {
+        return Err(error!(AmmError::CantUnstakeBeforeCliff));
+    }
+
+    let amount_available_to_release = vesting_data.to_release(&vesting_config, current_ts);
 
     if release_amount > amount_available_to_release {
         return Err(error!(AmmError::NotEnoughTokensToRelease));
@@ -104,6 +108,13 @@ pub fn handle(ctx: Context<Unstake>, release_amount: u64) -> Result<()> {
         accs.send_quote_to_user().with_signer(staking_signer_seeds),
         withdrawal.max_withdrawal_quote,
     )?;
+
+    msg!(
+        "unstake for: {} fees_meme: {} fees_quote: {}",
+        release_amount,
+        withdrawal.max_withdrawal_meme,
+        withdrawal.max_withdrawal_quote,
+    );
 
     Ok(())
 }

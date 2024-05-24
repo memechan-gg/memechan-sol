@@ -26,7 +26,7 @@ anchor-spl = {version = "0.29.0", features = ["metadata"]}
 uint = "0.9.5"
 # serum_dex = { git = "https://github.com/openbook-dex/program.git", features = ["no-entrypoint"] }
 bytemuck = "*"
-spl-math = "0.2.0"
+spl-math = {version = "0.2.0", features = [ "no-entrypoint" ]}
 
 [dev-dependencies]
 csv = "1.1"

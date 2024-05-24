@@ -12,12 +12,7 @@ use core as core_;
 
 use endpoints::*;
 
-declare_id!("BDRDLhqbfEQx2LZQ9Js7k1Dt1S9AArTw44q1rM96YrwC");
-
-pub mod admin {
-    use anchor_lang::prelude::declare_id;
-    declare_id!("8RSDaghj3qZLBNvRBiN5oULX66dgng9pW2HxHubpR8TW");
-}
+declare_id!("3ZSoMaLkD4QBVY94hiqRsi7wtxhXHn1cQxKzPnXyB2KP");
 
 #[program]
 pub mod memechan_sol {
@@ -36,12 +31,28 @@ pub mod memechan_sol {
         create_metadata::handle(ctx, name, symbol, uri)
     }
 
+    pub fn get_swap_x_amt(
+        ctx: Context<GetSwapXAmt>,
+        coin_in_amount: u64,
+        coin_y_min_value: u64,
+    ) -> Result<()> {
+        get_swap_x_amt::handle(ctx, coin_in_amount, coin_y_min_value)
+    }
+
     pub fn swap_x(
         ctx: Context<SwapCoinX>,
         coin_in_amount: u64,
         coin_y_min_value: u64,
     ) -> Result<()> {
         swap_x::handle(ctx, coin_in_amount, coin_y_min_value)
+    }
+
+    pub fn get_swap_y_amt(
+        ctx: Context<GetSwapYAmt>,
+        coin_in_amount: u64,
+        coin_x_min_value: u64,
+    ) -> Result<()> {
+        get_swap_y_amt::handle(ctx, coin_in_amount, coin_x_min_value)
     }
 
     pub fn swap_y(

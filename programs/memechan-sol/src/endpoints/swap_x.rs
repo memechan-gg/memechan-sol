@@ -96,5 +96,11 @@ pub fn handle(ctx: Context<SwapCoinX>, coin_in_amount: u64, coin_y_min_value: u6
     )
     .unwrap();
 
+    msg!(
+        "swapped_in: {}\n swapped_out: {}",
+        swap_amount.amount_in,
+        swap_amount.amount_out
+    );
+
     Ok(())
 }

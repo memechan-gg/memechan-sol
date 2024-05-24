@@ -78,11 +78,17 @@ pub fn handle(ctx: Context<SwapCoinY>, coin_in_amount: u64, coin_x_min_value: u6
         pool.locked = true;
     };
 
-    let swap_amount = swap_amount.amount_out;
+    let swap_amount_out = swap_amount.amount_out;
 
     let meme_ticket = &mut accs.meme_ticket;
 
-    meme_ticket.setup(pool.key(), accs.owner.key(), swap_amount);
+    meme_ticket.setup(pool.key(), accs.owner.key(), swap_amount_out);
+
+    msg!(
+        "swapped_in: {}\n swapped_out: {}",
+        swap_amount.amount_in,
+        swap_amount.amount_out
+    );
 
     return Ok(());
 }

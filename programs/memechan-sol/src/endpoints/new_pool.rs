@@ -1,16 +1,9 @@
-use crate::consts::DEFAULT_MAX_M;
-use crate::consts::DEFAULT_MAX_M_LP;
-use crate::consts::DEFAULT_PRICE_FACTOR;
-use crate::consts::MAX_MEME_TOKENS;
-use crate::consts::MAX_TICKET_TOKENS;
-use crate::consts::MEME_TOKEN_DECIMALS;
-use crate::consts::SLERF_MINT;
+use crate::consts::{
+    ADMIN_KEY, DEFAULT_MAX_M, DEFAULT_MAX_M_LP, DEFAULT_PRICE_FACTOR, MAX_MEME_TOKENS,
+    MAX_TICKET_TOKENS, MEME_TOKEN_DECIMALS, SLERF_MINT,
+};
 use crate::err;
-use crate::models::bound::compute_alpha_abs;
-use crate::models::bound::compute_beta;
-use crate::models::bound::BoundPool;
-use crate::models::bound::Config;
-use crate::models::bound::Decimals;
+use crate::models::bound::{compute_alpha_abs, compute_beta, BoundPool, Config, Decimals};
 use crate::models::fees::Fees;
 use crate::models::fees::FEE;
 use crate::models::target_config::TargetConfig;
@@ -54,7 +47,7 @@ pub struct NewPool<'info> {
     #[account(
         constraint = admin_quote_vault.mint == quote_mint.key()
             @ err::acc("Admin quote vault must be of SLERF mint"),
-        constraint = admin_quote_vault.owner == crate::admin::id()
+        constraint = admin_quote_vault.owner == ADMIN_KEY
             @ err::acc("Admin quote vault authority must match admin"),
     )]
     pub admin_quote_vault: Account<'info, TokenAccount>,
@@ -123,8 +116,8 @@ pub fn handle(ctx: Context<NewPool>) -> Result<()> {
         fee_out_percent: FEE,
     };
 
-    let gamma_s = (accs.target_config.token_target_amount
-        / 10u64.pow(accs.quote_mint.decimals as u32)) as u128;
+    let mint_decimals = 10_u64.checked_pow(accs.quote_mint.decimals as u32).unwrap();
+    let gamma_s = (accs.target_config.token_target_amount / mint_decimals) as u128;
     let gamma_m = DEFAULT_MAX_M;
     let omega_m = DEFAULT_MAX_M_LP;
     let price_factor = DEFAULT_PRICE_FACTOR;
@@ -141,7 +134,7 @@ pub fn handle(ctx: Context<NewPool>) -> Result<()> {
         decimals: Decimals {
             alpha: decimals,
             beta: decimals,
-            quote: accs.quote_mint.decimals as u64,
+            quote: mint_decimals,
         },
     };
 
