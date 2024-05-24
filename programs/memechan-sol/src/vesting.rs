@@ -1,12 +1,12 @@
 use anchor_lang::prelude::*;
 
 #[cfg(not(feature = "mainnet"))]
-const DEFAULT_CLIFF: i64 = 180; // 48 hours; TODO: test
+const DEFAULT_CLIFF: i64 = 180; // 3 minutes; TODO: test
 #[cfg(feature = "mainnet")]
 const DEFAULT_CLIFF: i64 = 172_800; // 48 hours;
 
 #[cfg(not(feature = "mainnet"))]
-const DEFAULT_LINEAR: i64 = 3600; // 14 days; TODO: test
+const DEFAULT_LINEAR: i64 = 3600; // 1 hour; TODO: test
 #[cfg(feature = "mainnet")]
 const DEFAULT_LINEAR: i64 = 1_209_600; // 14 days;
 
