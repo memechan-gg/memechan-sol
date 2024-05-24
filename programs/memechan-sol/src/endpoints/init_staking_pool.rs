@@ -28,6 +28,7 @@ pub struct InitStakingPool<'info> {
         close = signer,
         has_one = admin_vault_quote,
         constraint = pool.locked
+            @ err::acc("Pool must be locked before proceeding to live phase"),
     )]
     pub pool: Box<Account<'info, BoundPool>>,
     /// CHECK: bound-curve phase pda signer
@@ -200,6 +201,7 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, InitStakingPool<'info>>) ->
         target_token_amt,
         quote_decimals
     );
+
     if quote_supply != target_token_amt * quote_decimals {
         return Err(error!(AmmError::InvariantViolation));
     }

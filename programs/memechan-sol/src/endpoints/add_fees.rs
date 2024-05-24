@@ -7,6 +7,8 @@ use crate::{
     raydium::{self, models::AmmInfo},
 };
 
+use crate::err::AmmError;
+use crate::math::Decimal;
 use crate::raydium::RaydiumAmm;
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token, TokenAccount};
@@ -187,6 +189,10 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<
     let lp_tokens_owned = accs.staking_lp_wallet.amount;
 
     let lp_tokens_to_burn = lp_tokens_to_burn(fee_ratio, lp_tokens_owned)?;
+
+    if lp_tokens_to_burn == 0 {
+        return Err(error!(AmmError::NoFeesToAdd));
+    }
 
     accs.redeem_liquidity(lp_tokens_to_burn, staking_signer_seeds)?;
 
