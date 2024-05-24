@@ -1,8 +1,7 @@
 use crate::{
     consts::RAYDIUM_PROGRAM_ID,
     models::{
-        fee_distribution::{arithmetic_fee_ratio, cumulated_lp_withdrawal, lp_tokens_to_withdraw},
-        staking::StakingPool,
+        staking::{lp_tokens_to_burn, StakingPool},
         OpenBook,
     },
     raydium::{self, models::AmmInfo},
@@ -178,7 +177,7 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<
 
     drop(amm);
 
-    let fee_ratio = arithmetic_fee_ratio(
+    let fee_ratio = accs.staking.compute_fee_ratio_and_update(
         accs.raydium_meme_vault.amount,
         cumulated_fees_meme,
         accs.raydium_quote_vault.amount,
@@ -187,12 +186,9 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<
 
     let lp_tokens_owned = accs.staking_lp_wallet.amount;
 
-    let cumulated_lp_withdrawal = cumulated_lp_withdrawal(&fee_ratio, lp_tokens_owned)?;
+    let lp_tokens_to_burn = lp_tokens_to_burn(fee_ratio, lp_tokens_owned)?;
 
-    let lp_tokens_to_withdraw =
-        lp_tokens_to_withdraw(&cumulated_lp_withdrawal, accs.staking.lp_tokens_withdrawn)?;
-
-    accs.redeem_liquidity(lp_tokens_to_withdraw, staking_signer_seeds)?;
+    accs.redeem_liquidity(lp_tokens_to_burn, staking_signer_seeds)?;
 
     accs.meme_vault.reload().unwrap();
     accs.quote_vault.reload().unwrap();
@@ -200,8 +196,6 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<
     let state = &mut accs.staking;
     state.fees_x_total += accs.meme_vault.amount - meme_vault_initial_amt;
     state.fees_y_total += accs.quote_vault.amount - quote_vault_initial_amt;
-
-    accs.staking.lp_tokens_withdrawn += lp_tokens_to_withdraw;
 
     Ok(())
 }
