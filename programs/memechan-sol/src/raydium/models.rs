@@ -35,7 +35,6 @@ macro_rules! impl_loadable {
     };
 }
 
-#[account(zero_copy)]
 #[repr(C)]
 #[derive(Debug, Default, PartialEq)]
 pub struct AmmConfig {
@@ -147,9 +146,7 @@ impl AmmInfo {
 }
 
 #[repr(C)]
-#[derive(
-    Clone, Copy, Debug, Default, PartialEq, AnchorDeserialize, AnchorSerialize, Zeroable, Pod,
-)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Zeroable, Pod, BorshSerialize)]
 pub struct RaydiumFees {
     /// numerator of the min_separate
     pub min_separate_numerator: u64,
@@ -174,7 +171,7 @@ pub struct RaydiumFees {
 }
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, Default, PartialEq, AnchorDeserialize, AnchorSerialize, Zeroable)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Zeroable)]
 pub struct StateData {
     /// delay to take pnl coin
     pub need_take_pnl_coin: u64,
@@ -214,13 +211,12 @@ pub(crate) struct LastOrderDistance {
 }
 
 #[repr(C)]
-#[derive(Clone, Copy, Default, AnchorDeserialize, AnchorSerialize, Zeroable, Pod)]
+#[derive(Clone, Copy, Default, Zeroable, Pod)]
 pub struct TargetOrder {
     pub price: u64,
     pub vol: u64,
 }
 
-#[account(zero_copy(unsafe))]
 #[repr(C)]
 pub struct TargetOrders {
     pub owner: [u64; 4],
@@ -254,7 +250,6 @@ pub struct TargetOrders {
     pub free_slot_bits: u128,
 }
 
-#[account(zero_copy(unsafe))]
 #[repr(packed)]
 pub struct OpenOrders {
     pub account_flags: u64, // Initialized, OpenOrders
@@ -275,7 +270,6 @@ pub struct OpenOrders {
     pub referrer_rebates_accrued: u64,
 }
 
-#[account(zero_copy(unsafe))]
 #[repr(C)]
 pub struct MarketState {
     // 0

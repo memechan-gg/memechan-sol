@@ -29,10 +29,8 @@ import {
   provider,
   admin,
   solMint,
-  amm,
   sleep,
 } from "./helpers";
-import { createProgramToll, programTollAddress } from "./amm";
 import { BN } from "@project-serum/anchor";
 import { AmmPool } from "./pool";
 import { Staking } from "./staking";
@@ -146,18 +144,21 @@ export class BoundPool {
       poolSigner,
       launchVaultid
     );
+    
+    const targetConfig = BoundPool.targerConfigPda(id.publicKey);
 
     await memechan.methods
-      .new()
+      .newPool()
       .accounts({
-        adminSolVault: adminSolVault,
-        launchVault: launchVault,
-        solVault: poolSolVault,
+        adminQuoteVault: adminSolVault,
+        memeVault: launchVault,
+        quoteVault: poolSolVault,
         memeMint: memeMint,
         pool: id.publicKey,
         poolSigner: poolSigner,
         sender: signer.publicKey,
-        solMint: solMint,
+        targetConfig,
+        quoteMint: solMint,
         tokenProgram: TOKEN_PROGRAM_ID,
         systemProgram: SystemProgram.programId,
       })
@@ -186,19 +187,30 @@ export class BoundPool {
     return BoundPool.signerFrom(this.id);
   }
 
-  public associatedPda(marketAccount: PublicKey, seed: string): PublicKey {
-    const pda = PublicKey.findProgramAddressSync(
+  public static targerConfigPda(pool: PublicKey) {
+    return BoundPool.findPDAGeneric("target_config", pool, memechan.programId)
+  }
+
+  public static findPDAGeneric(pref: string, pubkey: PublicKey, memechanProgramId: PublicKey): PublicKey {
+    return PublicKey.findProgramAddressSync(
+      [Buffer.from(pref), pubkey.toBytes()],
+      memechanProgramId,
+    )[0];
+  }
+
+  public associatedPda(marketAccount: PublicKey, seed: string): [PublicKey, number] {
+    const [pda, nom] = PublicKey.findProgramAddressSync(
       [
         RAYDIUM_PROGRAM_ID.toBytes(),
         marketAccount.toBytes(),
-        Buffer.from(TARGET_ASSOCIATED_SEED),
+        Buffer.from(seed),
       ],
       RAYDIUM_PROGRAM_ID
-    )[0];
+    );
 
-    return pda;
+    return [pda, nom];
   }
-
+/*
   public static async airdropLiquidityTokens(
     mint: PublicKey,
     wallet: PublicKey,
@@ -235,7 +247,7 @@ export class BoundPool {
         owner: user.publicKey,
         pool: pool,
         poolSignerPda: poolSignerPda,
-        solVault: this.solVault,
+        quoteVault: this.solVault,
         userSol: userSolAcc,
         systemProgram: SystemProgram.programId,
         tokenProgram: TOKEN_PROGRAM_ID,
@@ -612,4 +624,5 @@ export class BoundPool {
 //     [Buffer.from("signer"), publicKey.toBytes()],
 //     memechan.programId
 //   )[0];
-// }
+// }*/
+}

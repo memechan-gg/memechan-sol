@@ -5,14 +5,12 @@ import { expect } from "chai";
 import { Program, workspace } from "@project-serum/anchor";
 import { MemechanSol } from "../target/types/memechan_sol";
 import { NATIVE_MINT, createWrappedNativeAccount } from "@solana/spl-token";
-import { Amm } from "../target/types/amm";
 
 export const provider = AnchorProvider.local();
 setProvider(provider);
 export const payer = (provider.wallet as NodeWallet).payer;
 
 export const memechan = workspace.MemechanSol as Program<MemechanSol>;
-export const amm = workspace.Amm as Program<Amm>;
 
 export const admin = new PublicKey("8vBA2MzaQdt3UWimSkx1J4m2zMgp8A2iwtRKzXVurXP2");
 
