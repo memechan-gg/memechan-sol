@@ -1,7 +1,9 @@
 use anchor_lang::prelude::borsh::{self, BorshSerialize};
-use anchor_lang::prelude::*;
+use anchor_lang::{prelude::*, Owners};
 use bytemuck::{Pod, Zeroable};
 use solana_program::pubkey::Pubkey;
+
+use crate::consts::{RAYDIUM_PROGRAM_ID, RAYDIUM_PROGRAM_ID_};
 
 pub const TEN_THOUSAND: u64 = 10000;
 pub const MAX_ORDER_LIMIT: usize = 10;
@@ -20,6 +22,12 @@ pub struct AmmConfig {
     pub pending_2: [u64; 31],
     /// init amm pool fee amount
     pub create_pool_fee: u64,
+}
+
+impl Owners for AmmInfo {
+    fn owners() -> &'static [Pubkey] {
+        RAYDIUM_PROGRAM_ID_
+    }
 }
 
 #[account(zero_copy)]

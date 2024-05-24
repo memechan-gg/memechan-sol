@@ -36,6 +36,8 @@ pub const RAYDIUM_PROGRAM_ID: Pubkey =
 pub const RAYDIUM_PROGRAM_ID: Pubkey =
     solana_program::pubkey!("675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8"); // Mainnet
 
+pub const RAYDIUM_PROGRAM_ID_: &'static [Pubkey] = &[RAYDIUM_PROGRAM_ID];
+
 #[cfg(not(feature = "mainnet"))]
 pub const OPENBOOK_PROGRAM_ID: Pubkey =
     solana_program::pubkey!("EoTcMgcDRTJVZDMZWBoU6rhYHZfkNTVEAfz3uUJRcYGj"); // Devnet

@@ -4,6 +4,7 @@
 
 pub mod f64;
 pub mod u192_decimal;
+pub mod utils;
 
 use anchor_lang::prelude::*;
 use std::fmt;
@@ -94,12 +95,8 @@ pub trait AlmostEq: ScaledVal + TrySub<Self> + Ord + Clone {
         let precision = Self::from_scaled_val(10u128.pow(precision));
         match self.cmp(other) {
             std::cmp::Ordering::Equal => true,
-            std::cmp::Ordering::Less => {
-                other.try_sub(self.clone()).unwrap() < precision
-            }
-            std::cmp::Ordering::Greater => {
-                self.try_sub(other.clone()).unwrap() < precision
-            }
+            std::cmp::Ordering::Less => other.try_sub(self.clone()).unwrap() < precision,
+            std::cmp::Ordering::Greater => self.try_sub(other.clone()).unwrap() < precision,
         }
     }
 }

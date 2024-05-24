@@ -1270,6 +1270,7 @@ dependencies = [
  "num-integer",
  "proptest",
  "solana-program",
+ "spl-math",
  "uint",
 ]
 
@@ -2170,6 +2171,20 @@ dependencies = [
  "sha2 0.10.8",
  "syn 2.0.53",
  "thiserror",
+]
+
+[[package]]
+name = "spl-math"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "102d87a7608c793497fa3e85e9d0e24a33be06a94fb029b2cd30d794295f8110"
+dependencies = [
+ "borsh 0.10.3",
+ "num-derive 0.3.3",
+ "num-traits",
+ "solana-program",
+ "thiserror",
+ "uint",
 ]
 
 [[package]]

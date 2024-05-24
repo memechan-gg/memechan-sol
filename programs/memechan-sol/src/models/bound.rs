@@ -1,7 +1,11 @@
-use crate::{consts::DECIMALS_S, err::AmmError, models::CheckedMath};
+use crate::{
+    consts::DECIMALS_S,
+    err::AmmError,
+    math::utils::{multiply_divide, CheckedMath, CheckedMath256},
+};
 use anchor_lang::prelude::*;
-use num_integer::Roots;
 use solana_program::pubkey::Pubkey;
+use spl_math::uint::U256;
 use std::{cmp::min, mem};
 
 use super::{fees::Fees, Reserve, SwapAmount};
@@ -152,19 +156,9 @@ impl BoundPool {
         let alpha_decimals = self.config.decimals.alpha;
         let beta_decimals = self.config.decimals.beta;
 
-        match delta_s1_strategy(alpha_abs, beta, alpha_decimals, beta_decimals, s_b, delta_m) {
+        match delta_s_strategy(alpha_abs, beta, alpha_decimals, beta_decimals, s_b, delta_m) {
             Some(delta_s) => Ok(delta_s as u64),
-            None => match delta_s2_strategy(
-                alpha_abs,
-                beta,
-                alpha_decimals,
-                beta_decimals,
-                s_b,
-                delta_m,
-            ) {
-                Some(delta_s) => Ok(delta_s as u64),
-                None => Err(error!(AmmError::MathOverflow)),
-            },
+            None => Err(error!(AmmError::MathOverflow)),
         }
     }
 
@@ -317,7 +311,7 @@ impl BoundPool {
     }
 }
 
-fn delta_s1_strategy(
+fn delta_s_strategy(
     alpha_abs: u128,
     beta: u128,
     alpha_decimals: u128,
@@ -325,194 +319,92 @@ fn delta_s1_strategy(
     s_b: u128,
     delta_m: u128,
 ) -> Option<u128> {
-    // a1 = 2 * beta * alpha_decimals * DECIMALS_S - 2 * alpha_abs * s_b * beta_decimals;
-    let a1 = (2 * beta)
+    let alpha_abs = U256::from(alpha_abs);
+    let beta = U256::from(beta);
+    let alpha_decimals = U256::from(alpha_decimals);
+    let beta_decimals = U256::from(beta_decimals);
+    let s_b = U256::from(s_b);
+    let delta_m = U256::from(delta_m);
+    let decimals_s = U256::from(DECIMALS_S);
+
+    let u = U256::from(2)
+        .checked_mul(beta)
         .checked_mul(alpha_decimals)
-        .checked_mul(DECIMALS_S)
-        .checked_sub_((2 * alpha_abs).checked_mul(s_b).checked_mul(beta_decimals));
-
-    if let None = a1 {
-        return None;
-    }
-
-    // b1 = beta_decimals * beta_decimals * DECIMALS_S;
-    let b1 = beta_decimals.checked_pow(2).checked_mul(DECIMALS_S);
-
-    if let None = b1 {
-        return None;
-    }
-
-    // c1 = 8 * delta_m * alpha_abs;
-    let c1 = (8 * alpha_abs).checked_mul(delta_m);
-
-    if let None = c1 {
-        return None;
-    }
-
-    // a = (a1.pow(2) * alpha_decimals + c1 * b1.pow(2)).sqrt();
-    let a = a1
-        .checked_pow(2)
-        .checked_mul(alpha_decimals)
-        .checked_add_(b1.checked_pow(2).checked_mul_(c1))
-        .sqrt();
-
-    if let None = a {
-        return None;
-    }
-
-    // b = (alpha_decimals * b1.pow(2)).sqrt();
-    let b = b1.checked_pow(2).checked_mul(alpha_decimals).sqrt();
-
-    if let None = b {
-        return None;
-    }
-
-    // u = 2 * beta * alpha_decimals * DECIMALS_S - 2 * alpha_abs * s_b * beta_decimals;
-    let u = (2 * beta)
-        .checked_mul(alpha_decimals)
-        .checked_mul(DECIMALS_S)
-        .checked_sub_((2 * alpha_abs).checked_mul(s_b).checked_mul(beta_decimals));
+        .checked_mul(decimals_s)
+        .checked_sub_(
+            U256::from(2)
+                .checked_mul(alpha_abs)
+                .checked_mul(s_b)
+                .checked_mul(beta_decimals),
+        );
 
     if let None = u {
         return None;
     }
+    let u = u.unwrap();
 
-    // v = alpha_decimals * beta_decimals * DECIMALS_S;
     let v = alpha_decimals
         .checked_mul(beta_decimals)
-        .checked_mul(DECIMALS_S);
+        .checked_mul(decimals_s);
 
     if let None = v {
         return None;
     }
+    let v = v.unwrap();
 
-    // num = (a * v - u * b) * DECIMALS_S * alpha_decimals;
-    let num = a
-        .checked_mul_(v)
-        .checked_sub_(u.checked_mul_(b))
-        .checked_mul(DECIMALS_S)
-        .checked_mul(alpha_decimals);
-
-    if let None = num {
-        return None;
-    }
-
-    // denom = (2 * alpha_abs) * (b * v);
-    let denom = b.checked_mul_(v).checked_mul(2 * alpha_abs);
-
-    if let None = denom {
-        return None;
-    }
-
-    // delta_s = num / denom
-    num.checked_div_(denom)
-}
-
-fn multiply_until_overflow(nums: Vec<u128>) -> (u128, Vec<u128>) {
-    fn helper(nums: &[u128], current_product: u128) -> (u128, Vec<u128>) {
-        if nums.is_empty() {
-            return (current_product, vec![]);
-        }
-
-        let next = nums[0];
-        if let Some(result) = current_product.checked_mul(next) {
-            helper(&nums[1..], result)
-        } else {
-            (current_product, nums.to_vec())
-        }
-    }
-
-    if nums.is_empty() {
-        return (1, vec![]);
-    }
-
-    helper(&nums, 1)
-}
-
-fn delta_s2_strategy(
-    alpha_abs: u128,
-    beta: u128,
-    alpha_decimals: u128,
-    beta_decimals: u128,
-    s_b: u128,
-    delta_m: u128,
-) -> Option<u128> {
-    // u = 2 * beta * alpha_decimals * DECIMALS_S - 2 * alpha_abs * s_b * beta_decimals;
-    let u = (2 * beta)
-        .checked_mul(alpha_decimals)
-        .checked_mul(DECIMALS_S)
-        .checked_sub_((2 * alpha_abs).checked_mul(s_b).checked_mul(beta_decimals));
-
-    if let None = u {
-        return None;
-    }
-
-    let w = (8 * alpha_abs).checked_mul(delta_m);
+    let w = U256::from(8).checked_mul(delta_m).checked_mul(alpha_abs);
 
     if let None = w {
         return None;
     }
+    let w = w.unwrap();
 
-    // First = a / (D_beta * sqrt(D_alpha) * 2 * alpha_abs)
-    // Where, a = sqrt( u^2 * D_alpha + wv^2 )
-    // <=> a = u * sqrt(D_alpha) + sqrt( w * D_alpha^2 * D_beta^2 * D_S^2)
-    // In relation to the second term we want to maximize precision without risking overflow
-    // therefore we use `multiply_until_overflow` which multiply the terms inside the square root until
-    // before it hits overflow
-
-    let first_num_1 = u.checked_mul(alpha_decimals.sqrt());
-
-    if let None = first_num_1 {
+    let a = compute_a(u, alpha_decimals, w, v, U256::from(1));
+    if let None = a {
         return None;
     }
+    let a = a.unwrap();
 
-    let (maxed_elem, remaining_elems) = multiply_until_overflow(vec![
-        w.unwrap(),
-        alpha_decimals,
-        beta_decimals,
-        DECIMALS_S,
-        alpha_decimals,
-        beta_decimals,
-        DECIMALS_S,
-    ]);
+    let b = ((v.checked_pow(U256::from(2))).checked_mul(alpha_decimals)).sqrt();
 
-    // Once we hit a maxed value we scale it down with the square root
-    let maxed_elem_sqrt = Some(maxed_elem.sqrt());
-
-    // And multiply against the remaining factor. The remaining factor is the product of
-    // all the square roots of the remaining elements
-    let remaining_factor = remaining_elems
-        .iter()
-        .try_fold(1u128, |acc, &num| acc.checked_mul(num.sqrt()));
-
-    let first_num_2 = maxed_elem_sqrt.checked_mul_(remaining_factor);
-
-    if let None = first_num_2 {
+    if let None = b {
         return None;
     }
+    let b = b.unwrap();
 
-    let first_num = first_num_1.checked_add_(first_num_2);
-    let first_denom = beta_decimals
-        .checked_mul(alpha_decimals.sqrt())
-        .checked_mul(2 * alpha_abs);
+    let num_1 = vec![decimals_s, alpha_decimals, a, v];
+    let num_2 = vec![decimals_s, alpha_decimals, u, b];
+    let denom_ = vec![U256::from(2), alpha_abs, b, v];
 
-    let first_term = first_num.checked_div_(first_denom);
+    let left = multiply_divide(num_1, denom_.clone());
+    let right = multiply_divide(num_2, denom_);
 
-    if let None = first_term {
-        return None;
+    left.checked_sub_(right).map(|value| value.as_u128())
+}
+
+fn compute_a(u: U256, alpha_decimals: U256, w: U256, v: U256, scale: U256) -> Option<U256> {
+    let left = u
+        .checked_div(scale)
+        .checked_mul(u)
+        .checked_mul(alpha_decimals);
+
+    let right = v.checked_div(scale).checked_mul(v).checked_mul(w);
+
+    let result = left
+        .checked_add_(right)
+        .sqrt()
+        .checked_mul(scale.integer_sqrt());
+
+    match result {
+        Some(value) => Some(value),
+        None => compute_a(
+            u,
+            alpha_decimals,
+            w,
+            v,
+            scale.checked_mul(U256::from(100)).unwrap(),
+        ),
     }
-
-    let second_term = beta
-        .checked_mul(DECIMALS_S)
-        .checked_div(beta_decimals)
-        .checked_mul(alpha_decimals)
-        .checked_div(alpha_abs);
-
-    if let None = second_term {
-        return None;
-    }
-
-    first_term.checked_sub_(second_term).checked_add(s_b)
 }
 
 fn delta_m2_strategy(
@@ -523,7 +415,6 @@ fn delta_m2_strategy(
     s_a: u128,
     s_b: u128,
 ) -> Option<u128> {
-    println!("STRATEGY 2");
     let left = (beta * 2)
         .checked_mul(DECIMALS_S)
         .checked_mul(alpha_decimals)
@@ -588,12 +479,6 @@ fn delta_m1_strategy(
     if let None = right {
         return None;
     }
-
-    // println!("left: {:?}", left.unwrap());
-    // println!("right: {:?}", right.unwrap());
-    // println!("left- right: {:?}", left.checked_sub_(right).unwrap());
-
-    // panic!();
 
     left.checked_sub_(right)
 }
@@ -1024,6 +909,208 @@ mod tests {
         Ok(())
     }
 
+    #[test]
+    fn test_delta_s() -> Result<()> {
+        let gamma_s: u128 = 1000;
+        let gamma_m: u128 = 1643350384685548;
+        let omega_m: u128 = 100000000;
+        let price_factor = 1;
+        let delta_m = 1643350384685596;
+        let s_b = 1000000000000 as u64;
+
+        let (alpha, alpha_decimals) = compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor)?;
+        let beta = compute_beta(gamma_s, gamma_m, omega_m, price_factor, alpha_decimals)?;
+
+        let pool = BoundPool {
+            config: Config {
+                alpha_abs: alpha,
+                beta,
+                price_factor,
+                gamma_s: gamma_s as u64,
+                gamma_m: gamma_m as u64,
+                omega_m: omega_m as u64,
+                decimals: Decimals {
+                    alpha: alpha_decimals,
+                    beta: alpha_decimals,
+                    quote: 1_000_000_000,
+                },
+            },
+            ..Default::default()
+        };
+
+        let delta_s = pool.compute_delta_s(s_b as u64, delta_m)?;
+
+        assert_eq!(delta_s, 1000000000000);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_delta_s_1() -> Result<()> {
+        let gamma_s: u128 = 1000000;
+        let gamma_m: u128 = 51643300384685548;
+        let omega_m: u128 = 100000000;
+        let price_factor = 1;
+        let delta_m = 103234957369087;
+        let s_b = 1000000000000 as u64;
+
+        let (alpha, alpha_decimals) = compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor)?;
+        let beta = compute_beta(gamma_s, gamma_m, omega_m, price_factor, alpha_decimals)?;
+
+        let pool = BoundPool {
+            config: Config {
+                alpha_abs: alpha,
+                beta,
+                price_factor,
+                gamma_s: gamma_s as u64,
+                gamma_m: gamma_m as u64,
+                omega_m: omega_m as u64,
+                decimals: Decimals {
+                    alpha: alpha_decimals,
+                    beta: alpha_decimals,
+                    quote: 1_000_000_000,
+                },
+            },
+            ..Default::default()
+        };
+
+        let delta_s = pool.compute_delta_s(s_b as u64, delta_m)?;
+
+        assert_eq!(delta_s, 1000000000000);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_delta_s_2() -> Result<()> {
+        let gamma_s: u128 = 1001;
+        let gamma_m: u128 = 1643350384685548;
+        let omega_m: u128 = 100000000;
+        let price_factor = 1;
+        let delta_m = 1640068607501974;
+        let s_b = 1001000000000 as u64;
+
+        let (alpha, alpha_decimals) = compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor)?;
+        let beta = compute_beta(gamma_s, gamma_m, omega_m, price_factor, alpha_decimals)?;
+
+        let delta_s = delta_s_strategy(
+            alpha,
+            beta,
+            alpha_decimals,
+            alpha_decimals,
+            s_b as u128,
+            delta_m,
+        );
+
+        assert_eq!(delta_s.unwrap(), 1000000000000);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_delta_s_3() -> Result<()> {
+        let gamma_s: u128 = 1055;
+        let gamma_m: u128 = 1643350384685548;
+        let omega_m: u128 = 100000000;
+        let price_factor = 1;
+        let delta_m = 1638884051572039;
+        let s_b = 1000000000000 as u64;
+
+        let (alpha, alpha_decimals) = compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor)?;
+        let beta = compute_beta(gamma_s, gamma_m, omega_m, price_factor, alpha_decimals)?;
+
+        let delta_s = delta_s_strategy(
+            alpha,
+            beta,
+            alpha_decimals,
+            alpha_decimals,
+            s_b as u128,
+            delta_m,
+        );
+
+        assert_eq!(delta_s.unwrap(), 1000000000000);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_delta_s_4() -> Result<()> {
+        let gamma_s: u128 = 31623;
+        let gamma_m: u128 = 1693300384685548;
+        let omega_m: u128 = 100000000;
+        let price_factor = 1;
+        let delta_m = 105399683490709;
+        let s_b = 1000000000000 as u64;
+
+        let (alpha, alpha_decimals) = compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor)?;
+        let beta = compute_beta(gamma_s, gamma_m, omega_m, price_factor, alpha_decimals)?;
+
+        let delta_s1 = delta_s_strategy(
+            alpha,
+            beta,
+            alpha_decimals,
+            alpha_decimals,
+            s_b as u128,
+            delta_m,
+        );
+
+        assert!(delta_s1.unwrap() == 1000000000000);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_delta_s_5() -> Result<()> {
+        let gamma_s: u128 = 3162278;
+        let gamma_m: u128 = 501643300384685548;
+        let omega_m: u128 = 100000000;
+        let price_factor = 1;
+        let delta_m = 317216881990209;
+        let s_b = 1000000000000 as u64;
+
+        let (alpha, alpha_decimals) = compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor)?;
+        let beta = compute_beta(gamma_s, gamma_m, omega_m, price_factor, alpha_decimals)?;
+
+        let delta_s1 = delta_s_strategy(
+            alpha,
+            beta,
+            alpha_decimals,
+            alpha_decimals,
+            s_b as u128,
+            delta_m,
+        );
+
+        assert!(delta_s1.unwrap() == 1000000000000);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_delta_s_6() -> Result<()> {
+        let gamma_s: u128 = 3162279;
+        let gamma_m: u128 = 621872196659868452;
+        let omega_m: u128 = 1643300384685548;
+        let price_factor = 1;
+        let delta_m = 392724664528292 as u128;
+        let s_b = 1000000000000 as u64;
+
+        let (alpha, alpha_decimals) = compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor)?;
+        let beta = compute_beta(gamma_s, gamma_m, omega_m, price_factor, alpha_decimals)?;
+
+        let delta_s1 = delta_s_strategy(
+            alpha,
+            beta,
+            alpha_decimals,
+            alpha_decimals,
+            s_b as u128,
+            delta_m,
+        );
+
+        assert!(delta_s1.unwrap() == 1000000000000);
+
+        Ok(())
+    }
+
     fn read_csv_column(filename: &str) -> Vec<u64> {
         // Open the CSV file
         let file = File::open(filename).unwrap();
@@ -1094,7 +1181,7 @@ mod tests {
 
     proptest! {
         #[test]
-        fn successfully_returns_positive_exponent(
+        fn compute_delta_m_and_s_with_fuzzy_params(
             gamma_s in 1_000..10_000_000_u128,
             gamma_m in 100_000_000_u128..900_000_000_000_000_000_u128,
             omega_m in 100_000_000_u128..900_000_000_000_000_000_u128,
@@ -1139,20 +1226,53 @@ mod tests {
             let delta_s = 1000;
 
             for _ in (0..gamma_s).step_by(delta_s) {
-                let actual = pool.compute_delta_m(s_a * 1_000_000_000, (s_a + delta_s as u64) * 1_000_000_000);
+                let delta_m = pool.compute_delta_m(s_a * 1_000_000_000, (s_a + delta_s as u64) * 1_000_000_000);
 
-                if actual.is_err() {
-                    println!("s_a: {:?}", s_a);
-                    println!("s_b: {:?}", s_a + delta_s as u64);
-                    println!("gamma_s: {:?}", gamma_s);
-                    println!("gamma_m: {:?}", gamma_m);
-                    println!("omega_m: {:?}", omega_m);
-                    println!("price_factor: {:?}", price_factor);
+                if delta_m.is_err() {
+                    println!("FAIL (1), s_a: {:?}, s_b: {:?}, gamma_s: {:?}, gamma_m: {:?}, omega_m: {:?}, price_factor: {:?}",
+                        s_a * 1_000_000_000,
+                        (s_a + delta_s as u64) * 1_000_000_000,
+                        gamma_s,
+                        gamma_m,
+                        omega_m,
+                        price_factor
+                    );
 
                     panic!();
                 }
 
-                assert!(actual.unwrap() != 0);
+                let delta_m = delta_m.unwrap();
+
+                assert!(delta_m != 0);
+
+                let delta_s_ = pool.compute_delta_s((s_a + delta_s as u64) * 1_000_000_000, delta_m);
+
+                if delta_s_.is_err() {
+
+                    println!("FAIL (2), delta_m: {:?}, s_b: {:?}, gamma_s: {:?}, gamma_m: {:?}, omega_m: {:?}, price_factor: {:?}",
+                        delta_m,
+                        (s_a + delta_s as u64) * 1_000_000_000,
+                        gamma_s,
+                        gamma_m,
+                        omega_m,
+                        price_factor
+                    );
+
+                    panic!();
+                } else {
+                    // For debugging purposes
+                    // println!("OK({:?}), delta_m: {:?}, s_b: {:?}, gamma_s: {:?}, gamma_m: {:?}, omega_m: {:?}, price_factor: {:?}",
+                    //     delta_s_,
+                    //     delta_m,
+                    //     (s_a + delta_s as u64) * 1_000_000_000,
+                    //     gamma_s,
+                    //     gamma_m,
+                    //     omega_m,
+                    //     price_factor
+                    // );
+
+                    assert!(delta_s_.unwrap() == (delta_s * 1_000_000_000) as u64);
+                }
 
                 s_a += 1;
             }
