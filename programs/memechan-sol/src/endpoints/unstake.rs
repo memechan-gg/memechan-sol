@@ -99,6 +99,13 @@ pub fn handle(ctx: Context<Unstake>, release_amount: u64) -> Result<()> {
 
     let staking_signer_seeds = &[&staking_seeds[..]];
 
+    msg!(
+        "unstake for: {} fees_meme: {} fees_quote: {}",
+        release_amount,
+        withdrawal.max_withdrawal_meme,
+        withdrawal.max_withdrawal_quote,
+    );
+
     token::transfer(
         accs.send_meme_to_user().with_signer(staking_signer_seeds),
         withdrawal.max_withdrawal_meme + release_amount,
@@ -108,13 +115,6 @@ pub fn handle(ctx: Context<Unstake>, release_amount: u64) -> Result<()> {
         accs.send_quote_to_user().with_signer(staking_signer_seeds),
         withdrawal.max_withdrawal_quote,
     )?;
-
-    msg!(
-        "unstake for: {} fees_meme: {} fees_quote: {}",
-        release_amount,
-        withdrawal.max_withdrawal_meme,
-        withdrawal.max_withdrawal_quote,
-    );
 
     Ok(())
 }
