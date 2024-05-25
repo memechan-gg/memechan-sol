@@ -84,6 +84,12 @@ pub fn handle(ctx: Context<WithdrawFees>) -> Result<()> {
     lp_ticket.withdraws_meme += withdrawal.max_withdrawal_meme;
     lp_ticket.withdraws_quote += withdrawal.max_withdrawal_quote;
 
+    msg!(
+        "fees_meme: {} fees_quote: {}",
+        withdrawal.max_withdrawal_meme,
+        withdrawal.max_withdrawal_quote,
+    );
+
     if withdrawal.max_withdrawal_meme > 0 {
         token::transfer(
             accs.send_meme_fees_to_user()
@@ -99,12 +105,6 @@ pub fn handle(ctx: Context<WithdrawFees>) -> Result<()> {
             withdrawal.max_withdrawal_quote,
         )?;
     }
-
-    msg!(
-        "fees_meme: {} fees_quote: {}",
-        withdrawal.max_withdrawal_meme,
-        withdrawal.max_withdrawal_quote,
-    );
 
     Ok(())
 }
