@@ -28,5 +28,5 @@ To collect the logs from proptests
 
 
 # SDK
-1. Create `.npmrc` file with the read token of `@avernikoz/memechan-sol-sdk` (should be something like `//registry.npmjs.org/:_authToken=[real npm auth token]`)
-2. Run `yarn install` to install 
+1. Create `.npmrc` file with the read token of `@avernikoz/memechan-sol-sdk` (should be something like `//registry.npmjs.org/:_authToken=[real npm auth token]`) in the root of the project.
+2. Run `yarn install` to install the sdk dependency
