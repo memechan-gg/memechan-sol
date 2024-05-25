@@ -62,7 +62,7 @@ impl StakingPool {
 }
 
 impl StakingPool {
-    pub fn compute_fee_ratio_and_update(
+    pub fn compute_fee_ratio(
         &mut self,
         meme_balance: u64,
         acc_meme_fee: u64,
@@ -77,9 +77,6 @@ impl StakingPool {
             quote_balance,
             acc_quote_fee,
         )?;
-
-        self.raydium_fees.last_cum_quote_fees = acc_quote_fee;
-        self.raydium_fees.last_cum_meme_fees = acc_meme_fee;
 
         Ok(fee_ratio)
     }
