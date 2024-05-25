@@ -4,6 +4,7 @@ use std::mem;
 
 pub const LOCK_TIME: i64 = 60; // * 3600;
 
+#[derive(Default)]
 #[account]
 pub struct MemeTicket {
     pub owner: Pubkey,
