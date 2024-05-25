@@ -1,79 +1,70 @@
-import { MarketV2, Token, DEVNET_PROGRAM_ID } from "@raydium-io/raydium-sdk";
-import { Connection, Keypair, PublicKey } from "@solana/web3.js";
-import { makeTxVersion } from "./config";
-import { buildAndSendTx } from "./utils";
+import { MarketV2, Token } from "@raydium-io/raydium-sdk";
+import {
+  Connection,
+  Keypair,
+  PublicKey,
+  Transaction,
+  TransactionInstruction,
+  TransactionMessage,
+  VersionedTransaction,
+} from "@solana/web3.js";
+import { PROGRAMIDS, makeTxVersion } from "./config";
+import { buildTxs, sendTx } from "./utils";
+import { OPENBOOK_ID } from "../bound_pool";
 
-type TxInputInfo = {
+type CreateMarketTxInput = {
   baseToken: Token;
   quoteToken: Token;
-  wallet: Keypair;
+  wallet: PublicKey;
+  signer: Keypair;
   connection: Connection;
 };
 
-export async function createMarketTest(input: TxInputInfo) {
-  // -------- step 1: make instructions --------
-
-  const createMarketInstruments =
-    await MarketV2.makeCreateMarketInstructionSimple({
-      connection: input.connection,
-      wallet: input.wallet.publicKey,
-      baseInfo: input.baseToken,
-      quoteInfo: input.quoteToken,
-      lotSize: 1, // default 1
-      tickSize: 0.000001, // default 0.01
-      dexProgramId: DEVNET_PROGRAM_ID.OPENBOOK_MARKET,
-      makeTxVersion,
-    });
+export async function createMarket(input: CreateMarketTxInput) {
+  const { transactions: createMarketTransactions, marketId } = await getCreateMarketTransactions(input);
 
   return {
-    txids: await buildAndSendTx(
-      input.connection,
-      input.wallet,
-      createMarketInstruments.innerTransactions
-    ),
-    marketId: createMarketInstruments.address.marketId,
+    txids: await sendTx(input.connection, input.signer, createMarketTransactions, {
+      skipPreflight: true,
+    }),
+    marketId,
   };
 }
 
-export async function createMarket(input: TxInputInfo) {
-  // -------- step 1: make instructions --------
-  const createMarketInstruments =
-    await MarketV2.makeCreateMarketInstructionSimple({
-      connection: input.connection,
-      wallet: input.wallet.publicKey,
-      baseInfo: input.baseToken,
-      quoteInfo: input.quoteToken,
-      lotSize: 1, // default 1
-      tickSize: 0.000001, // default 0.01
-      dexProgramId: DEVNET_PROGRAM_ID.OPENBOOK_MARKET,
-      makeTxVersion,
-    });
+export async function getCreateMarketTransactions(
+  input: CreateMarketTxInput,
+): Promise<{ transactions: (Transaction | VersionedTransaction)[]; marketId: PublicKey }> {
+  const createMarketInstruments = await MarketV2.makeCreateMarketInstructionSimple({
+    connection: input.connection,
+    wallet: input.wallet,
+    baseInfo: input.baseToken,
+    quoteInfo: input.quoteToken,
+    // set based on https://docs.raydium.io/raydium/updates/archive/creating-an-openbook-amm-pool
+    lotSize: 1,
+    tickSize: 0.000001,
+    dexProgramId: OPENBOOK_ID,
+    makeTxVersion
+  });
 
-  const tx = await buildAndSendTx(
-    input.connection,
-    input.wallet,
-    createMarketInstruments.innerTransactions
-  );
+  const transactions = await buildTxs(input.connection, input.signer, createMarketInstruments.innerTransactions);
 
-  return {
-    txids: tx,
-    marketId: createMarketInstruments.address.marketId,
-    // eventQueue: createMarketInstruments.address.eventQueue,
-    // openOrders: PublicKey;
-    // targetOrders: PublicKey;
-  };
+  return { transactions, marketId: createMarketInstruments.address.marketId };
 }
 
-// async function howToUse() {
-//   const baseToken = DEFAULT_TOKEN.RAY // RAY
-//   const quoteToken = DEFAULT_TOKEN.USDC // USDC
+export function getCreateMarketInstructions(
+  transactions: (Transaction | VersionedTransaction)[],
+): TransactionInstruction[] {
+  const instructions: TransactionInstruction[] = [];
 
-//   createMarket({
-//     baseToken,
-//     quoteToken,
-//     wallet: wallet,
-//   }).then(({ txids }) => {
-//     /** continue with txids */
-//     console.log('txids', txids)
-//   })
-// }
+  transactions.forEach((tx) => {
+    if (tx instanceof VersionedTransaction) {
+      const txMessage = TransactionMessage.decompile(tx.message);
+      const txInstructions = txMessage.instructions;
+      instructions.push(...txInstructions);
+    } else {
+      instructions.push(...tx.instructions);
+    }
+  });
+
+  return instructions;
+}

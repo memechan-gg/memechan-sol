@@ -1,10 +1,12 @@
-import { AnchorProvider, setProvider, BN } from "@project-serum/anchor";
-import { PublicKey } from "@solana/web3.js";
-import NodeWallet from "@project-serum/anchor/dist/cjs/nodewallet";
+import { Program, workspace, AnchorProvider, setProvider, BN } from "@coral-xyz/anchor";
+import { PublicKey, Keypair, Connection, Transaction, Signer, ConfirmOptions, sendAndConfirmTransaction } from "@solana/web3.js";
+import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
 import { expect } from "chai";
-import { Program, workspace } from "@project-serum/anchor";
 import { MemechanSol } from "../target/types/memechan_sol";
-import { NATIVE_MINT, createWrappedNativeAccount } from "@solana/spl-token";
+import { mintTo } from "@solana/spl-token";
+import {config} from "dotenv"
+
+export const conf = config()
 
 export const provider = AnchorProvider.local();
 setProvider(provider);
@@ -12,9 +14,32 @@ export const payer = (provider.wallet as NodeWallet).payer;
 
 export const memechan = workspace.MemechanSol as Program<MemechanSol>;
 
-export const admin = new PublicKey("8vBA2MzaQdt3UWimSkx1J4m2zMgp8A2iwtRKzXVurXP2");
+export const admin = new PublicKey("8SvkUtJZCyJwSQGkiszwcRcPv7c8pPSr8GVEppGNN7DV");
 
-export const solMint = NATIVE_MINT;
+const payerSecretKey = JSON.parse(process.env.ADMIN_PRIV_KEY??"");
+export const adminSigner = Keypair.fromSecretKey(Uint8Array.from(payerSecretKey));
+ 
+export const QUOTE_MINT = new PublicKey("HX2pp5za2aBkrA5X5iTioZXcrpWb2q9DiaeWPW3qKMaw");
+
+export function getSendAndConfirmTransactionMethod({
+  connection,
+  transaction,
+  signers,
+  options = {
+    commitment: "confirmed",
+    skipPreflight: true,
+  },
+}: {
+  connection: Connection;
+  transaction: Transaction;
+  signers: Signer[];
+  options?: ConfirmOptions;
+}): () => Promise<void> {
+  return async () => {
+    await sendAndConfirmTransaction(connection, transaction, signers, options);
+  };
+}
+
 
 export async function errLogs(job: Promise<unknown>): Promise<string> {
   try {
@@ -36,6 +61,15 @@ export async function airdrop(to: PublicKey, amount: number = 100_000_000_000) {
     await provider.connection.requestAirdrop(to, amount),
     "confirmed"
   );
+}
+
+export function findProgramAddress(seeds: Array<Buffer | Uint8Array>, programId: PublicKey) {
+  const [publicKey, nonce] = PublicKey.findProgramAddressSync(seeds, programId);
+  return { publicKey, nonce };
+}
+
+export async function mintQuote(to: PublicKey, amount: number = 1_000_000_000_000_000) {
+  await mintTo(provider.connection, adminSigner, QUOTE_MINT, to, adminSigner, amount)
 }
 
 export async function sleep(ms: number) {
