@@ -83,7 +83,7 @@ fn get_max_withdraw(
         return Err(error!(AmmError::NoTokensToWithdraw));
     }
 
-    let allowed_withdrawal = max_user_withdrawal - user_withdrawals_total;
+    let allowed_withdrawal = max_user_withdrawal - user_withdrawals_total * PRECISION;
 
     Ok((allowed_withdrawal / PRECISION) as u64)
 }
