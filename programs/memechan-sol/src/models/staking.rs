@@ -14,14 +14,14 @@ pub struct StakingPool {
     pub lp_mint: Pubkey,
     pub quote_vault: Pubkey,
     pub vesting_config: VestingConfig,
-    pub raydium_fees: RaydiumFees,
+    pub raydium_fees: RaydiumAmmFees,
     pub stakes_total: u64,
     pub fees_x_total: u64,
     pub fees_y_total: u64,
 }
 
 #[derive(AnchorDeserialize, AnchorSerialize, Copy, Clone, Debug, Eq, PartialEq, Default)]
-pub struct RaydiumFees {
+pub struct RaydiumAmmFees {
     pub last_cum_quote_fees: u64,
     pub last_cum_meme_fees: u64,
 }
