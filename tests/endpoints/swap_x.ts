@@ -1,16 +1,19 @@
 import { assert, expect } from "chai";
-import { BoundPool } from "../bound_pool";
+import { BoundPoolWrapper } from "../bound_pool";
 import { AccountMeta, Keypair, PublicKey } from "@solana/web3.js";
-import { createAccount, createWrappedNativeAccount, getAccount } from "@solana/spl-token";
+import {
+  createAccount,
+  createWrappedNativeAccount,
+  getAccount,
+} from "@solana/spl-token";
 import { memechan, payer, provider, sleep } from "../helpers";
 import { BN } from "@coral-xyz/anchor";
 
 export function test() {
   describe.skip("swap_x", () => {
-
     it.skip("swaps user sol->memecoin->sol", async () => {
       const user = Keypair.generate();
-      const pool = await BoundPool.new();
+      const pool = await BoundPoolWrapper.new();
 
       const userSolAcc = await createWrappedNativeAccount(
         provider.connection,
@@ -25,7 +28,7 @@ export function test() {
         user,
         memeTokensOut: new BN(1),
         solAmountIn: new BN(30 * 1e9),
-        userSolAcc
+        userSolAcc,
       });
 
       await sleep(6000);
@@ -39,7 +42,7 @@ export function test() {
 
     it.skip("swaps sol->memecoin->sol->full meme", async () => {
       const user = Keypair.generate();
-      const pool = await BoundPool.new();
+      const pool = await BoundPoolWrapper.new();
 
       const userSolAcc = await createWrappedNativeAccount(
         provider.connection,
@@ -54,7 +57,7 @@ export function test() {
         user,
         memeTokensOut: new BN(1),
         solAmountIn: new BN(30 * 1e9),
-        userSolAcc
+        userSolAcc,
       });
 
       await sleep(6000);
@@ -74,26 +77,33 @@ export function test() {
 
       const poolInfo = await pool.fetch();
 
-      assert(poolInfo.locked, "pool should be locked")
+      assert(poolInfo.locked, "pool should be locked");
 
       const ticketOneInfo = await userMemeTicket.fetch();
       const ticketInfo = await ticketId.fetch();
 
-      const memesTotal = ticketInfo.amount.add(ticketOneInfo.amount).add(poolInfo.adminFeesMeme);
-      assert(memesTotal.eq(new BN(9e14)), "total sum of memetokens with fees should amount to 9e14")
+      const memesTotal = ticketInfo.amount
+        .add(ticketOneInfo.amount)
+        .add(poolInfo.adminFeesMeme);
+      assert(
+        memesTotal.eq(new BN(9e14)),
+        "total sum of memetokens with fees should amount to 9e14"
+      );
 
       const solAmt = poolInfo.quoteReserve.tokens;
-      assert(solAmt.eq(new BN(3e11)), "pool should have 300 sol")
+      assert(solAmt.eq(new BN(3e11)), "pool should have 300 sol");
 
       const solVault = await getAccount(
         provider.connection,
-        poolInfo.quoteReserve.vault,
-      )
+        poolInfo.quoteReserve.vault
+      );
 
-      const totalAmt = solVault.amount - BigInt(poolInfo.adminFeesQuote.toNumber());
-      assert(totalAmt === BigInt(3e11), "pool should have 300 sol without admin fees")
+      const totalAmt =
+        solVault.amount - BigInt(poolInfo.adminFeesQuote.toNumber());
+      assert(
+        totalAmt === BigInt(3e11),
+        "pool should have 300 sol without admin fees"
+      );
     });
-
   });
-
 }

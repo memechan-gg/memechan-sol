@@ -1,26 +1,22 @@
-import { assert, expect } from "chai";
-import { BoundPool } from "../bound_pool";
-import { AccountMeta, Keypair, PublicKey } from "@solana/web3.js";
-import { createAccount, createWrappedNativeAccount, getAccount } from "@solana/spl-token";
-import { memechan, payer, provider, sleep } from "../helpers";
+import { QUOTE_MINT, memechan, payer, provider, sleep } from "../helpers";
 import { BN } from "@coral-xyz/anchor";
+import { client } from "../common";
+import { Token } from "@raydium-io/raydium-sdk";
+import { BoundPoolWrapper } from "../bound_pool";
 
 export function test() {
-    describe.skip("go_live", () => {
+  describe.skip("go_live", () => {
+    it.skip("full swap then go live", async () => {
+      const pool = await BoundPoolWrapper.new();
 
-        it.skip("full swap then go live", async () => {
-            const pool = await BoundPool.new();
+      await sleep(500);
 
-            await sleep(1000);
+      const ticketId = await pool.swap_y({
+        memeTokensOut: new BN(1),
+        solAmountIn: new BN(303 * 1e9),
+      });
 
-            const ticketId = await pool.swap_y({
-                memeTokensOut: new BN(1),
-                solAmountIn: new BN(303 * 1e9),
-            });
-
-            await pool.go_live({})
-
-        });
+      await pool.go_live({});
     });
-
+  });
 }

@@ -1,12 +1,26 @@
-import { Program, workspace, AnchorProvider, setProvider, BN } from "@coral-xyz/anchor";
-import { PublicKey, Keypair, Connection, Transaction, Signer, ConfirmOptions, sendAndConfirmTransaction } from "@solana/web3.js";
+import {
+  Program,
+  workspace,
+  AnchorProvider,
+  setProvider,
+  BN,
+} from "@coral-xyz/anchor";
+import {
+  PublicKey,
+  Keypair,
+  Connection,
+  Transaction,
+  Signer,
+  ConfirmOptions,
+  sendAndConfirmTransaction,
+} from "@solana/web3.js";
 import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
 import { expect } from "chai";
 import { MemechanSol } from "../target/types/memechan_sol";
 import { mintTo } from "@solana/spl-token";
-import {config} from "dotenv"
+import { config } from "dotenv";
 
-export const conf = config()
+export const conf = config();
 
 export const provider = AnchorProvider.local();
 setProvider(provider);
@@ -14,12 +28,18 @@ export const payer = (provider.wallet as NodeWallet).payer;
 
 export const memechan = workspace.MemechanSol as Program<MemechanSol>;
 
-export const admin = new PublicKey("8SvkUtJZCyJwSQGkiszwcRcPv7c8pPSr8GVEppGNN7DV");
+export const admin = new PublicKey(
+  "8SvkUtJZCyJwSQGkiszwcRcPv7c8pPSr8GVEppGNN7DV"
+);
 
-const payerSecretKey = JSON.parse(process.env.ADMIN_PRIV_KEY??"");
-export const adminSigner = Keypair.fromSecretKey(Uint8Array.from(payerSecretKey));
- 
-export const QUOTE_MINT = new PublicKey("HX2pp5za2aBkrA5X5iTioZXcrpWb2q9DiaeWPW3qKMaw");
+const payerSecretKey = JSON.parse(process.env.ADMIN_PRIV_KEY ?? "");
+export const adminSigner = Keypair.fromSecretKey(
+  Uint8Array.from(payerSecretKey)
+);
+
+export const QUOTE_MINT = new PublicKey(
+  "HX2pp5za2aBkrA5X5iTioZXcrpWb2q9DiaeWPW3qKMaw"
+);
 
 export function getSendAndConfirmTransactionMethod({
   connection,
@@ -39,7 +59,6 @@ export function getSendAndConfirmTransactionMethod({
     await sendAndConfirmTransaction(connection, transaction, signers, options);
   };
 }
-
 
 export async function errLogs(job: Promise<unknown>): Promise<string> {
   try {
@@ -63,13 +82,26 @@ export async function airdrop(to: PublicKey, amount: number = 100_000_000_000) {
   );
 }
 
-export function findProgramAddress(seeds: Array<Buffer | Uint8Array>, programId: PublicKey) {
+export function findProgramAddress(
+  seeds: Array<Buffer | Uint8Array>,
+  programId: PublicKey
+) {
   const [publicKey, nonce] = PublicKey.findProgramAddressSync(seeds, programId);
   return { publicKey, nonce };
 }
 
-export async function mintQuote(to: PublicKey, amount: number = 1_000_000_000_000_000) {
-  await mintTo(provider.connection, adminSigner, QUOTE_MINT, to, adminSigner, amount)
+export async function mintQuote(
+  to: PublicKey,
+  amount: number = 1_000_000_000_000_000
+) {
+  await mintTo(
+    provider.connection,
+    adminSigner,
+    QUOTE_MINT,
+    to,
+    adminSigner,
+    amount
+  );
 }
 
 export async function sleep(ms: number) {
