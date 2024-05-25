@@ -5,6 +5,7 @@
 #![allow(deprecated)]
 use super::models::{LastOrderDistance, RaydiumFees};
 use anchor_lang::prelude::borsh::{self, BorshSerialize};
+use anchor_lang::IdlBuild;
 use solana_program::pubkey::Pubkey;
 
 #[repr(C)]
@@ -359,3 +360,5 @@ pub(crate) enum AmmInstruction {
     /// Update amm config account by admin
     UpdateConfigAccount(ConfigArgs),
 }
+
+impl IdlBuild for AmmInstruction {}

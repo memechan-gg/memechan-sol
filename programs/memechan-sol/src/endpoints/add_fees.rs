@@ -8,7 +8,6 @@ use crate::{
 };
 
 use crate::err::AmmError;
-use crate::math::Decimal;
 use crate::raydium::RaydiumAmm;
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token, TokenAccount};
@@ -199,6 +198,13 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<
     accs.meme_vault.reload().unwrap();
     accs.quote_vault.reload().unwrap();
 
+    msg!(
+        "meme_vault_amt {} meme_vault_initial_amt {} quote_vault_amt {} quote_vault_initial_amt {}",
+        accs.meme_vault.amount,
+        meme_vault_initial_amt,
+        accs.quote_vault.amount,
+        quote_vault_initial_amt
+    );
     let state = &mut accs.staking;
     state.fees_x_total += accs.meme_vault.amount - meme_vault_initial_amt;
     state.fees_y_total += accs.quote_vault.amount - quote_vault_initial_amt;

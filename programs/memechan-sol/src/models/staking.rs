@@ -39,8 +39,7 @@ impl StakingPool {
         let lp_mint = 32;
         let quote_vault = 32;
         let vesting_config = mem::size_of::<VestingConfig>();
-        let last_cum_quote_fees = 8;
-        let last_cum_meme_fees = 8;
+        let raydium_fees = mem::size_of::<RaydiumFees>();
         let stakes_total = 8;
         let fees_x_total = 8;
         let fees_y_total = 8;
@@ -53,8 +52,7 @@ impl StakingPool {
             + lp_mint
             + quote_vault
             + vesting_config
-            + last_cum_quote_fees
-            + last_cum_meme_fees
+            + raydium_fees
             + stakes_total
             + fees_x_total
             + fees_y_total
@@ -121,8 +119,6 @@ pub fn token_fee_ratio(reserve_balance: u64, cumulated_fees: u64) -> Result<Deci
 }
 
 mod tests {
-    use crate::math::{ScaledVal, U192};
-
     use super::*;
 
     #[test]

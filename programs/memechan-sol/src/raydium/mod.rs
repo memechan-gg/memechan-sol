@@ -1,12 +1,13 @@
 pub mod instruction;
 pub mod models;
 
-pub use instruction::*;
-
 pub use anchor_lang::prelude::*;
 use solana_program::instruction::Instruction;
 
 use crate::consts::RAYDIUM_PROGRAM_ID;
+use crate::raydium::instruction::{
+    AmmInstruction, DepositInstruction, InitializeInstruction2, WithdrawInstruction,
+};
 
 #[derive(Clone)]
 pub struct RaydiumAmm;
