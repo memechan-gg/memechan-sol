@@ -13,6 +13,7 @@ pub struct StakingPool {
     pub lp_vault: Pubkey,
     pub lp_mint: Pubkey,
     pub quote_vault: Pubkey,
+    pub raydium_amm: Pubkey,
     pub vesting_config: VestingConfig,
     pub raydium_fees: RaydiumAmmFees,
     pub stakes_total: u64,
@@ -38,9 +39,9 @@ impl StakingPool {
         let lp_vault = 32;
         let lp_mint = 32;
         let quote_vault = 32;
+        let raydium_amm = 32;
         let vesting_config = mem::size_of::<VestingConfig>();
-        let last_cum_quote_fees = 8;
-        let last_cum_meme_fees = 8;
+        let raydium_fees = mem::size_of::<RaydiumAmmFees>();
         let stakes_total = 8;
         let fees_x_total = 8;
         let fees_y_total = 8;
@@ -52,9 +53,9 @@ impl StakingPool {
             + lp_vault
             + lp_mint
             + quote_vault
+            + raydium_amm
             + vesting_config
-            + last_cum_quote_fees
-            + last_cum_meme_fees
+            + raydium_fees
             + stakes_total
             + fees_x_total
             + fees_y_total
