@@ -51,14 +51,8 @@ pub fn update_stake(
 
     let stake_diff = ((user_stake_diff as u128) * PRECISION) / (user_old_stake as u128);
 
-    let user_withdrawals_x = &mut lp_ticket.withdraws_meme;
-    let withdraw_diff_x = get_withdraw_diff(*user_withdrawals_x, stake_diff);
-    *user_withdrawals_x -= withdraw_diff_x;
-
-    let user_withdrawals_y = &mut lp_ticket.withdraws_quote;
-    let withdraw_diff_y = get_withdraw_diff(*user_withdrawals_y, stake_diff);
-    *user_withdrawals_y = withdraw_diff_y;
-
+    lp_ticket.withdraws_meme -= get_withdraw_diff(lp_ticket.withdraws_meme, stake_diff);
+    lp_ticket.withdraws_quote -= get_withdraw_diff(lp_ticket.withdraws_quote, stake_diff);
     state.stakes_total -= user_stake_diff;
 
     Ok(withdrawal)
