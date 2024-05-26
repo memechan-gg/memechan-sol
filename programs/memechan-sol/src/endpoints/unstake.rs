@@ -82,9 +82,11 @@ pub fn handle(ctx: Context<Unstake>, release_amount: u64) -> Result<()> {
         return Err(error!(AmmError::NotEnoughTokensToRelease));
     }
 
+    let ticket = &mut accs.meme_ticket;
+
     let withdrawal = update_stake(
         &mut accs.staking,
-        &mut accs.meme_ticket,
+        ticket,
         vesting_data.current_stake(),
         release_amount,
     )?;
