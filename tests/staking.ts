@@ -4,12 +4,8 @@ import {
   createAccount,
   getAccount,
 } from "@solana/spl-token";
-import {
-  PublicKey,
-  Keypair
-} from "@solana/web3.js";
-import { memechan, payer, amm, provider } from "./helpers";
-import { AmmPool } from "./pool";
+import { PublicKey, Keypair } from "@solana/web3.js";
+import { memechan, payer, provider } from "./helpers";
 import { Address, BN } from "@project-serum/anchor";
 import { MemeTicket } from "./ticket";
 
@@ -29,7 +25,6 @@ export class Staking {
     //
   }
 
-
   public async fetch() {
     return memechan.account.stakingPool.fetch(this.id);
   }
@@ -42,19 +37,19 @@ export class Staking {
   }
 
   public async add_fees(ammPool: AmmPool) {
-
     const info = await this.fetch();
 
-    const pda = this.signerPda()
+    const pda = this.signerPda();
     const staking = this.id;
 
-    const ammInfo = await ammPool.fetch()
+    const ammInfo = await ammPool.fetch();
 
     const getAccountMetaFromPublicKey = (pk) => {
       return { isSigner: false, isWritable: true, pubkey: pk };
     };
 
-    await memechan.methods.addFees()
+    await memechan.methods
+      .addFees()
       .accounts({
         memeVault: info.memeVault,
         wsolVault: info.wsolVault,
@@ -69,7 +64,7 @@ export class Staking {
       })
       .remainingAccounts([
         getAccountMetaFromPublicKey(ammInfo.reserves[0].vault),
-        getAccountMetaFromPublicKey(ammInfo.reserves[1].vault)
+        getAccountMetaFromPublicKey(ammInfo.reserves[1].vault),
       ])
       .signers([payer])
       .rpc();
@@ -83,13 +78,10 @@ export class Staking {
     return Staking.signerFrom(this.id);
   }
 
-  public async unstake(
-    input: UnstakeArgs
-  ): Promise<[PublicKey, PublicKey]> {
-
+  public async unstake(input: UnstakeArgs): Promise<[PublicKey, PublicKey]> {
     let user = input.user;
 
-    let stakingInfo = await this.fetch()
+    let stakingInfo = await this.fetch();
 
     const memeAccKey = Keypair.generate();
     const memeAcc = await createAccount(
@@ -109,7 +101,8 @@ export class Staking {
       wsolAccKey
     );
 
-    await memechan.methods.unstake(input.amount)
+    await memechan.methods
+      .unstake(input.amount)
       .accounts({
         memeTicket: input.ticket.id,
         signer: input.user.publicKey,
@@ -119,7 +112,7 @@ export class Staking {
         staking: this.id,
         userMeme: memeAcc,
         userWsol: wsolAcc,
-        tokenProgram: TOKEN_PROGRAM_ID
+        tokenProgram: TOKEN_PROGRAM_ID,
       })
       .signers([user])
       .rpc();
@@ -130,10 +123,9 @@ export class Staking {
   public async withdraw_fees(
     input: WithdrawFeesArgs
   ): Promise<[PublicKey, PublicKey]> {
-
     let user = input.user;
 
-    let stakingInfo = await this.fetch()
+    let stakingInfo = await this.fetch();
 
     const memeAccKey = Keypair.generate();
     const memeAcc = await createAccount(
@@ -153,7 +145,8 @@ export class Staking {
       wsolAccKey
     );
 
-    await memechan.methods.withdrawFees()
+    await memechan.methods
+      .withdrawFees()
       .accounts({
         memeTicket: input.ticket.id,
         stakingSignerPda: this.signer(),
@@ -163,7 +156,7 @@ export class Staking {
         userMeme: memeAcc,
         userWsol: wsolAcc,
         signer: user.publicKey,
-        tokenProgram: TOKEN_PROGRAM_ID
+        tokenProgram: TOKEN_PROGRAM_ID,
       })
       .signers([user])
       .rpc();

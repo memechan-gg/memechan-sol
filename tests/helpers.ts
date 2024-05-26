@@ -1,20 +1,20 @@
 import { AnchorProvider, setProvider, BN } from "@project-serum/anchor";
-import { PublicKey } from "@solana/web3.js";
 import NodeWallet from "@project-serum/anchor/dist/cjs/nodewallet";
 import { expect } from "chai";
 import { Program, workspace } from "@project-serum/anchor";
 import { MemechanSol } from "../target/types/memechan_sol";
 import { NATIVE_MINT, createWrappedNativeAccount } from "@solana/spl-token";
-import { Amm } from "../target/types/amm";
+import { Connection, PublicKey } from "@solana/web3.js";
 
 export const provider = AnchorProvider.local();
 setProvider(provider);
 export const payer = (provider.wallet as NodeWallet).payer;
 
 export const memechan = workspace.MemechanSol as Program<MemechanSol>;
-export const amm = workspace.Amm as Program<Amm>;
 
-export const admin = new PublicKey("8vBA2MzaQdt3UWimSkx1J4m2zMgp8A2iwtRKzXVurXP2");
+export const admin = new PublicKey(
+  "8SvkUtJZCyJwSQGkiszwcRcPv7c8pPSr8GVEppGNN7DV"
+);
 
 export const solMint = NATIVE_MINT;
 
@@ -56,4 +56,12 @@ export async function assertApproxCurrentSlot(
 
 export function getCurrentSlot(): Promise<number> {
   return provider.connection.getSlot();
+}
+
+export function findProgramAddress(
+  seeds: Array<Buffer | Uint8Array>,
+  programId: PublicKey
+) {
+  const [publicKey, nonce] = PublicKey.findProgramAddressSync(seeds, programId);
+  return { publicKey, nonce };
 }

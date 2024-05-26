@@ -15,8 +15,7 @@ no-entrypoint = []
 no-idl = []
 no-log-ix-name = []
 localnet = []
-devnet = []
-mainnet = []
+dev = []
 
 [dependencies]
 num-integer = "0.1.46"

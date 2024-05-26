@@ -1,9 +1,13 @@
 import BN from "bn.js";
-import { BoundPool } from "../bound_pool";
+import { BoundPool } from "../BoundPool";
 import { airdrop, payer, provider, sleep } from "../helpers";
 import { AmmPool } from "../pool";
-import { createAssociatedTokenAccount, createWrappedNativeAccount, getOrCreateAssociatedTokenAccount } from "@solana/spl-token";
-import { Keypair } from "@solana/web3.js"
+import {
+  createAssociatedTokenAccount,
+  createWrappedNativeAccount,
+  getOrCreateAssociatedTokenAccount,
+} from "@solana/spl-token";
+import { Keypair } from "@solana/web3.js";
 import { Staking } from "../staking";
 
 export function test() {
@@ -33,7 +37,7 @@ export function test() {
         payer,
         user.publicKey,
         10e9
-      )
+      );
 
       const memeWallet = await createAssociatedTokenAccount(
         provider.connection,
@@ -42,15 +46,9 @@ export function test() {
         user.publicKey
       );
 
-      await amm.swap(
-        user,
-        solWallet,
-        memeWallet,
-        1e9,
-        1
-      )
+      await amm.swap(user, solWallet, memeWallet, 1e9, 1);
 
-      await staking.add_fees(amm)
+      await staking.add_fees(amm);
     });
   });
 }

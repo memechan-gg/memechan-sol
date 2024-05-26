@@ -29,29 +29,34 @@ pub const LP_MINT_ASSOCIATED_SEED: &'static [u8] = b"lp_mint_associated_seed";
 /// Amm config seed
 pub const AMM_CONFIG_SEED: &'static [u8] = b"amm_config_account_seed";
 
-#[cfg(not(feature = "mainnet"))]
-pub const RAYDIUM_PROGRAM_ID: Pubkey =
-    solana_program::pubkey!("HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8"); // Devnet
-#[cfg(feature = "mainnet")]
-pub const RAYDIUM_PROGRAM_ID: Pubkey =
-    solana_program::pubkey!("675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8"); // Mainnet
-
 pub const RAYDIUM_PROGRAM_ID_: &'static [Pubkey] = &[RAYDIUM_PROGRAM_ID];
-
-#[cfg(not(feature = "mainnet"))]
-pub const OPENBOOK_PROGRAM_ID: Pubkey =
-    solana_program::pubkey!("EoTcMgcDRTJVZDMZWBoU6rhYHZfkNTVEAfz3uUJRcYGj"); // Devnet
-#[cfg(feature = "mainnet")]
-pub const OPENBOOK_PROGRAM_ID: Pubkey =
-    solana_program::pubkey!("srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX"); // Mainnet
-
-#[cfg(not(feature = "mainnet"))]
-pub const SLERF_MINT: Pubkey =
-    solana_program::pubkey!("HX2pp5za2aBkrA5X5iTioZXcrpWb2q9DiaeWPW3qKMaw"); // Devnet - can use any
-
-#[cfg(feature = "mainnet")]
-pub const SLERF_MINT: Pubkey =
-    solana_program::pubkey!("7BgBvyjrZX1YKz4oh9mjb8ZScatkkwb8DzFx7LoiVkM3"); // Mainnet
 
 pub const ADMIN_KEY: Pubkey =
     solana_program::pubkey!("8SvkUtJZCyJwSQGkiszwcRcPv7c8pPSr8GVEppGNN7DV");
+
+/// === Mainnet ===
+
+#[cfg(not(feature = "dev"))]
+pub const RAYDIUM_PROGRAM_ID: Pubkey =
+    solana_program::pubkey!("675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8"); // Mainnet
+#[cfg(not(feature = "dev"))]
+pub const OPENBOOK_PROGRAM_ID: Pubkey =
+    solana_program::pubkey!("srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX"); // Mainnet
+
+#[cfg(not(feature = "dev"))]
+pub const SLERF_MINT: Pubkey =
+    solana_program::pubkey!("7BgBvyjrZX1YKz4oh9mjb8ZScatkkwb8DzFx7LoiVkM3"); // Mainnet
+
+/// === Devnet ===
+
+#[cfg(feature = "dev")]
+pub const RAYDIUM_PROGRAM_ID: Pubkey =
+    solana_program::pubkey!("HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8"); // Devnet
+
+#[cfg(feature = "dev")]
+pub const OPENBOOK_PROGRAM_ID: Pubkey =
+    solana_program::pubkey!("EoTcMgcDRTJVZDMZWBoU6rhYHZfkNTVEAfz3uUJRcYGj"); // Devnet
+
+#[cfg(feature = "dev")]
+pub const SLERF_MINT: Pubkey =
+    solana_program::pubkey!("HX2pp5za2aBkrA5X5iTioZXcrpWb2q9DiaeWPW3qKMaw"); // Devnet - can use any
