@@ -91,7 +91,7 @@ export interface NewPool {
 export interface SwapYArgs {
   pool: PublicKey;
   quoteVault: PublicKey;
-  userSol: PublicKey;
+  userQuoteWallet: PublicKey;
   memeTicket: Keypair;
   owner: Keypair;
   poolSignerPda: PublicKey;
@@ -102,7 +102,7 @@ export interface SwapYArgs {
 export interface SwapXArgs {
   pool: PublicKey;
   memeTicket: PublicKey;
-  userSol: PublicKey;
+  userQuoteWallet: PublicKey;
   quoteVault: PublicKey;
   owner: Keypair;
   poolSignerPda: PublicKey;
@@ -209,7 +209,8 @@ export class BoundPool {
     public adminVaultQuote: PublicKey,
     public memeMint: PublicKey,
     public quoteMint: PublicKey,
-    public targetConfig: PublicKey
+    public targetConfig: PublicKey,
+    public adminKeypair: Keypair
   ) {
     //
   }
@@ -252,7 +253,7 @@ export class BoundPool {
         return createMint(
           provider.connection,
           payer,
-          poolSigner,
+          adminKeypair.publicKey,
           null,
           MEMECHAN_QUOTE_TOKEN_DECIMALS,
           quoteMintKeypair
@@ -354,7 +355,8 @@ export class BoundPool {
       adminQuoteVault,
       memeMint,
       quoteMint,
-      targetConfig
+      targetConfig,
+      adminKeypair
     );
   }
 
@@ -449,19 +451,35 @@ export class BoundPool {
 
     const pool = input.pool ?? this.id;
     const poolSignerPda = input.poolSignerPda ?? this.signerPda();
-    const coinInAmount = input.coinInAmount ?? 1 * 1e9;
-    const coinXMinValue = input.coinXMinValue ?? 1;
+    const coinInAmount = input.coinInAmount ?? new BN(1 * 1e9);
+    const coinXMinValue = input.coinXMinValue ?? new BN(1);
 
     const quoteVault = input.quoteVault ?? this.quoteVault;
 
-    const userSolAcc =
-      input.userSol ??
-      (await createWrappedNativeAccount(
-        provider.connection,
-        payer,
-        user.publicKey,
-        500 * 10e9
-      ));
+    const userQuoteWallet =
+      input.userQuoteWallet ??
+      (await (async () => {
+        const userQuoteWalletKeypair = Keypair.generate();
+
+        const userQuoteWallet = await createAccount(
+          provider.connection,
+          payer,
+          this.quoteMint,
+          user.publicKey,
+          userQuoteWalletKeypair
+        );
+
+        return userQuoteWallet;
+      })());
+
+    await mintTo(
+      provider.connection,
+      payer,
+      this.quoteMint,
+      userQuoteWallet,
+      this.adminKeypair,
+      coinInAmount.toNumber()
+    );
 
     const memeTicketKeypair = input.memeTicket ?? Keypair.generate();
 
@@ -470,7 +488,7 @@ export class BoundPool {
       .accounts({
         pool,
         quoteVault,
-        userSol: userSolAcc,
+        userQuoteWallet,
         memeTicket: memeTicketKeypair.publicKey,
         owner: user.publicKey,
         poolSignerPda: poolSignerPda,
@@ -481,6 +499,18 @@ export class BoundPool {
       .rpc({ skipPreflight: true });
 
     return new MemeTicket(memeTicketKeypair.publicKey);
+  }
+
+  public quoteMintInfo(): Token {
+    const quoteTokenInfo: Token = new Token(
+      TOKEN_PROGRAM_ID,
+      this.quoteMint,
+      MEMECHAN_QUOTE_TOKEN_DECIMALS,
+      "SLERF",
+      "SLERF"
+    );
+
+    return quoteTokenInfo;
   }
 
   public async swapX(input: Partial<SwapXArgs>): Promise<void> {
@@ -495,21 +525,29 @@ export class BoundPool {
     const quoteVault = input.quoteVault ?? this.quoteVault;
 
     const memeTicket = input.memeTicket!;
-    const userSolAcc =
-      input.userSol ??
-      (await createWrappedNativeAccount(
-        provider.connection,
-        payer,
-        user.publicKey,
-        500 * 10e9
-      ));
+
+    const userQuoteWallet =
+      input.userQuoteWallet ??
+      (await (async () => {
+        const userQuoteWalletKeypair = Keypair.generate();
+
+        const userQuoteWallet = await createAccount(
+          provider.connection,
+          payer,
+          this.quoteMint,
+          user.publicKey,
+          userQuoteWalletKeypair
+        );
+
+        return userQuoteWallet;
+      })());
 
     await memechan.methods
       .swapX(new BN(coinInAmount), new BN(coinYMinValue))
       .accounts({
         pool,
         memeTicket,
-        userSol: userSolAcc,
+        userQuoteWallet,
         quoteVault,
         owner: user.publicKey,
         poolSigner,

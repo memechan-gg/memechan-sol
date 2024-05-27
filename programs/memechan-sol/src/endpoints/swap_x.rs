@@ -18,10 +18,10 @@ pub struct SwapCoinX<'info> {
     pub meme_ticket: Account<'info, MemeTicket>,
     #[account(
         mut,
-        constraint = check_slerf_mint(user_sol.mint)
+        constraint = check_slerf_mint(user_quote_wallet.mint)
             @ err::acc("Quote mint should be SLERF mint")
     )]
-    pub user_sol: Account<'info, TokenAccount>,
+    pub user_quote_wallet: Account<'info, TokenAccount>,
     #[account(
         mut,
         constraint = pool.quote_reserve.vault == quote_vault.key()
@@ -38,7 +38,7 @@ impl<'info> SwapCoinX<'info> {
     fn send_tokens_to_user(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
             from: self.quote_vault.to_account_info(),
-            to: self.user_sol.to_account_info(),
+            to: self.user_quote_wallet.to_account_info(),
             authority: self.pool_signer.to_account_info(),
         };
 

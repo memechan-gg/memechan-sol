@@ -17,10 +17,10 @@ pub struct SwapCoinY<'info> {
     quote_vault: Account<'info, TokenAccount>,
     #[account(
         mut,
-        constraint = check_slerf_mint(user_sol.mint)
+        constraint = check_slerf_mint(user_quote_wallet.mint)
             @ err::acc("Quote mint should be SLERF mint")
     )]
-    user_sol: Account<'info, TokenAccount>,
+    user_quote_wallet: Account<'info, TokenAccount>,
     #[account(init, payer = owner, space = MemeTicket::space())]
     meme_ticket: Account<'info, MemeTicket>,
     #[account(mut)]
@@ -35,7 +35,7 @@ pub struct SwapCoinY<'info> {
 impl<'info> SwapCoinY<'info> {
     fn send_user_tokens(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
-            from: self.user_sol.to_account_info(),
+            from: self.user_quote_wallet.to_account_info(),
             to: self.quote_vault.to_account_info(),
             authority: self.owner.to_account_info(),
         };
@@ -47,6 +47,11 @@ impl<'info> SwapCoinY<'info> {
 
 pub fn handle(ctx: Context<SwapCoinY>, coin_in_amount: u64, coin_x_min_value: u64) -> Result<()> {
     let accs = ctx.accounts;
+
+    msg!(
+        "pool.meme_reserve.tokens BEFORE: {}",
+        accs.pool.meme_reserve.tokens
+    );
 
     if coin_in_amount == 0 {
         return Err(error!(AmmError::NoZeroTokens));
@@ -66,6 +71,11 @@ pub fn handle(ctx: Context<SwapCoinY>, coin_in_amount: u64, coin_x_min_value: u6
     )
     .unwrap();
 
+    msg!(
+        "fees out: {}",
+        swap_amount.admin_fee_out
+    );
+
     let pool = &mut accs.pool;
 
     pool.admin_fees_quote += swap_amount.admin_fee_in;
@@ -74,6 +84,10 @@ pub fn handle(ctx: Context<SwapCoinY>, coin_in_amount: u64, coin_x_min_value: u6
     pool.quote_reserve.tokens += swap_amount.amount_in;
     pool.meme_reserve.tokens -= swap_amount.amount_out + swap_amount.admin_fee_out;
 
+    msg!(
+        "pool.meme_reserve.tokens AFTER: {}",
+        pool.meme_reserve.tokens
+    );
     if pool.meme_reserve.tokens == 0 {
         pool.locked = true;
     };
