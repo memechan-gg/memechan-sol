@@ -3,6 +3,7 @@
 [features]
 seeds = false
 skip-lint = false
+dev = true
 
 [programs.localnet]
 memechan_sol = "BDRDLhqbfEQx2LZQ9Js7k1Dt1S9AArTw44q1rM96YrwC"
@@ -11,12 +12,27 @@ memechan_sol = "BDRDLhqbfEQx2LZQ9Js7k1Dt1S9AArTw44q1rM96YrwC"
 memechan_sol = "BDRDLhqbfEQx2LZQ9Js7k1Dt1S9AArTw44q1rM96YrwC"
 
 [registry]
-url = "https://api.apr.dev"
+# url = "https://api.apr.dev"
+url = "http://127.0.0.1:8899"
 
 [provider]
-cluster = "https://api.devnet.solana.com"
-# cluster = "localnet"
+cluster = "Localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+
+# [test]
+# startup_wait = 1000
+
+[[test.genesis]]
+address = "HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8"  
+program = "tests/programs/devnet/raydium.so"
+
+[[test.genesis]]
+address = "EoTcMgcDRTJVZDMZWBoU6rhYHZfkNTVEAfz3uUJRcYGj"  
+program = "tests/programs/devnet/openbook.so"
+
+[[test.genesis]]
+address = "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"  
+program = "tests/programs/devnet/mpl_metadata.so"
