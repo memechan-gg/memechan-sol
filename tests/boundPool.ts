@@ -782,7 +782,7 @@ export class BoundPool {
         const stakingMemeVault = await createAccount(
           provider.connection,
           payer,
-          quoteMint,
+          memeMint,
           stakingSigner,
           stakingMemeVaultKeypair
         );

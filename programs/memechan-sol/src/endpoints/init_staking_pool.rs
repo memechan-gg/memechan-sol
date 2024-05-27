@@ -95,12 +95,14 @@ pub struct InitStakingPool<'info> {
 
     #[account(
         mut,
-        constraint = staking_meme_vault.owner == staking_pool_signer_pda.key()
+        constraint = staking_meme_vault.owner == staking_pool_signer_pda.key(),
+        constraint = staking_meme_vault.mint == meme_mint.key(),
     )]
     pub staking_meme_vault: Box<Account<'info, TokenAccount>>,
     #[account(
         mut,
-        constraint = staking_quote_vault.owner == staking_pool_signer_pda.key()
+        constraint = staking_quote_vault.owner == staking_pool_signer_pda.key(),
+        constraint = staking_quote_vault.mint == quote_mint.key(),
     )]
     /// Bonding Pool WSOL vault
     pub staking_quote_vault: Box<Account<'info, TokenAccount>>,
@@ -221,7 +223,7 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, InitStakingPool<'info>>) ->
     // 3. Transfer pool_quote_vault
     msg!("3");
     msg!(
-        "Amount of wSOL to transfer {:?}",
+        "Amount of Quote to transfer {:?}",
         accs.pool_quote_vault.amount
     );
 
