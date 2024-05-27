@@ -23,6 +23,34 @@ pub struct BoundPool {
     pub locked: bool,
 }
 
+impl BoundPool {
+    pub const POOL_PREFIX: &'static [u8; 10] = b"bound_pool";
+    pub const SIGNER_PDA_PREFIX: &'static [u8; 6] = b"signer";
+
+    pub fn space() -> usize {
+        let discriminant = 8;
+
+        let meme_reserve = mem::size_of::<Reserve>();
+        let quote_reserve = mem::size_of::<Reserve>();
+        let admin_fees_meme = 8;
+        let admin_fees_quote = 8;
+        let admin_vault_quote = 32;
+        let fees = mem::size_of::<Fees>();
+        let config = mem::size_of::<Config>();
+        let locked = 1;
+
+        discriminant
+            + meme_reserve
+            + quote_reserve
+            + admin_fees_meme
+            + admin_fees_quote
+            + admin_vault_quote
+            + fees
+            + config
+            + locked
+    }
+}
+
 #[derive(AnchorDeserialize, AnchorSerialize, Copy, Clone, Debug, Eq, PartialEq, Default)]
 pub struct Decimals {
     pub alpha: u128,
@@ -280,34 +308,6 @@ fn compute_scale(num_: u128) -> u64 {
         }
 
         return scale;
-    }
-}
-
-impl BoundPool {
-    pub const POOL_PREFIX: &'static [u8; 10] = b"bound_pool";
-    pub const SIGNER_PDA_PREFIX: &'static [u8; 6] = b"signer";
-
-    pub fn space() -> usize {
-        let discriminant = 8;
-
-        let meme_reserve = mem::size_of::<Reserve>();
-        let quote_reserve = mem::size_of::<Reserve>();
-        let admin_fees_meme = 8;
-        let admin_fees_quote = 8;
-        let admin_vault_quote = 32;
-        let fees = mem::size_of::<Fees>();
-        let config = mem::size_of::<Config>();
-        let locked = 1;
-
-        discriminant
-            + meme_reserve
-            + quote_reserve
-            + admin_fees_meme
-            + admin_fees_quote
-            + admin_vault_quote
-            + fees
-            + config
-            + locked
     }
 }
 

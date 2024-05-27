@@ -6,10 +6,11 @@ import * as fees from "./endpoints/fees";
 import * as tickets from "./endpoints/tickets";
 import * as staking from "./endpoints/staking";
 
-import { provider } from "./helpers";
+import { airdrop, payer, provider } from "./helpers";
 
 describe("memechan-sol", () => {
   provider.opts.skipPreflight = true;
+  airdrop(payer.publicKey);
   newPool.test();
   swapY.test();
   swapX.test();

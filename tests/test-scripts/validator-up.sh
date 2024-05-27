@@ -1,5 +1,5 @@
 #!/bin/bash
 
 rm -rf ./test-ledger
-solana-test-validator -c EoTcMgcDRTJVZDMZWBoU6rhYHZfkNTVEAfz3uUJRcYGj -c AN7pD96d2agML342DvQ1gyB5DWNiuuLKfmEm4RWiiHJz -c HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8 -c 7Q3dxqTT5StFR3FFSLPPDkcwbYDz463YRRaxmzcZoyDy -c HX2pp5za2aBkrA5X5iTioZXcrpWb2q9DiaeWPW3qKMaw -c 3XMrhbv989VxAMi3DErLV9eJht1pHppW5LbKxe9fkEFR -c metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s -c PwDiXFxQsGra4sFFTT8r1QWRMd4vfumiWC1jfWNfdYT -c 3XT1xcsgwjrfsBpQNeYcDhNj9NGJFzGjGAqfx6UWvhjk -u d
+solana-test-validator --clone-upgradeable-program EoTcMgcDRTJVZDMZWBoU6rhYHZfkNTVEAfz3uUJRcYGj --clone-upgradeable-program  HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8 -c HX2pp5za2aBkrA5X5iTioZXcrpWb2q9DiaeWPW3qKMaw -c 3XMrhbv989VxAMi3DErLV9eJht1pHppW5LbKxe9fkEFR --clone-upgradeable-program metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s -c 3XT1xcsgwjrfsBpQNeYcDhNj9NGJFzGjGAqfx6UWvhjk -u d
 
