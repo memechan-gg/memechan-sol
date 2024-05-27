@@ -28,19 +28,18 @@ import {
   // memechan,
   // payer,
   // provider,
-  // admin,
+  admin,
   // solMint,
   // amm,
   sleep,
   findProgramAddress,
   provider,
   payer,
-  admin,
   memechan,
+  adminKeypair,
 } from "./helpers";
 
 import { BN } from "@project-serum/anchor";
-import { Staking } from "./staking";
 import { MemeTicket } from "./ticket";
 import {
   SYSVAR_CLOCK_PUBKEY,
@@ -51,12 +50,15 @@ import {
 import { createMarket } from "./raydium/openbook";
 import {
   MEMECHAN_MEME_TOKEN_DECIMALS,
-  MEMECHAN_QUOTE_MINT,
-  MEMECHAN_QUOTE_TOKEN,
-  MEMECHAN_TARGET_CONFIG,
+  MEMECHAN_QUOTE_TOKEN_DECIMALS,
+  QUOTE_TOKEN_DECIMALS,
+  // MEMECHAN_QUOTE_MINT,
+  // MEMECHAN_QUOTE_TOKEN,
 } from "./config";
 import { ATA_PROGRAM_ID, PROGRAMIDS } from "./raydium/config";
 import { getCreateMarketTransactions } from "./raydium/openBookCreateMarket";
+import { sendTx } from "./util";
+import { formatAmmKeysById } from "./raydium/formatAmmKeysById";
 
 const RAYDIUM_PROGRAM_ID = new PublicKey(
   "HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8"
@@ -68,9 +70,15 @@ const SLERF_MINT = new PublicKey(
   "HX2pp5za2aBkrA5X5iTioZXcrpWb2q9DiaeWPW3qKMaw"
 );
 
+export interface NewTargetConfig {
+  sender: Keypair;
+  targetConfig: PublicKey;
+  mint: PublicKey;
+}
+
 export interface NewPool {
   sender: Keypair;
-  pool: Keypair;
+  pool: PublicKey;
   memeMint: PublicKey;
   quoteVault: PublicKey;
   quoteMint: PublicKey;
@@ -144,9 +152,55 @@ export interface GoLiveArgs {
   userDestinationLpTokenAta: PublicKey;
 }
 
+export interface UnstakeArgs {
+  staking: PublicKey;
+  memeTicket: PublicKey;
+  userMeme: PublicKey;
+  userQuote: PublicKey;
+  memeVault: PublicKey;
+  signer: Keypair;
+  stakingSignerPda: PublicKey;
+  releaseAmount: BN;
+}
+
+export interface AddFeesArgs {
+  staking: PublicKey;
+  memeVault: PublicKey;
+  quoteVault: PublicKey;
+  stakingSignerPda: PublicKey;
+  stakingLpWallet: PublicKey;
+  signer: Keypair;
+  raydiumAmm: PublicKey;
+  raydiumAmmAuthority: PublicKey;
+  raydiumMemeVault: PublicKey;
+  raydiumQuoteVault: PublicKey;
+  raydiumLpMint: PublicKey;
+  openOrders: PublicKey;
+  targetOrders: PublicKey;
+  marketAccount: PublicKey;
+  marketEventQueue: PublicKey;
+  marketCoinVault: PublicKey;
+  marketPcVault: PublicKey;
+  marketVaultSigner: PublicKey;
+  marketBids: PublicKey;
+  marketAsks: PublicKey;
+}
+
+export interface WithdrawFeesArgs {
+  staking: PublicKey;
+  memeTicket: PublicKey;
+  userMeme: PublicKey;
+  userQuote: PublicKey;
+  memeVault: PublicKey;
+  quoteVault: PublicKey;
+  stakingSignerPda: PublicKey;
+  signer: Keypair;
+}
+
 export class BoundPool {
   public stakingQuoteVault?: PublicKey;
   public stakingMemeVault?: PublicKey;
+  public marketId?: PublicKey;
 
   private constructor(
     public id: PublicKey,
@@ -154,25 +208,33 @@ export class BoundPool {
     public memeVault: PublicKey,
     public adminVaultQuote: PublicKey,
     public memeMint: PublicKey,
-    public quoteMint: PublicKey
+    public quoteMint: PublicKey,
+    public targetConfig: PublicKey
   ) {
     //
   }
 
   public static async new(input: Partial<NewPool>): Promise<BoundPool> {
-    const id = input.pool ?? Keypair.generate();
-
     const sender = input.sender ?? Keypair.generate();
     await airdrop(sender.publicKey);
+    await airdrop(payer.publicKey);
+    await airdrop(adminKeypair.publicKey);
 
-    const poolSigner = BoundPool.boundPoolSignerPda(id.publicKey);
+    let memeMintKeypair = Keypair.generate();
+    let quoteMintKeypair = Keypair.generate();
+
+    const pool =
+      input.pool ??
+      this.findBoundPoolPubkey(
+        memeMintKeypair.publicKey,
+        quoteMintKeypair.publicKey
+      );
+    const poolSigner = BoundPool.boundPoolSignerPda(pool);
 
     // 1. Create Meme Mint
     const memeMint =
       input.memeMint ??
       (await (async () => {
-        let memeMintKeypair = Keypair.generate();
-
         return createMint(
           provider.connection,
           payer,
@@ -184,7 +246,18 @@ export class BoundPool {
       })());
 
     // 2. Get quote mint
-    const quoteMint = input.quoteMint ?? MEMECHAN_QUOTE_MINT;
+    const quoteMint =
+      input.quoteMint ??
+      (await (async () => {
+        return createMint(
+          provider.connection,
+          payer,
+          poolSigner,
+          null,
+          MEMECHAN_QUOTE_TOKEN_DECIMALS,
+          quoteMintKeypair
+        );
+      })());
 
     // 3. Create Pool Quote Vault
     const quoteVault =
@@ -197,7 +270,8 @@ export class BoundPool {
           payer,
           quoteMint,
           poolSigner,
-          quoteVaultKeypair
+          quoteVaultKeypair,
+          { skipPreflight: true }
         );
 
         return quoteVault;
@@ -240,7 +314,20 @@ export class BoundPool {
         return memeVault;
       })());
 
-    const targetConfig = input.targetConfig ?? MEMECHAN_TARGET_CONFIG;
+    const targetConfig =
+      input.targetConfig ?? this.targetConfigPubkey(quoteMint);
+
+    await memechan.methods
+      // .newTargetConfig(new BN(40000000000000))
+      .newTargetConfig(new BN(40_000 * QUOTE_TOKEN_DECIMALS))
+      .accounts({
+        sender: adminKeypair.publicKey,
+        targetConfig,
+        mint: quoteMint,
+        systemProgram: SystemProgram.programId,
+      })
+      .signers([adminKeypair])
+      .rpc({ skipPreflight: true });
 
     await memechan.methods
       .newPool()
@@ -249,30 +336,44 @@ export class BoundPool {
         memeVault,
         quoteVault,
         memeMint: memeMint,
-        pool: id.publicKey,
-        poolSigner: poolSigner,
-        sender: payer.publicKey,
+        pool,
+        poolSigner,
+        sender: sender.publicKey,
         quoteMint,
         tokenProgram: TOKEN_PROGRAM_ID,
         systemProgram: SystemProgram.programId,
-        // TODO: Replace it in a way, that it would respect any target config, not only a hardcoded one
         targetConfig,
       })
-      .signers([sender, id])
-      .rpc();
+      .signers([sender])
+      .rpc({ skipPreflight: true });
 
     return new BoundPool(
-      id.publicKey,
+      pool,
       quoteVault,
       memeVault,
       adminQuoteVault,
       memeMint,
-      quoteMint
+      quoteMint,
+      targetConfig
     );
   }
 
   public async fetch() {
     return memechan.account.boundPool.fetch(this.id);
+  }
+
+  public static findBoundPoolPubkey(
+    memeMintPubkey: PublicKey,
+    quoteMintPubkey: PublicKey
+  ): PublicKey {
+    return PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("bound_pool"),
+        memeMintPubkey.toBytes(),
+        quoteMintPubkey.toBytes(),
+      ],
+      memechan.programId
+    )[0];
   }
 
   // Ok
@@ -283,14 +384,21 @@ export class BoundPool {
     )[0];
   }
 
+  public static targetConfigPubkey(mint: PublicKey): PublicKey {
+    return PublicKey.findProgramAddressSync(
+      [Buffer.from("config"), mint.toBytes()],
+      memechan.programId
+    )[0];
+  }
+
   // Ok
   public signerPda(): PublicKey {
     return BoundPool.boundPoolSignerPda(this.id);
   }
 
-  public stakingPubkey(memeMint: PublicKey): PublicKey {
+  public stakingPubkey(): PublicKey {
     return PublicKey.findProgramAddressSync(
-      [Buffer.from("staking_pool"), memeMint.toBytes()],
+      [Buffer.from("staking_pool"), this.memeMint.toBytes()],
       memechan.programId
     )[0];
   }
@@ -370,7 +478,7 @@ export class BoundPool {
         tokenProgram: TOKEN_PROGRAM_ID,
       })
       .signers([user, memeTicketKeypair])
-      .rpc();
+      .rpc({ skipPreflight: true });
 
     return new MemeTicket(memeTicketKeypair.publicKey);
   }
@@ -408,7 +516,7 @@ export class BoundPool {
         tokenProgram: TOKEN_PROGRAM_ID,
       })
       .signers([user])
-      .rpc();
+      .rpc({ skipPreflight: true });
   }
 
   public async closeTicket(
@@ -426,9 +534,189 @@ export class BoundPool {
         owner: user.publicKey,
       })
       .signers([user])
-      .rpc();
+      .rpc({ skipPreflight: true });
 
     return;
+  }
+
+  public async addFees(input: Partial<AddFeesArgs>): Promise<MemeTicket> {
+    const user = input.signer ?? Keypair.generate();
+    await airdrop(user.publicKey);
+    const staking = input.staking ?? this.stakingPubkey();
+    const memeVault = input.memeVault ?? this.memeVault;
+    const quoteVault = input.quoteVault ?? this.quoteVault;
+    const stakingSigner =
+      input.stakingSignerPda ?? this.stakingSignerPda(staking);
+
+    const raydiumLpMint =
+      input.raydiumLpMint ??
+      this.getRaydiumLpMint({
+        programId: PROGRAMIDS.AmmV4,
+        marketId: this.marketId!,
+      });
+
+    const stakingLpWallet =
+      input.stakingLpWallet ??
+      (await (async () => {
+        const stakingLpWalletKeypair = Keypair.generate();
+
+        const stakingLpWallet = await createAccount(
+          provider.connection,
+          payer,
+          raydiumLpMint,
+          user.publicKey,
+          stakingLpWalletKeypair
+        );
+
+        return stakingLpWallet;
+      })());
+
+    const raydiumAmm =
+      input.raydiumAmm ??
+      this.raydiumAmmPubkey({
+        programId: PROGRAMIDS.AmmV4,
+        marketId: this.marketId!,
+      });
+    const raydiumAmmAuthority =
+      input.raydiumAmmAuthority ??
+      this.raydiumAuthority({
+        programId: PROGRAMIDS.AmmV4,
+      }).publicKey;
+    const openOrders =
+      input.openOrders ??
+      this.getAssociatedOpenOrders({
+        programId: PROGRAMIDS.AmmV4,
+        marketId: this.marketId!,
+      });
+    const targetOrders =
+      input.targetOrders ??
+      this.getAssociatedTargetOrders({
+        programId: PROGRAMIDS.AmmV4,
+        marketId: this.marketId!,
+      });
+
+    const raydiumMemeVault =
+      input.raydiumMemeVault ??
+      this.getRaydiumBaseVault({
+        programId: PROGRAMIDS.AmmV4,
+        marketId: this.marketId!,
+      });
+    const raydiumQuoteVault =
+      input.raydiumQuoteVault ??
+      this.getRaydiumQuoteVault({
+        programId: PROGRAMIDS.AmmV4,
+        marketId: this.marketId!,
+      });
+
+    const marketAccount = input.marketAccount ?? this.marketId!;
+
+    const ammPool = await formatAmmKeysById(
+      raydiumAmm.toBase58(),
+      provider.connection
+    );
+
+    const marketEventQueue = input.marketEventQueue ?? ammPool.marketEventQueue;
+
+    const marketAsks = input.marketAsks ?? ammPool.marketAsks;
+    const marketBids = input.marketBids ?? ammPool.marketBids;
+    const marketCoinVault = input.marketCoinVault ?? ammPool.marketBaseVault;
+    const marketPcVault = input.marketPcVault ?? ammPool.marketQuoteVault;
+    const marketVaultSigner =
+      input.marketVaultSigner ?? ammPool.marketAuthority;
+
+    await memechan.methods
+      .addFees()
+      .accounts({
+        staking,
+        memeVault,
+        quoteVault,
+        stakingSignerPda: stakingSigner,
+        stakingLpWallet,
+        signer: user.publicKey,
+        raydiumAmm,
+        raydiumAmmAuthority: raydiumAmmAuthority,
+        raydiumMemeVault,
+        raydiumQuoteVault,
+        raydiumLpMint,
+        openOrders,
+        targetOrders,
+        marketAccount,
+        marketEventQueue,
+        marketCoinVault,
+        marketPcVault,
+        marketVaultSigner,
+        marketBids,
+        marketAsks,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        raydiumProgram: ammPool.programId,
+        marketProgramId: ammPool.marketProgramId,
+      })
+      .signers([user])
+      .rpc({ skipPreflight: true });
+
+    return;
+  }
+
+  public async withdrawFees(input: Partial<WithdrawFeesArgs>): Promise<void> {
+    const user = input.signer ?? Keypair.generate();
+    await airdrop(user.publicKey);
+    const staking = input.staking ?? this.stakingPubkey();
+
+    const memeTicket = input.memeTicket!;
+
+    const userMeme =
+      input.userMeme ??
+      (await (async () => {
+        const userMemeKeypair = Keypair.generate();
+
+        const userMeme = await createAccount(
+          provider.connection,
+          payer,
+          this.memeMint,
+          user.publicKey,
+          userMemeKeypair
+        );
+
+        return userMeme;
+      })());
+
+    const userQuote =
+      input.userQuote ??
+      (await (async () => {
+        const userQuoteKeypair = Keypair.generate();
+
+        const userQuote = await createAccount(
+          provider.connection,
+          payer,
+          this.memeMint,
+          user.publicKey,
+          userQuoteKeypair
+        );
+
+        return userQuote;
+      })());
+
+    const memeVault = input.quoteVault ?? this.stakingMemeVault;
+    const quoteVault = input.quoteVault ?? this.stakingQuoteVault;
+
+    const stakingSigner =
+      input.stakingSignerPda ?? this.stakingSignerPda(staking);
+
+    await memechan.methods
+      .withdrawFees()
+      .accounts({
+        staking,
+        memeTicket,
+        userMeme,
+        userQuote,
+        memeVault,
+        quoteVault,
+        stakingSignerPda: stakingSigner,
+        signer: user.publicKey,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .signers([user])
+      .rpc({ skipPreflight: true });
   }
 
   public async initStakingPool(
@@ -444,7 +732,7 @@ export class BoundPool {
     const adminVaultQuote = input.adminVaultQuote ?? this.adminVaultQuote;
     const memeMint = input.memeMint ?? this.memeMint;
     const quoteMint = input.quoteMint ?? this.quoteMint;
-    const staking = input.staking ?? this.stakingPubkey(memeMint);
+    const staking = input.staking ?? this.stakingPubkey();
     const stakingSigner =
       input.stakingPoolSignerPda ?? this.stakingSignerPda(staking);
 
@@ -509,7 +797,68 @@ export class BoundPool {
         systemProgram: SystemProgram.programId,
       })
       .signers([user])
-      .rpc();
+      .rpc({ skipPreflight: true });
+
+    return;
+  }
+
+  public async unstake(input: Partial<UnstakeArgs>): Promise<MemeTicket> {
+    const user = input.signer ?? Keypair.generate();
+    const staking = input.staking ?? this.stakingPubkey();
+    const memeTicket = input.memeTicket!;
+
+    const userMeme =
+      input.userMeme ??
+      (await (async () => {
+        const userMemeKeypair = Keypair.generate();
+
+        const userMeme = await createAccount(
+          provider.connection,
+          payer,
+          this.memeMint,
+          user.publicKey,
+          userMemeKeypair
+        );
+
+        return userMeme;
+      })());
+
+    const userQuote =
+      input.userQuote ??
+      (await (async () => {
+        const userQuoteKeypair = Keypair.generate();
+
+        const userQuote = await createAccount(
+          provider.connection,
+          payer,
+          this.memeMint,
+          user.publicKey,
+          userQuoteKeypair
+        );
+
+        return userQuote;
+      })());
+
+    const memeVault = input.memeVault ?? this.memeVault;
+    const stakingSignerPda =
+      input.stakingSignerPda ?? this.stakingSignerPda(staking);
+    const releaseAmount = input.releaseAmount ?? new BN(100);
+
+    await airdrop(user.publicKey);
+
+    await memechan.methods
+      .unstake(releaseAmount)
+      .accounts({
+        staking,
+        memeTicket,
+        userMeme,
+        userQuote,
+        memeVault,
+        signer: user.publicKey,
+        stakingSignerPda,
+      })
+      .signers([user])
+      .rpc({ skipPreflight: true });
 
     return;
   }
@@ -654,25 +1003,6 @@ export class BoundPool {
   }
 
   public async goLive(input: Partial<GoLiveArgs>): Promise<void> {
-    // signer
-    // staking
-    // stakingPoolSignerPda
-    // poolMemeVault
-    // poolWsolVault
-    // memeMint
-    // quoteMint
-    // openOrders
-    // targetOrders
-    // marketAccount
-    // raydiumAmm
-    // raydiumAmmAuthority
-    // raydiumLpMint
-    // raydiumMemeVault
-    // raydiumQuoteVault
-    // ammConfig
-    // feeDestination
-    // userDestinationLpTokenAta
-
     const user = input.signer ?? Keypair.generate();
     await airdrop(user.publicKey);
 
@@ -682,7 +1012,7 @@ export class BoundPool {
     const poolMemeVault = input.poolMemeVault ?? this.stakingMemeVault!;
     const poolQuoteVault = input.poolWsolVault ?? this.stakingQuoteVault!;
 
-    const staking = input.staking ?? this.stakingPubkey(memeMint);
+    const staking = input.staking ?? this.stakingPubkey();
     const stakingSigner =
       input.stakingPoolSignerPda ?? this.stakingSignerPda(staking);
 
@@ -691,7 +1021,14 @@ export class BoundPool {
       new PublicKey(this.memeMint),
       MEMECHAN_MEME_TOKEN_DECIMALS
     );
-    const quoteTokenInfo = MEMECHAN_QUOTE_TOKEN;
+
+    const quoteTokenInfo: Token = new Token(
+      TOKEN_PROGRAM_ID,
+      quoteMint,
+      MEMECHAN_QUOTE_TOKEN_DECIMALS,
+      "SLERF",
+      "SLERF"
+    );
 
     const { marketId, transactions: createMarketTransactions } =
       await getCreateMarketTransactions({
@@ -701,6 +1038,12 @@ export class BoundPool {
         signer: user,
         connection: provider.connection,
       });
+
+    await sendTx(provider.connection, payer, createMarketTransactions, {
+      skipPreflight: true,
+    });
+
+    await airdrop(stakingSigner);
 
     const feeDestination = input.feeDestination ?? Keypair.generate().publicKey;
     const ammId = this.raydiumAmmPubkey({
@@ -740,6 +1083,8 @@ export class BoundPool {
       TOKEN_PROGRAM_ID
     ).publicKey;
 
+    this.marketId = marketId;
+
     await memechan.methods
       .goLive(raydiumAmmAuthority.nonce)
       .accounts({
@@ -770,7 +1115,7 @@ export class BoundPool {
         raydiumProgram: PROGRAMIDS.AmmV4,
       })
       .signers([user])
-      .rpc();
+      .rpc({ skipPreflight: true });
   }
 
   // public async redeemLiquidity(
@@ -871,7 +1216,7 @@ export class BoundPool {
   //     })
   //     .remainingAccounts(vaultsAndWallets)
   //     .signers([user])
-  //     .rpc();
+  //     .rpc({ skipPreflight: true });
   // }
 
   // public async swap(
@@ -903,7 +1248,7 @@ export class BoundPool {
   //       lpMint: pool.mint,
   //     })
   //     .signers([user])
-  //     .rpc();
+  //     .rpc({ skipPreflight: true });
   // }
 
   // public async setSwapFee(permillion: number) {
@@ -913,7 +1258,7 @@ export class BoundPool {
   //     })
   //     .accounts({ admin: this.admin.publicKey, pool: this.id.publicKey })
   //     .signers([this.admin])
-  //     .rpc();
+  //     .rpc({ skipPreflight: true });
   // }
 }
 

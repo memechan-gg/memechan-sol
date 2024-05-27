@@ -1,3 +1,4 @@
+use crate::err;
 use crate::models::target_config::TargetConfig;
 
 use crate::consts::ADMIN_KEY;
@@ -9,6 +10,7 @@ pub struct NewTargetConfig<'info> {
     #[account(
         mut,
         constraint = sender.key() == ADMIN_KEY.key()
+            @ err::acc("Sender must be admin"),
     )]
     pub sender: Signer<'info>,
     #[account(

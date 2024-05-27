@@ -4,7 +4,8 @@ import { expect } from "chai";
 import { Program, workspace } from "@project-serum/anchor";
 import { MemechanSol } from "../target/types/memechan_sol";
 import { NATIVE_MINT, createWrappedNativeAccount } from "@solana/spl-token";
-import { Connection, PublicKey } from "@solana/web3.js";
+import { Connection, PublicKey, Keypair } from "@solana/web3.js";
+import fs from "fs";
 
 export const provider = AnchorProvider.local();
 setProvider(provider);
@@ -12,9 +13,21 @@ export const payer = (provider.wallet as NodeWallet).payer;
 
 export const memechan = workspace.MemechanSol as Program<MemechanSol>;
 
+// Function to read a JSON keypair file and return a Keypair instance
+const getKeypairFromJson = (filePath: string): Keypair => {
+  // Read the JSON file
+  const keypairData = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+
+  // Create and return a Keypair from the secret key array
+  return Keypair.fromSecretKey(Uint8Array.from(keypairData));
+};
+
 export const admin = new PublicKey(
-  "8SvkUtJZCyJwSQGkiszwcRcPv7c8pPSr8GVEppGNN7DV"
-);
+  "8RSDaghj3qZLBNvRBiN5oULX66dgng9pW2HxHubpR8TW"
+); // Dev
+
+const filePath = "keypairs/admin.json";
+export const adminKeypair = getKeypairFromJson(filePath);
 
 export const solMint = NATIVE_MINT;
 

@@ -7,6 +7,7 @@ use crate::models::fees::{LAUNCH_FEE, PRECISION};
 use crate::models::staked_lp::MemeTicket;
 use crate::models::staking::StakingPool;
 use crate::models::OpenBook;
+use crate::utils::check_slerf_mint;
 use crate::vesting;
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
@@ -66,7 +67,7 @@ pub struct InitStakingPool<'info> {
     pub meme_mint: Box<Account<'info, Mint>>,
     /// Mint Account for WSOL
     #[account(
-        constraint = quote_mint.key() == SLERF_MINT
+        constraint = check_slerf_mint(quote_mint.key())
             @ err::acc("Quote mint should be native SLERF mint")
     )]
     pub quote_mint: Box<Account<'info, Mint>>,

@@ -8,6 +8,7 @@ use crate::models::fees::Fees;
 use crate::models::fees::FEE;
 use crate::models::target_config::TargetConfig;
 use crate::models::Reserve;
+use crate::utils::check_slerf_mint;
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::program_option::COption;
 use anchor_spl::token::{self, Mint, Token, TokenAccount};
@@ -40,7 +41,7 @@ pub struct NewPool<'info> {
     )]
     pub quote_vault: Account<'info, TokenAccount>,
     #[account(
-        constraint = quote_mint.key() == SLERF_MINT
+        constraint = check_slerf_mint(quote_mint.key())
             @ err::acc("Quote mint should be the SLERF mint")
     )]
     pub quote_mint: Account<'info, Mint>,

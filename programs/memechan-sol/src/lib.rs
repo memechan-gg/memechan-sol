@@ -5,6 +5,7 @@ pub mod libraries;
 pub mod math;
 pub mod models;
 pub mod raydium;
+pub mod utils;
 pub mod vesting;
 
 use anchor_lang::prelude::*;
@@ -12,7 +13,11 @@ use core as core_;
 
 use endpoints::*;
 
+#[cfg(not(feature = "dev"))]
 declare_id!("3ZSoMaLkD4QBVY94hiqRsi7wtxhXHn1cQxKzPnXyB2KP");
+
+#[cfg(feature = "dev")]
+declare_id!("BDRDLhqbfEQx2LZQ9Js7k1Dt1S9AArTw44q1rM96YrwC");
 
 #[program]
 pub mod memechan_sol {

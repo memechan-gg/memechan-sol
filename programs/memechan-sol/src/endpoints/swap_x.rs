@@ -1,8 +1,8 @@
-use crate::consts::SLERF_MINT;
 use crate::err;
 use crate::err::AmmError;
 use crate::models::bound::BoundPool;
 use crate::models::staked_lp::MemeTicket;
+use crate::{consts::SLERF_MINT, utils::check_slerf_mint};
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 
@@ -18,7 +18,7 @@ pub struct SwapCoinX<'info> {
     pub meme_ticket: Account<'info, MemeTicket>,
     #[account(
         mut,
-        constraint = user_sol.mint == SLERF_MINT
+        constraint = check_slerf_mint(user_sol.mint)
             @ err::acc("Quote mint should be SLERF mint")
     )]
     pub user_sol: Account<'info, TokenAccount>,

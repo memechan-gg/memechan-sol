@@ -31,8 +31,13 @@ pub const AMM_CONFIG_SEED: &'static [u8] = b"amm_config_account_seed";
 
 pub const RAYDIUM_PROGRAM_ID_: &'static [Pubkey] = &[RAYDIUM_PROGRAM_ID];
 
+#[cfg(not(feature = "dev"))]
 pub const ADMIN_KEY: Pubkey =
     solana_program::pubkey!("8SvkUtJZCyJwSQGkiszwcRcPv7c8pPSr8GVEppGNN7DV");
+
+#[cfg(feature = "dev")]
+pub const ADMIN_KEY: Pubkey =
+    solana_program::pubkey!("8RSDaghj3qZLBNvRBiN5oULX66dgng9pW2HxHubpR8TW");
 
 /// === Mainnet ===
 

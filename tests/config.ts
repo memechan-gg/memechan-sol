@@ -30,25 +30,25 @@ export const SLERF_MINT = new PublicKey(
   "7BgBvyjrZX1YKz4oh9mjb8ZScatkkwb8DzFx7LoiVkM3"
 );
 
-export const MEMECHAN_QUOTE_MINT = new PublicKey(
-  "HX2pp5za2aBkrA5X5iTioZXcrpWb2q9DiaeWPW3qKMaw"
-);
+// export const MEMECHAN_QUOTE_MINT = new PublicKey(
+//   "HX2pp5za2aBkrA5X5iTioZXcrpWb2q9DiaeWPW3qKMaw"
+// );
 export const MEMECHAN_TARGET_CONFIG = new PublicKey(
   "H3vkkiCoXWESVK2FGUa561XtC41g73sRgx4h3tQJNAov"
 );
 export const MEMECHAN_QUOTE_TOKEN_DECIMALS = 9; // current devnet quote token decimals
-export const MEMECHAN_QUOTE_TOKEN: Token = new Token(
-  TOKEN_PROGRAM_ID,
-  MEMECHAN_QUOTE_MINT,
-  MEMECHAN_QUOTE_TOKEN_DECIMALS,
-  "SLERF",
-  "SLERF"
-);
+// export const MEMECHAN_QUOTE_TOKEN: Token = new Token(
+//   TOKEN_PROGRAM_ID,
+//   MEMECHAN_QUOTE_MINT,
+//   MEMECHAN_QUOTE_TOKEN_DECIMALS,
+//   "SLERF",
+//   "SLERF"
+// );
 export const MEMECHAN_MEME_TOKEN_DECIMALS = 6;
 
 // Contract constants
 export const MEME_TOKEN_DECIMALS = 1_000_000;
-export const WSOL_DECIMALS = 1_000_000_000;
+export const QUOTE_TOKEN_DECIMALS = 1_000_000_000;
 export const MAX_TICKET_TOKENS = 800_000_000;
 export const MAX_MEME_TOKENS = 1_000_000_000;
 
