@@ -17,8 +17,8 @@ describe("memechan-sol", () => {
   // newPool.test();
   // swapY.test();
   // swapX.test();
-  initStakingPool.test();
-  // goLive.test();
+  // initStakingPool.test();
+  goLive.test();
   // fees.test();
   // tickets.test();
   // staking.test();

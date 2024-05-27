@@ -128,8 +128,6 @@ pub struct InitStakingPool<'info> {
     // Programs
     /// CHECK: Checks done in cpi call to raydium
     pub ata_program: Program<'info, AssociatedToken>,
-    // Checked by raydium account
-    pub market_program_id: Program<'info, OpenBook>,
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
 }

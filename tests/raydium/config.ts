@@ -1,9 +1,9 @@
 import {
   ENDPOINT as _ENDPOINT,
   DEVNET_PROGRAM_ID,
+  LOOKUP_TABLE_CACHE,
   //   RAYDIUM_DEVNET,
   TxVersion,
-  //LOOKUP_TABLE_CACHE
 } from "@raydium-io/raydium-sdk";
 import { PublicKey } from "@solana/web3.js";
 
@@ -19,7 +19,7 @@ export const ATA_PROGRAM_ID = new PublicKey(
 
 export const makeTxVersion = TxVersion.V0; // LEGACY
 
-//export const addLookupTableInfo = LOOKUP_TABLE_CACHE // only mainnet. other = undefined
+// export const addLookupTableInfo = LOOKUP_TABLE_CACHE; // only mainnet. other = undefined
 export const addLookupTableInfo = undefined;
 
 // export const DEFAULT_TOKEN = {

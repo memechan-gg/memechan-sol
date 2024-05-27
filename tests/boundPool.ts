@@ -830,7 +830,6 @@ export class BoundPool {
         rent: SYSVAR_RENT_PUBKEY,
         clock: SYSVAR_CLOCK_PUBKEY,
         ataProgram: ATA_PROGRAM_ID,
-        marketProgramId: PROGRAMIDS.OPENBOOK_MARKET,
         tokenProgram: TOKEN_PROGRAM_ID,
         systemProgram: SystemProgram.programId,
       })
@@ -1077,13 +1076,16 @@ export class BoundPool {
         connection: provider.connection,
       });
 
-    await sendTx(provider.connection, payer, createMarketTransactions, {
+    await sendTx(provider.connection, user, createMarketTransactions, {
       skipPreflight: true,
     });
 
     await airdrop(stakingSigner);
 
-    const feeDestination = input.feeDestination ?? Keypair.generate().publicKey;
+    const feeDestination =
+      input.feeDestination ??
+      new PublicKey("3XMrhbv989VxAMi3DErLV9eJht1pHppW5LbKxe9fkEFR");
+
     const ammId = this.raydiumAmmPubkey({
       programId: PROGRAMIDS.AmmV4,
       marketId,
@@ -1102,6 +1104,8 @@ export class BoundPool {
     const ammConfig = this.getRaydiumConfigId({
       programId: PROGRAMIDS.AmmV4,
     });
+
+    console.log("ammConfig: " + ammConfig);
     const raydiumLpMint = this.getRaydiumLpMint({
       programId: PROGRAMIDS.AmmV4,
       marketId,
@@ -1122,6 +1126,25 @@ export class BoundPool {
     ).publicKey;
 
     this.marketId = marketId;
+
+    console.log("user signer: ", user.publicKey);
+    console.log("poolMemeVault,", poolMemeVault);
+    console.log("poolQuoteVault,", poolQuoteVault);
+    console.log("quoteMint: ", quoteMint);
+    console.log("staking:,", staking);
+    console.log("stakingPoolSignerPda: ,", stakingSigner);
+    console.log("raydiumLpMint: ,", raydiumLpMint);
+    console.log("raydiumAmm: ,", ammId);
+    console.log("raydiumAmmAuthority: ,", raydiumAmmAuthority.publicKey);
+    console.log("raydiumMemeVault: ,", raydiumMemeVault);
+    console.log("raydiumQuoteVault: ,", raydiumWsolVault);
+    console.log("marketAccount: ,", marketId);
+    console.log("openOrders: ,", openOrders);
+    console.log("targetOrders: ,", targetOrders);
+    console.log("memeMint: ,", memeMint);
+    console.log("ammConfig: ,", ammConfig);
+    console.log("feeDestinationInfo: ,", feeDestination);
+    console.log("userDestinationLpTokenAta: ,", userDestinationLpTokenAta);
 
     await memechan.methods
       .goLive(raydiumAmmAuthority.nonce)

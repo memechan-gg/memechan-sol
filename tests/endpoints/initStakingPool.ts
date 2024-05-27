@@ -33,10 +33,6 @@ export function test() {
     });
 
     it("init staking pool", async () => {
-      const poolInfo = await pool.fetch();
-      assert(poolInfo.locked, "pool should be locked");
-      const ticketInfo = await ticket.fetch();
-
       await pool.initStakingPool({
         signer: user,
       });

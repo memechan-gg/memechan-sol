@@ -1,5 +1,5 @@
 import { assert, expect } from "chai";
-import { BoundPool } from "../BoundPool";
+import { BoundPool } from "../boundPool";
 import { AccountMeta, Keypair, PublicKey } from "@solana/web3.js";
 import {
   createAccount,
@@ -8,20 +8,58 @@ import {
 } from "@solana/spl-token";
 import { memechan, payer, provider, sleep } from "../helpers";
 import { BN } from "@project-serum/anchor";
+import { MemeTicket } from "../ticket";
 
 export function test() {
   describe("go_live", () => {
-    it("full swap then go live", async () => {
-      const pool = await BoundPool.new();
+    let pool: BoundPool;
+    let pooolInfo;
+    let user = Keypair.generate();
+    let ticket: MemeTicket;
 
-      await sleep(1000);
+    beforeEach("init boundpool", async () => {
+      pool = await BoundPool.new({});
+      pooolInfo = await pool.fetch();
+    });
 
-      const ticketId = await pool.swap_y({
-        memeTokensOut: new BN(1),
-        solAmountIn: new BN(303 * 1e9),
+    beforeEach("swaps full quote -> meme", async () => {
+      // call to the swap endpoint
+      ticket = await pool.swapY({
+        owner: user,
+        coinXMinValue: new BN(1),
+        coinInAmount: new BN(45_000 * 1e9), // target is 40_000
       });
+    });
 
-      await pool.go_live({});
+    beforeEach("init staking pool", async () => {
+      await pool.initStakingPool({
+        signer: user,
+      });
+    });
+
+    it("go live", async () => {
+      // signer: Keypair;
+      // staking: PublicKey;
+      // stakingPoolSignerPda: PublicKey;
+      // poolMemeVault: PublicKey;
+      // poolWsolVault: PublicKey;
+      // memeMint: PublicKey;
+      // quoteMint: PublicKey;
+      // openOrders: PublicKey;
+      // targetOrders: PublicKey;
+      // marketAccount: PublicKey;
+      // raydiumAmm: PublicKey;
+      // raydiumAmmAuthority: PublicKey;
+      // raydiumLpMint: PublicKey;
+      // raydiumMemeVault: PublicKey;
+      // raydiumQuoteVault: PublicKey;
+      // ammConfig: PublicKey;
+      // feeDestination: PublicKey;
+      // userDestinationLpTokenAta: PublicKey;
+
+      await pool.goLive({
+        signer: user,
+      });
     });
   });
 }
