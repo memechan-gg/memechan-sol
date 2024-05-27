@@ -1067,6 +1067,9 @@ export class BoundPool {
       "SLERF"
     );
 
+    console.log("creating market");
+    console.log("PROGRAMIDS.AmmV4", PROGRAMIDS.AmmV4);
+
     const { marketId, transactions: createMarketTransactions } =
       await getCreateMarketTransactions({
         baseToken: baseTokenInfo,
@@ -1075,16 +1078,16 @@ export class BoundPool {
         signer: user,
         connection: provider.connection,
       });
-
+    console.log("sending tx");
     await sendTx(provider.connection, user, createMarketTransactions, {
       skipPreflight: true,
     });
-
+    console.log("sent tx");
     await airdrop(stakingSigner);
 
     const feeDestination =
       input.feeDestination ??
-      new PublicKey("3XMrhbv989VxAMi3DErLV9eJht1pHppW5LbKxe9fkEFR");
+      new PublicKey("7YttLkHDoNj9wyDur5pM1ejNaAvT9X4eqaYcHQqtj2G5");
 
     const ammId = this.raydiumAmmPubkey({
       programId: PROGRAMIDS.AmmV4,

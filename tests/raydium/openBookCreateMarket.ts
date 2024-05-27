@@ -1,4 +1,9 @@
-import { MarketV2, Token } from "@raydium-io/raydium-sdk";
+import {
+  MarketV2,
+  TOKEN_PROGRAM_ID,
+  Token,
+  generatePubKey,
+} from "@raydium-io/raydium-sdk";
 import {
   Connection,
   Keypair,
@@ -48,6 +53,45 @@ export async function getCreateMarketTransactions(
   transactions: (Transaction | VersionedTransaction)[];
   marketId: PublicKey;
 }> {
+  console.log("PROGRAMIDS.OPENBOOK_MARKET ", PROGRAMIDS.OPENBOOK_MARKET);
+
+  const market = generatePubKey({
+    fromPublicKey: input.wallet,
+    programId: PROGRAMIDS.OPENBOOK_MARKET,
+  });
+  const requestQueue = generatePubKey({
+    fromPublicKey: input.wallet,
+    programId: PROGRAMIDS.OPENBOOK_MARKET,
+  });
+  const eventQueue = generatePubKey({
+    fromPublicKey: input.wallet,
+    programId: PROGRAMIDS.OPENBOOK_MARKET,
+  });
+  const bids = generatePubKey({
+    fromPublicKey: input.wallet,
+    programId: PROGRAMIDS.OPENBOOK_MARKET,
+  });
+  const asks = generatePubKey({
+    fromPublicKey: input.wallet,
+    programId: PROGRAMIDS.OPENBOOK_MARKET,
+  });
+  const baseVault = generatePubKey({
+    fromPublicKey: input.wallet,
+    programId: TOKEN_PROGRAM_ID,
+  });
+  const quoteVault = generatePubKey({
+    fromPublicKey: input.wallet,
+    programId: TOKEN_PROGRAM_ID,
+  });
+
+  console.log("market: ", market.publicKey);
+  console.log("requestQueue: ", requestQueue.publicKey);
+  console.log("eventQueue: ", eventQueue.publicKey);
+  console.log("bids: ", bids.publicKey);
+  console.log("asks: ", asks.publicKey);
+  console.log("baseVault: ", baseVault.publicKey);
+  console.log("quoteVault: ", quoteVault.publicKey);
+
   const createMarketInstruments =
     await MarketV2.makeCreateMarketInstructionSimple({
       connection: input.connection,
