@@ -20,7 +20,7 @@ export function test() {
       // call to the swap endpoint
       const ticketId = await pool.swap_y({
         memeTokensOut: new BN(1),
-        solAmountIn: new BN(303 * 1e9),
+        quoteTokensIn: new BN(303 * 1e9),
       });
 
       sleep(1000);
@@ -63,21 +63,21 @@ export function test() {
       tickets.push(
         await pool.swap_y({
           memeTokensOut: new BN(1),
-          solAmountIn: new BN(50.5 * 1e9),
+          quoteTokensIn: new BN(50.5 * 1e9),
         })
       );
 
       tickets.push(
         await pool.swap_y({
           memeTokensOut: new BN(1),
-          solAmountIn: new BN(70.7 * 1e9),
+          quoteTokensIn: new BN(70.7 * 1e9),
         })
       );
 
       tickets.push(
         await pool.swap_y({
           memeTokensOut: new BN(1),
-          solAmountIn: new BN(181.8 * 1e9),
+          quoteTokensIn: new BN(181.8 * 1e9),
         })
       );
 
@@ -124,8 +124,8 @@ export function test() {
         await pool.swap_y({
           memeTokensOut: new BN(1),
           user: user,
-          solAmountIn: new BN(50.5 * 1e9),
-          userSolAcc: await createWrappedNativeAccount(
+          quoteTokensIn: new BN(50.5 * 1e9),
+          userQuoteAcc: await createWrappedNativeAccount(
             provider.connection,
             payer,
             user.publicKey,

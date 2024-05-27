@@ -49,7 +49,6 @@ pub fn update_stake(
     let stake_diff = ((user_stake_diff as u128) * PRECISION) / (user_old_stake as u128);
 
     lp_ticket.withdraws_meme -= get_withdraw_diff(lp_ticket.withdraws_meme, stake_diff);
-
     lp_ticket.withdraws_quote -= get_withdraw_diff(lp_ticket.withdraws_quote, stake_diff);
 
     state.stakes_total -= user_stake_diff;
@@ -76,7 +75,7 @@ fn get_max_withdraw(
         return Err(error!(AmmError::NoTokensToWithdraw));
     }
 
-    let allowed_withdrawal = max_user_withdrawal - user_withdrawals_total;
+    let allowed_withdrawal = max_user_withdrawal - user_withdrawals_total * PRECISION;
 
     Ok((allowed_withdrawal / PRECISION) as u64)
 }

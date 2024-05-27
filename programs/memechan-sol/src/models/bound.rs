@@ -18,6 +18,7 @@ pub struct BoundPool {
     pub admin_fees_meme: u64,
     pub admin_fees_quote: u64,
     pub admin_vault_quote: Pubkey,
+    pub creator_addr: Pubkey,
     pub fees: Fees,
     pub config: Config,
     pub locked: bool,
@@ -35,6 +36,7 @@ impl BoundPool {
         let admin_fees_meme = 8;
         let admin_fees_quote = 8;
         let admin_vault_quote = 32;
+        let creator_addr = 32;
         let fees = mem::size_of::<Fees>();
         let config = mem::size_of::<Config>();
         let locked = 1;
@@ -45,6 +47,7 @@ impl BoundPool {
             + admin_fees_meme
             + admin_fees_quote
             + admin_vault_quote
+            + creator_addr
             + fees
             + config
             + locked

@@ -18,10 +18,9 @@ export class TargetConfigWrapper {
     );
 
     if (tcdata !== null) {
-      console.log("0.5");
       return;
     }
-    console.log("1");
+
     await airdrop(adminSigner.publicKey);
 
     await TargetConfig.new({

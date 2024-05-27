@@ -361,7 +361,7 @@ export class BoundPoolClient {
   public static async new(args: BoundPoolArgs): Promise<BoundPoolClient> {
     const { payer, client, quoteToken } = args;
     const { connection, memechanProgram } = client;
-    console.log("0");
+
     const { transaction, memeMintKeypair, poolQuoteVaultId, launchVaultId } =
       await this.getCreateNewBondingPoolAndTokenTransaction({
         ...args,
@@ -383,7 +383,6 @@ export class BoundPoolClient {
       [payer, memeMintKeypair, poolQuoteVaultId, launchVaultId],
       { skipPreflight: true }
     );
-    console.log("4");
     console.log("createPoolAndTokenSignature:", createPoolAndTokenSignature);
 
     const id = this.findBoundPoolPda(
@@ -626,7 +625,7 @@ export class BoundPoolClient {
     const meme_out = input.memeTokensOut;
 
     const userQuoteAcc =
-      input.userSolAcc ??
+      input.userQuoteAcc ??
       (
         await getOrCreateAssociatedTokenAccount(
           this.client.connection,
@@ -1169,6 +1168,7 @@ export class BoundPoolClient {
     const ammConfig = BoundPoolClient.getAssociatedConfigId({
       programId: PROGRAMIDS.AmmV4,
     });
+    console.log("ammconfig", ammConfig.toBase58());
     const raydiumLpMint = BoundPoolClient.getAssociatedLpMint({
       programId: PROGRAMIDS.AmmV4,
       marketId,

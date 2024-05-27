@@ -57,7 +57,7 @@ export class StakingPool {
       stakingPoolObjectData.lpVault,
       stakingPoolObjectData.lpMint,
       stakingPoolObjectData.quoteVault,
-      stakingPoolObjectData.
+      stakingPoolObjectData.raydiumAmm
     );
 
     return boundClientInstance;
@@ -365,7 +365,6 @@ export class StakingPool {
   }
 
   public static async getTokenHolderListHelius(mint: PublicKey, url: string) {
-    
     return [];
   }
 

@@ -16,6 +16,7 @@ use anchor_spl::token::{Mint, Token};
 pub struct CreateMetadata<'info> {
     #[account(mut)]
     pub sender: Signer<'info>,
+    #[account(constraint = sender.key() == pool.creator_addr)]
     pub pool: Account<'info, BoundPool>,
     #[account(
         mut,

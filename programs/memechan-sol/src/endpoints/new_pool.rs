@@ -142,6 +142,7 @@ pub fn handle(ctx: Context<NewPool>) -> Result<()> {
     pool.meme_reserve.mint = accs.meme_mint.key();
     pool.meme_reserve.vault = accs.meme_vault.key();
     pool.locked = false;
+    pool.creator_addr = accs.sender.key();
 
     Ok(())
 }

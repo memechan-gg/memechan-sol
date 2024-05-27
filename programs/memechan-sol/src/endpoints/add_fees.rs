@@ -178,7 +178,7 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<
 
     drop(amm);
 
-    let fee_ratio = accs.staking.compute_fee_ratio_and_update(
+    let fee_ratio = accs.staking.compute_fee_ratio(
         accs.raydium_meme_vault.amount,
         cumulated_fees_meme,
         accs.raydium_quote_vault.amount,
@@ -190,7 +190,8 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<
     let lp_tokens_to_burn = lp_tokens_to_burn(fee_ratio, lp_tokens_owned)?;
 
     if lp_tokens_to_burn == 0 {
-        return Err(error!(AmmError::NoFeesToAdd));
+        msg!("No fees to collect");
+        return Ok(());
     }
 
     accs.redeem_liquidity(lp_tokens_to_burn, staking_signer_seeds)?;
@@ -206,6 +207,10 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<
         quote_vault_initial_amt
     );
     let state = &mut accs.staking;
+
+    state.raydium_fees.last_cum_meme_fees = cumulated_fees_meme;
+    state.raydium_fees.last_cum_quote_fees = cumulated_fees_quote;
+
     state.fees_x_total += accs.meme_vault.amount - meme_vault_initial_amt;
     state.fees_y_total += accs.quote_vault.amount - quote_vault_initial_amt;
 

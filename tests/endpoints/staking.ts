@@ -27,24 +27,24 @@ export function test() {
       tickets.push(
         await pool.swap_y({
           user,
-          memeTokensOut: 1,
-          quoteTokensIn: 50.5 * 1e9,
+          memeTokensOut: new BN(1),
+          quoteTokensIn: new BN(50 * 1e9),
         })
       );
       tickets.push(
         await pool.swap_y({
-          memeTokensOut: 1,
-          quoteTokensIn: 70.7 * 1e9,
+          memeTokensOut: new BN(1),
+          quoteTokensIn: new BN(70.7 * 1e9),
         })
       );
       tickets.push(
         await pool.swap_y({
-          memeTokensOut: 1,
-          quoteTokensIn: 181.8 * 1e9,
+          memeTokensOut: new BN(1),
+          quoteTokensIn: new BN(181.8 * 1e9),
         })
       );
 
-      const [amm, staking] = await pool.go_live({});
+      const [amm, staking] = await pool.go_live();
 
       const stakingInfo = await staking.fetch();
 

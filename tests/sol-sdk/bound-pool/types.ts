@@ -10,7 +10,7 @@ export interface SwapYArgs {
   payer: Signer;
   user: Keypair;
   pool: PublicKey;
-  userSolAcc?: PublicKey;
+  userQuoteAcc?: PublicKey;
   quoteAmountIn: BN;
   quoteMint: PublicKey;
   memeTokensOut: BN;

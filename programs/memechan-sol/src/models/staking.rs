@@ -13,15 +13,16 @@ pub struct StakingPool {
     pub lp_vault: Pubkey,
     pub lp_mint: Pubkey,
     pub quote_vault: Pubkey,
+    pub raydium_amm: Pubkey,
     pub vesting_config: VestingConfig,
-    pub raydium_fees: RaydiumFees,
+    pub raydium_fees: RaydiumAmmFees,
     pub stakes_total: u64,
     pub fees_x_total: u64,
     pub fees_y_total: u64,
 }
 
 #[derive(AnchorDeserialize, AnchorSerialize, Copy, Clone, Debug, Eq, PartialEq, Default)]
-pub struct RaydiumFees {
+pub struct RaydiumAmmFees {
     pub last_cum_quote_fees: u64,
     pub last_cum_meme_fees: u64,
 }
@@ -38,8 +39,9 @@ impl StakingPool {
         let lp_vault = 32;
         let lp_mint = 32;
         let quote_vault = 32;
+        let raydium_amm = 32;
         let vesting_config = mem::size_of::<VestingConfig>();
-        let raydium_fees = mem::size_of::<RaydiumFees>();
+        let raydium_fees = mem::size_of::<RaydiumAmmFees>();
         let stakes_total = 8;
         let fees_x_total = 8;
         let fees_y_total = 8;
@@ -51,6 +53,7 @@ impl StakingPool {
             + lp_vault
             + lp_mint
             + quote_vault
+            + raydium_amm
             + vesting_config
             + raydium_fees
             + stakes_total
@@ -60,7 +63,7 @@ impl StakingPool {
 }
 
 impl StakingPool {
-    pub fn compute_fee_ratio_and_update(
+    pub fn compute_fee_ratio(
         &mut self,
         meme_balance: u64,
         acc_meme_fee: u64,
@@ -75,9 +78,6 @@ impl StakingPool {
             quote_balance,
             acc_quote_fee,
         )?;
-
-        self.raydium_fees.last_cum_quote_fees = acc_quote_fee;
-        self.raydium_fees.last_cum_meme_fees = acc_meme_fee;
 
         Ok(fee_ratio)
     }

@@ -45,4 +45,7 @@ address = "HX2pp5za2aBkrA5X5iTioZXcrpWb2q9DiaeWPW3qKMaw"
 address = "3XMrhbv989VxAMi3DErLV9eJht1pHppW5LbKxe9fkEFR"
 [[test.validator.clone]]
 address = "3XT1xcsgwjrfsBpQNeYcDhNj9NGJFzGjGAqfx6UWvhjk"
+[[test.validator.clone]]
+address = "8QN9yfKqWDoKjvZmqFsgCzAqwZBQuzVVnC388dN5RCPo"
+
 

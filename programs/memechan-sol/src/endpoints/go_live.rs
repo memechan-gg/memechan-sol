@@ -233,6 +233,7 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, GoLive<'info>>, nonce: u8) 
     // Add LP vault and mint to staking pool
     accs.staking.lp_mint = accs.raydium_lp_mint.key();
     accs.staking.lp_vault = accs.user_destination_lp_token_ata.key();
+    accs.staking.raydium_amm = accs.raydium_amm.key();
 
     Ok(())
 }

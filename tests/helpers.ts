@@ -82,6 +82,13 @@ export async function airdrop(to: PublicKey, amount: number = 100_000_000_000) {
   );
 }
 
+export async function airdrop_tokens(
+  to: PublicKey,
+  amount: number = 1 ** 6 * 10 ** 9
+) {
+  return await mintQuote(to, amount);
+}
+
 export function findProgramAddress(
   seeds: Array<Buffer | Uint8Array>,
   programId: PublicKey

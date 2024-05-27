@@ -22,15 +22,15 @@ export function test() {
 
       // call to the swap endpoint
       const ticketId = await boundPool.swap_y({
-        memeTokensOut: 1,
-        quoteTokensIn: 303 * 1e9,
+        memeTokensOut: new BN(1),
+        quoteTokensIn: new BN(50500 * 1e9),
       });
 
       const poolInfo = await boundPool.fetch();
 
       sleep(1000);
 
-      const [amm, staking] = await boundPool.go_live({});
+      const [amm, staking] = await boundPool.go_live();
 
       const solWallet = await createWrappedNativeAccount(
         provider.connection,

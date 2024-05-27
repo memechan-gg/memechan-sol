@@ -40,8 +40,9 @@ export type BoundPoolType = IdlAccounts<MemechanSol>["boundPool"];
 
 export interface SwapYArgs {
   user?: Keypair;
-  memeTokensOut: number;
-  quoteTokensIn: number;
+  memeTokensOut: BN;
+  quoteTokensIn: BN;
+  userQuoteAcc?: PublicKey;
 }
 
 export class BoundPoolWrapper {
@@ -64,20 +65,24 @@ export class BoundPoolWrapper {
       user: payer,
     });
 
-    return [staking.amm, new StakingWrapper(staking.id)];
+    return [new AmmPool(staking.amm), new StakingWrapper(staking.id)];
   }
   public async swap_y(args: SwapYArgs): Promise<MemeTicketWrapper> {
     const user = args.user ?? payer;
-    const memeTokensOut = new BN(args.memeTokensOut);
-    const quoteAmountIn = new BN(args.quoteTokensIn);
+    const memeTokensOut = args.memeTokensOut;
+    const quoteAmountIn = args.quoteTokensIn;
 
-    const tokens = await getOrCreateAssociatedTokenAccount(
-      client.connection,
-      payer,
-      QUOTE_MINT,
-      payer.publicKey
-    );
-    console.log(tokens.address);
+    const userQuoteAcc =
+      args.userQuoteAcc ??
+      (
+        await getOrCreateAssociatedTokenAccount(
+          client.connection,
+          payer,
+          QUOTE_MINT,
+          payer.publicKey
+        )
+      ).address;
+    console.log(userQuoteAcc);
     const ticket = await this.bpClient.swapY({
       memeTokensOut,
       quoteAmountIn,
@@ -85,7 +90,7 @@ export class BoundPoolWrapper {
       pool: this.bpClient.id,
       quoteMint: QUOTE_MINT,
       user,
-      userSolAcc: tokens.address,
+      userQuoteAcc,
     });
 
     return new MemeTicketWrapper(ticket.id);
