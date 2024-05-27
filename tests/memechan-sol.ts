@@ -3,7 +3,7 @@ import { Program } from "@project-serum/anchor";
 import { MemechanSol } from "../target/types/memechan_sol";
 import * as newPool from "./endpoints/new";
 import * as swapY from "./endpoints/swapY";
-import * as swapX from "./endpoints/swap_x";
+import * as swapX from "./endpoints/swapX";
 import * as goLive from "./endpoints/init";
 import * as fees from "./endpoints/fees";
 import * as tickets from "./endpoints/tickets";
@@ -13,9 +13,9 @@ import { provider } from "./helpers";
 
 describe("memechan-sol", () => {
   provider.opts.skipPreflight = true;
-  // newPool.test();
+  newPool.test();
   swapY.test();
-  // swapX.test();
+  swapX.test();
   // goLive.test();
   // fees.test();
   // tickets.test();

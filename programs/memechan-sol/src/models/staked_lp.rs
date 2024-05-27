@@ -2,7 +2,11 @@ use crate::vesting::VestingData;
 use anchor_lang::prelude::*;
 use std::mem;
 
-pub const LOCK_TIME: i64 = 60; // * 3600;
+#[cfg(not(feature = "dev"))]
+pub const LOCK_TIME: i64 = 60 * 60 * 4; // 4 hours
+
+#[cfg(feature = "dev")]
+pub const LOCK_TIME: i64 = 2; // 2 seconds - for testing
 
 #[derive(Default)]
 #[account]
