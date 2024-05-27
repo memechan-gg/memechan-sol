@@ -1,5 +1,5 @@
 import { assert, expect } from "chai";
-import { MemeTicket } from "../ticket";
+import { MemeTicketWrapper } from "../ticket";
 import { BoundPoolWrapper } from "../bound_pool";
 import { BN } from "@coral-xyz/anchor";
 import { airdrop, memechan, payer, provider, sleep } from "../helpers";
@@ -22,25 +22,25 @@ export function test() {
       await airdrop(user.publicKey);
       const pool = await BoundPoolWrapper.new();
 
-      const tickets: MemeTicket[] = [];
+      const tickets: MemeTicketWrapper[] = [];
 
       tickets.push(
         await pool.swap_y({
           user,
-          memeTokensOut: new BN(1),
-          solAmountIn: new BN(50.5 * 1e9),
+          memeTokensOut: 1,
+          quoteTokensIn: 50.5 * 1e9,
         })
       );
       tickets.push(
         await pool.swap_y({
-          memeTokensOut: new BN(1),
-          solAmountIn: new BN(70.7 * 1e9),
+          memeTokensOut: 1,
+          quoteTokensIn: 70.7 * 1e9,
         })
       );
       tickets.push(
         await pool.swap_y({
-          memeTokensOut: new BN(1),
-          solAmountIn: new BN(181.8 * 1e9),
+          memeTokensOut: 1,
+          quoteTokensIn: 181.8 * 1e9,
         })
       );
 

@@ -26,9 +26,8 @@ export function test() {
 
       const ticketId = await pool.swap_y({
         user,
-        memeTokensOut: new BN(1),
-        solAmountIn: new BN(30 * 1e9),
-        userSolAcc,
+        memeTokensOut: 1,
+        quoteTokensIn: 30 * 1e9,
       });
 
       await sleep(6000);
@@ -55,9 +54,8 @@ export function test() {
 
       const userMemeTicket = await pool.swap_y({
         user,
-        memeTokensOut: new BN(1),
-        solAmountIn: new BN(30 * 1e9),
-        userSolAcc,
+        memeTokensOut: 1,
+        quoteTokensIn: 30 * 1e9,
       });
 
       await sleep(6000);
@@ -69,8 +67,8 @@ export function test() {
       // })
 
       const ticketId = await pool.swap_y({
-        memeTokensOut: new BN(1),
-        solAmountIn: new BN(303 * 1e9),
+        memeTokensOut: 1,
+        quoteTokensIn: 303 * 1e9,
       });
 
       await sleep(1000);

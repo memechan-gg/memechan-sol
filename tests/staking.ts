@@ -9,20 +9,20 @@ import { PublicKey, Keypair } from "@solana/web3.js";
 import { QUOTE_MINT, memechan, payer, provider } from "./helpers";
 import { AmmPool } from "./pool";
 import { Address, BN } from "@coral-xyz/anchor";
-import { MemeTicket } from "./ticket";
+import { MemeTicketWrapper } from "./ticket";
 
 export interface UnstakeArgs {
-  ticket: MemeTicket;
+  ticket: MemeTicketWrapper;
   amount: BN;
   user: Keypair;
 }
 
 export interface WithdrawFeesArgs {
-  ticket: MemeTicket;
+  ticket: MemeTicketWrapper;
   user: Keypair;
 }
 
-export class Staking {
+export class StakingWrapper {
   public constructor(public id: PublicKey) {
     //
   }
@@ -51,11 +51,11 @@ export class Staking {
   public async add_fees(ammPool: AmmPool) {}
 
   public signer(): PublicKey {
-    return Staking.signerFrom(this.id);
+    return StakingWrapper.signerFrom(this.id);
   }
 
   public signerPda(): PublicKey {
-    return Staking.signerFrom(this.id);
+    return StakingWrapper.signerFrom(this.id);
   }
 
   public async unstake(input: UnstakeArgs): Promise<[PublicKey, PublicKey]> {

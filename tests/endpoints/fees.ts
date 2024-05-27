@@ -7,7 +7,7 @@ import {
   getOrCreateAssociatedTokenAccount,
 } from "@solana/spl-token";
 import { Keypair } from "@solana/web3.js";
-import { Staking } from "../staking";
+import { StakingWrapper } from "../staking";
 import { BoundPoolWrapper } from "../bound_pool";
 
 export function test() {
@@ -22,8 +22,8 @@ export function test() {
 
       // call to the swap endpoint
       const ticketId = await boundPool.swap_y({
-        memeTokensOut: new BN(1),
-        solAmountIn: new BN(303 * 1e9),
+        memeTokensOut: 1,
+        quoteTokensIn: 303 * 1e9,
       });
 
       const poolInfo = await boundPool.fetch();

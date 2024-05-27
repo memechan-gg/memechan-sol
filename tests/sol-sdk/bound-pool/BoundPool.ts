@@ -8,6 +8,7 @@ import {
   getAssociatedTokenAddressSync,
   getOrCreateAssociatedTokenAccount,
   mintTo,
+  transfer,
 } from "@solana/spl-token";
 import {
   ComputeBudgetProgram,
@@ -79,7 +80,7 @@ import { normalizeInputCoinAmount } from "../util/trading/normalizeInputCoinAmou
 import { TargetConfig } from "../targetconfig/TargetConfig";
 import { memechan, provider } from "../../helpers";
 import { MemechanSol } from "../../../target/types/memechan_sol";
-import { BoundPool } from "../../bound_pool";
+import { BoundPoolType } from "../../bound_pool";
 
 export class BoundPoolClient {
   private constructor(
@@ -89,7 +90,8 @@ export class BoundPoolClient {
     public quoteVault: PublicKey,
     public memeTokenMint: PublicKey,
     public quoteTokenMint: PublicKey = MEMECHAN_QUOTE_MINT,
-    public memeToken: Token
+    public memeToken: Token,
+    public poolInfo: BoundPoolType
   ) {
     //
   }
@@ -117,7 +119,8 @@ export class BoundPoolClient {
         TOKEN_PROGRAM_ID,
         poolObjectData.memeReserve.mint,
         MEMECHAN_MEME_TOKEN_DECIMALS
-      )
+      ),
+      poolObjectData
     );
 
     return boundClientInstance;
@@ -161,7 +164,8 @@ export class BoundPoolClient {
       poolObjectData.quoteReserve.vault,
       poolObjectData.memeReserve.mint,
       poolObjectData.quoteReserve.mint,
-      new Token(TOKEN_PROGRAM_ID, poolObjectData.memeReserve.mint, 6) // TODO fix 6 decimals
+      new Token(TOKEN_PROGRAM_ID, poolObjectData.memeReserve.mint, 6), // TODO fix 6 decimals
+      poolObjectData
     );
 
     return boundClientInstance;
@@ -388,6 +392,8 @@ export class BoundPoolClient {
       memechanProgram.programId
     );
 
+    const poolObjectData = await BoundPoolClient.fetch2(client.connection, id);
+
     return new BoundPoolClient(
       id,
       client,
@@ -395,7 +401,8 @@ export class BoundPoolClient {
       poolQuoteVault,
       memeMint,
       quoteToken.mint,
-      new Token(TOKEN_PROGRAM_ID, memeMint, MEMECHAN_MEME_TOKEN_DECIMALS)
+      new Token(TOKEN_PROGRAM_ID, memeMint, MEMECHAN_MEME_TOKEN_DECIMALS),
+      poolObjectData
     );
   }
 
@@ -511,6 +518,8 @@ export class BoundPoolClient {
 
     // console.log("createCoinResponse: " + JSON.stringify(createCoinResponse));
 
+    const poolObjectData = await BoundPoolClient.fetch2(client.connection, id);
+
     return new BoundPoolClient(
       id,
       client,
@@ -518,7 +527,8 @@ export class BoundPoolClient {
       poolQuoteVault,
       memeMint,
       quoteToken.mint,
-      new Token(TOKEN_PROGRAM_ID, memeMint, MEMECHAN_MEME_TOKEN_DECIMALS)
+      new Token(TOKEN_PROGRAM_ID, memeMint, MEMECHAN_MEME_TOKEN_DECIMALS),
+      poolObjectData
     );
   }
 
@@ -631,16 +641,6 @@ export class BoundPoolClient {
 
     // const balance = await this.client.connection.getBalance(payer.publicKey);
     // console.log(`${balance / LAMPORTS_PER_SOL} SOL`);
-
-    // const modifyComputeUnits = ComputeBudgetProgram.setComputeUnitLimit({
-    //   units: 300,
-    // });
-
-    // const addPriorityFee = ComputeBudgetProgram.setComputeUnitPrice({
-    //   microLamports: 20000,
-    // });
-
-    //   transfer(this.client.connection, payer,
 
     // const transferTx = new Transaction().add(
     //   //  modifyComputeUnits,
@@ -1414,7 +1414,7 @@ export class BoundPoolClient {
       );
     }
 
-    const feeDestination = new PublicKey(input.feeDestinationWalletAddress);
+    const feeDestination = input.feeDestinationWalletAddress;
     const ammId = BoundPoolClient.getAssociatedId({
       programId: PROGRAMIDS.AmmV4,
       marketId,
@@ -1577,7 +1577,7 @@ export class BoundPoolClient {
     boundPoolInfo,
     quotePriceInUsd,
   }: {
-    boundPoolInfo: BoundPool;
+    boundPoolInfo: BoundPoolType;
     quotePriceInUsd: number;
   }): Promise<{ priceInQuote: string; priceInUsd: string }> {
     const memeBalance = new BigNumber(

@@ -4,7 +4,7 @@ import { Keypair, PublicKey, Signer, Transaction } from "@solana/web3.js";
 import { MemechanClient } from "../MemechanClient";
 import { MemeTicket } from "../memeticket/MemeTicket";
 import { TokenMetadata } from "../token/types";
-import { BoundPool } from "../../bound_pool";
+import { BoundPoolType } from "../../bound_pool";
 
 export interface SwapYArgs {
   payer: Signer;
@@ -57,9 +57,9 @@ export type GetSellMemeTransactionArgs = Omit<
 export interface GoLiveArgs {
   user: Keypair;
   payer: Signer;
-  boundPoolInfo: BoundPool;
+  boundPoolInfo: BoundPoolType;
   memeVault: PublicKey;
-  feeDestinationWalletAddress: string;
+  feeDestinationWalletAddress: PublicKey;
   quoteVault: PublicKey;
 }
 
@@ -71,7 +71,7 @@ export interface InitStakingPoolArgs {
   pool?: PublicKey;
   user: Keypair;
   payer: Signer;
-  boundPoolInfo: BoundPool;
+  boundPoolInfo: BoundPoolType;
 }
 
 export type GetInitStakingPoolTransactionArgs = Omit<

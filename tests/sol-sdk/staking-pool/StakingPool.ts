@@ -3,9 +3,7 @@ import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { AccountMeta, Keypair, PublicKey, Transaction } from "@solana/web3.js";
 import { MemechanClient } from "../MemechanClient";
 import { BoundPoolClient } from "../bound-pool/BoundPool";
-import { MemeTicket } from "../memeticket/MemeTicket";
-import { MemeTicketFields } from "../schema/codegen/accounts";
-import { MemechanSol } from "../schema/types/memechan_sol";
+import { MemeTicket, MemeTicketFields } from "../memeticket/MemeTicket";
 import {
   AddFeesArgs,
   GetAddFeesTransactionArgs,
@@ -21,6 +19,7 @@ import { MEMECHAN_QUOTE_MINT } from "../config/config";
 import { formatAmmKeysById } from "../raydium/formatAmmKeysById";
 import { RAYDIUM_MAINNET } from "@raydium-io/raydium-sdk";
 import { PROGRAMIDS } from "../raydium/config";
+import { MemechanSol } from "../../../target/types/memechan_sol";
 
 export class StakingPool {
   constructor(
@@ -32,6 +31,7 @@ export class StakingPool {
     public lpVault: PublicKey,
     public lpMint: PublicKey,
     public quote_vault: PublicKey,
+    public amm: PublicKey
   ) {}
 
   public static async fromStakingPoolId({
@@ -41,7 +41,10 @@ export class StakingPool {
     client: MemechanClient;
     poolAccountAddressId: PublicKey;
   }) {
-    const stakingPoolObjectData = await client.memechanProgram.account.stakingPool.fetch(poolAccountAddressId);
+    const stakingPoolObjectData =
+      await client.memechanProgram.account.stakingPool.fetch(
+        poolAccountAddressId
+      );
 
     console.log("stakingPoolObjectData:", stakingPoolObjectData);
 
@@ -54,13 +57,20 @@ export class StakingPool {
       stakingPoolObjectData.lpVault,
       stakingPoolObjectData.lpMint,
       stakingPoolObjectData.quoteVault,
+      stakingPoolObjectData.
     );
 
     return boundClientInstance;
   }
 
-  public static findSignerPda(publicKey: PublicKey, memechanProgramId: PublicKey): PublicKey {
-    return PublicKey.findProgramAddressSync([Buffer.from("staking"), publicKey.toBytes()], memechanProgramId)[0];
+  public static findSignerPda(
+    publicKey: PublicKey,
+    memechanProgramId: PublicKey
+  ): PublicKey {
+    return PublicKey.findProgramAddressSync(
+      [Buffer.from("staking"), publicKey.toBytes()],
+      memechanProgramId
+    )[0];
   }
 
   public async getAddFeesTransaction({
@@ -71,7 +81,10 @@ export class StakingPool {
     const tx = transaction ?? new Transaction();
     const stakingInfo = await this.fetch();
 
-    const ammPool = await formatAmmKeysById(ammPoolId.toBase58(), this.client.connection);
+    const ammPool = await formatAmmKeysById(
+      ammPoolId.toBase58(),
+      this.client.connection
+    );
 
     const stakingSignerPda = this.findSignerPda();
     //const stakingLpWalletKeypair = Keypair.generate();
@@ -123,18 +136,24 @@ export class StakingPool {
     return { tx };
   }
 
-  public async addFees({ payer, transaction, ammPoolId }: AddFeesArgs): Promise<void> {
+  public async addFees({
+    payer,
+    transaction,
+    ammPoolId,
+  }: AddFeesArgs): Promise<void> {
     const { tx: addFeesTransaction } = await this.getAddFeesTransaction({
       transaction,
       ammPoolId,
       payer,
     });
 
-    const sendAndConfirmAddFeesTransaction = getSendAndConfirmTransactionMethod({
-      connection: this.client.connection,
-      signers: [payer],
-      transaction: addFeesTransaction,
-    });
+    const sendAndConfirmAddFeesTransaction = getSendAndConfirmTransactionMethod(
+      {
+        connection: this.client.connection,
+        signers: [payer],
+        transaction: addFeesTransaction,
+      }
+    );
 
     await retry({
       fn: sendAndConfirmAddFeesTransaction,
@@ -142,9 +161,11 @@ export class StakingPool {
     });
   }
 
-  public async getUnstakeTransaction(
-    args: GetUnstakeTransactionArgs,
-  ): Promise<{ transaction: Transaction; memeAccountKeypair: Keypair; quoteAccountKeypair: Keypair }> {
+  public async getUnstakeTransaction(args: GetUnstakeTransactionArgs): Promise<{
+    transaction: Transaction;
+    memeAccountKeypair: Keypair;
+    quoteAccountKeypair: Keypair;
+  }> {
     const tx = args.transaction ?? new Transaction();
     const stakingInfo = await this.fetch();
 
@@ -155,7 +176,7 @@ export class StakingPool {
       args.user.publicKey,
       stakingInfo.memeMint,
       args.user.publicKey,
-      memeAccountKeypair,
+      memeAccountKeypair
     );
 
     tx.add(...createMemeAccountInstructions);
@@ -167,7 +188,7 @@ export class StakingPool {
       args.user.publicKey,
       MEMECHAN_QUOTE_MINT,
       args.user.publicKey,
-      quoteAccountKeypair,
+      quoteAccountKeypair
     );
 
     tx.add(...createQuoteAccountInstructions);
@@ -192,26 +213,35 @@ export class StakingPool {
     return { transaction: tx, memeAccountKeypair, quoteAccountKeypair };
   }
 
-  public async unstake(
-    args: UnstakeArgs,
-  ): Promise<{ memeAccountPublicKey: PublicKey; quoteAccountPublicKey: PublicKey }> {
-    const { memeAccountKeypair, transaction, quoteAccountKeypair } = await this.getUnstakeTransaction(args);
+  public async unstake(args: UnstakeArgs): Promise<{
+    memeAccountPublicKey: PublicKey;
+    quoteAccountPublicKey: PublicKey;
+  }> {
+    const { memeAccountKeypair, transaction, quoteAccountKeypair } =
+      await this.getUnstakeTransaction(args);
 
-    const sendAndConfirmUnstakeTransaction = getSendAndConfirmTransactionMethod({
-      connection: this.client.connection,
-      signers: [args.user, memeAccountKeypair, quoteAccountKeypair],
-      transaction,
-    });
+    const sendAndConfirmUnstakeTransaction = getSendAndConfirmTransactionMethod(
+      {
+        connection: this.client.connection,
+        signers: [args.user, memeAccountKeypair, quoteAccountKeypair],
+        transaction,
+      }
+    );
 
     await retry({
       fn: sendAndConfirmUnstakeTransaction,
       functionName: "unstake",
     });
 
-    return { memeAccountPublicKey: memeAccountKeypair.publicKey, quoteAccountPublicKey: quoteAccountKeypair.publicKey };
+    return {
+      memeAccountPublicKey: memeAccountKeypair.publicKey,
+      quoteAccountPublicKey: quoteAccountKeypair.publicKey,
+    };
   }
 
-  public async getWithdrawFeesTransaction(args: GetWithdrawFeesTransactionArgs): Promise<{
+  public async getWithdrawFeesTransaction(
+    args: GetWithdrawFeesTransactionArgs
+  ): Promise<{
     transaction: Transaction;
     memeAccountKeypair: Keypair;
     quoteAccountKeypair: Keypair;
@@ -226,7 +256,7 @@ export class StakingPool {
       args.user.publicKey,
       stakingInfo.memeMint,
       args.user.publicKey,
-      memeAccountKeypair,
+      memeAccountKeypair
     );
 
     tx.add(...createMemeAccountInstructions);
@@ -238,7 +268,7 @@ export class StakingPool {
       args.user.publicKey,
       MEMECHAN_QUOTE_MINT,
       args.user.publicKey,
-      quoteAccountKeypair,
+      quoteAccountKeypair
     );
 
     tx.add(...createWSolAccountInstructions);
@@ -263,23 +293,29 @@ export class StakingPool {
     return { transaction: tx, memeAccountKeypair, quoteAccountKeypair };
   }
 
-  public async withdrawFees(
-    args: WithdrawFeesArgs,
-  ): Promise<{ memeAccountPublicKey: PublicKey; quoteAccountPublicKey: PublicKey }> {
-    const { memeAccountKeypair, transaction, quoteAccountKeypair } = await this.getWithdrawFeesTransaction(args);
+  public async withdrawFees(args: WithdrawFeesArgs): Promise<{
+    memeAccountPublicKey: PublicKey;
+    quoteAccountPublicKey: PublicKey;
+  }> {
+    const { memeAccountKeypair, transaction, quoteAccountKeypair } =
+      await this.getWithdrawFeesTransaction(args);
 
-    const sendAndConfirmWithdrawFeesTransaction = getSendAndConfirmTransactionMethod({
-      connection: this.client.connection,
-      signers: [args.user, memeAccountKeypair, quoteAccountKeypair],
-      transaction,
-    });
+    const sendAndConfirmWithdrawFeesTransaction =
+      getSendAndConfirmTransactionMethod({
+        connection: this.client.connection,
+        signers: [args.user, memeAccountKeypair, quoteAccountKeypair],
+        transaction,
+      });
 
     await retry({
       fn: sendAndConfirmWithdrawFeesTransaction,
       functionName: "withdrawFees",
     });
 
-    return { memeAccountPublicKey: memeAccountKeypair.publicKey, quoteAccountPublicKey: quoteAccountKeypair.publicKey };
+    return {
+      memeAccountPublicKey: memeAccountKeypair.publicKey,
+      quoteAccountPublicKey: quoteAccountKeypair.publicKey,
+    };
   }
 
   public async getHoldersCount() {
@@ -293,65 +329,44 @@ export class StakingPool {
   /**
    * Fetches all tickets for corresponding pool id
    */
-  public async fetchRelatedTickets(pool = this.pool, client = this.client): Promise<MemeTicketFields[]> {
+  public async fetchRelatedTickets(
+    pool = this.pool,
+    client = this.client
+  ): Promise<MemeTicketFields[]> {
     return MemeTicket.fetchRelatedTickets(pool, client);
   }
 
   /**
    * Fetches all unique token holders and memetickets owners for pool; then returns their number
    */
-  public static async getHoldersCount(pool: PublicKey, mint: PublicKey, client: MemechanClient) {
+  public static async getHoldersCount(
+    pool: PublicKey,
+    mint: PublicKey,
+    client: MemechanClient
+  ) {
     return (await StakingPool.getHoldersList(pool, mint, client)).length;
   }
 
   /**
    * Fetches all unique token holders and memetickets owners for pool; then returns thier addresses
    */
-  public static async getHoldersList(pool: PublicKey, mint: PublicKey, client: MemechanClient) {
+  public static async getHoldersList(
+    pool: PublicKey,
+    mint: PublicKey,
+    client: MemechanClient
+  ) {
     const ticketHolderList = await BoundPoolClient.getHoldersList(pool, client);
-    const tokenHolderList = await StakingPool.getTokenHolderListHelius(mint, client.heliusApiUrl);
-
-    ticketHolderList.forEach((holder) => {
-      tokenHolderList.add(holder);
-    });
+    const tokenHolderList = await StakingPool.getTokenHolderListHelius(
+      mint,
+      client.heliusApiUrl
+    );
 
     return Array.from(tokenHolderList);
   }
 
   public static async getTokenHolderListHelius(mint: PublicKey, url: string) {
-    let page = 1;
-    const allOwners: Set<string> = new Set();
-
-    // eslint-disable-next-line no-constant-condition
-    while (true) {
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          jsonrpc: "2.0",
-          method: "getTokenAccounts",
-          id: "staking-get-token-holders",
-          params: {
-            page: page,
-            limit: 1000,
-            displayOptions: {},
-            mint: mint.toBase58(),
-          },
-        }),
-      });
-      const data = await response.json();
-
-      if (!data.result || data.result.token_accounts.length === 0) {
-        break;
-      }
-
-      data.result.token_accounts.forEach((account: { owner: string }) => allOwners.add(account.owner));
-      page++;
-    }
-
-    return allOwners;
+    
+    return [];
   }
 
   private async fetch(program = this.client.memechanProgram) {
@@ -363,7 +378,10 @@ export class StakingPool {
   }
 
   public findSignerPda(): PublicKey {
-    return StakingPool.findSignerPda(this.id, this.client.memechanProgram.programId);
+    return StakingPool.findSignerPda(
+      this.id,
+      this.client.memechanProgram.programId
+    );
   }
 
   private getAccountMeta(pubkey: PublicKey): AccountMeta {

@@ -14,13 +14,14 @@ import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
   createMint,
+  getOrCreateAssociatedTokenAccount,
 } from "@solana/spl-token";
 import { DUMMY_TOKEN_METADATA, client } from "./common";
 import { Token, publicKey } from "@raydium-io/raydium-sdk";
 import { BoundPoolClient } from "./sol-sdk/bound-pool/BoundPool";
-import { MemeTicket } from "./ticket";
+import { MemeTicketWrapper } from "./ticket";
 import { AmmPool } from "./pool";
-import { Staking } from "./staking";
+import { StakingWrapper } from "./staking";
 import { IdlAccounts } from "@coral-xyz/anchor";
 import { MemechanSol } from "../target/types/memechan_sol";
 
@@ -35,23 +36,59 @@ export const FEE_DESTINATION_ID = new PublicKey(
   "3XMrhbv989VxAMi3DErLV9eJht1pHppW5LbKxe9fkEFR"
 );
 
-export type BoundPool = IdlAccounts<MemechanSol>["boundPool"];
+export type BoundPoolType = IdlAccounts<MemechanSol>["boundPool"];
 
 export interface SwapYArgs {
   user?: Keypair;
-  memeTokensOut: BN;
-  solAmountIn: BN;
+  memeTokensOut: number;
+  quoteTokensIn: number;
 }
 
 export class BoundPoolWrapper {
-  public async fetch(): Promise<BoundPool> {
+  public async fetch(): Promise<BoundPoolType> {
     return memechan.account.boundPool.fetch(this.bpClient.id);
   }
-  public async go_live(arg0: {}): Promise<[AmmPool, Staking]> {
-    throw new Error("Method not implemented.");
+  public async go_live(): Promise<[AmmPool, StakingWrapper]> {
+    const res = await this.bpClient.initStakingPool({
+      boundPoolInfo: this.bpClient.poolInfo,
+      payer,
+      user: payer,
+    });
+
+    const staking = await this.bpClient.goLive2({
+      boundPoolInfo: this.bpClient.poolInfo,
+      feeDestinationWalletAddress: FEE_DESTINATION_ID,
+      memeVault: res.stakingMemeVault,
+      quoteVault: res.stakingQuoteVault,
+      payer,
+      user: payer,
+    });
+
+    return [staking.amm, new StakingWrapper(staking.id)];
   }
-  public async swap_y(swapYArgs: SwapYArgs): Promise<MemeTicket> {
-    throw new Error("Method not implemented.");
+  public async swap_y(args: SwapYArgs): Promise<MemeTicketWrapper> {
+    const user = args.user ?? payer;
+    const memeTokensOut = new BN(args.memeTokensOut);
+    const quoteAmountIn = new BN(args.quoteTokensIn);
+
+    const tokens = await getOrCreateAssociatedTokenAccount(
+      client.connection,
+      payer,
+      QUOTE_MINT,
+      payer.publicKey
+    );
+    console.log(tokens.address);
+    const ticket = await this.bpClient.swapY({
+      memeTokensOut,
+      quoteAmountIn,
+      payer,
+      pool: this.bpClient.id,
+      quoteMint: QUOTE_MINT,
+      user,
+      userSolAcc: tokens.address,
+    });
+
+    return new MemeTicketWrapper(ticket.id);
   }
   private constructor(public bpClient: BoundPoolClient) {
     //

@@ -8,7 +8,7 @@ import {
 } from "@solana/spl-token";
 import { memechan, payer, provider, sleep } from "../helpers";
 import { BN } from "@coral-xyz/anchor";
-import { MemeTicket } from "../ticket";
+import { MemeTicketWrapper } from "../ticket";
 
 export function test() {
   describe.skip("swap_y", () => {
@@ -58,7 +58,7 @@ export function test() {
 
       await sleep(1000);
 
-      const tickets: MemeTicket[] = [];
+      const tickets: MemeTicketWrapper[] = [];
 
       tickets.push(
         await pool.swap_y({
