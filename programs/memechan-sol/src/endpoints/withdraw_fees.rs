@@ -20,10 +20,12 @@ pub struct WithdrawFees<'info> {
     )]
     pub meme_ticket: Account<'info, MemeTicket>,
     #[account(
+        mut,
         constraint = user_meme.owner == signer.key()
     )]
     pub user_meme: Account<'info, TokenAccount>,
     #[account(
+        mut,
         constraint = user_quote.owner == signer.key()
     )]
     pub user_quote: Account<'info, TokenAccount>,
