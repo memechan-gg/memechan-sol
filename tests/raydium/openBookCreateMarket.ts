@@ -13,9 +13,10 @@ import {
   TransactionMessage,
   VersionedTransaction,
 } from "@solana/web3.js";
-import { PROGRAMIDS, makeTxVersion } from "./config";
+import { makeTxVersion } from "./config";
 import { sendTx } from "./utils";
 import { buildTxs } from "../util";
+import { openbookPubkey, raydiumPubkey } from "../config";
 
 type CreateMarketTxInput = {
   baseToken: Token;
@@ -28,11 +29,6 @@ type CreateMarketTxInput = {
 export async function createMarket(input: CreateMarketTxInput) {
   const { transactions: createMarketTransactions, marketId } =
     await getCreateMarketTransactions(input);
-
-  console.log(
-    "createMarketTransactions:",
-    JSON.stringify(createMarketTransactions)
-  );
 
   return {
     txids: await sendTx(
@@ -53,27 +49,27 @@ export async function getCreateMarketTransactions(
   transactions: (Transaction | VersionedTransaction)[];
   marketId: PublicKey;
 }> {
-  console.log("PROGRAMIDS.OPENBOOK_MARKET ", PROGRAMIDS.OPENBOOK_MARKET);
+  const openbookProgram = openbookPubkey();
 
   const market = generatePubKey({
     fromPublicKey: input.wallet,
-    programId: PROGRAMIDS.OPENBOOK_MARKET,
+    programId: openbookProgram,
   });
   const requestQueue = generatePubKey({
     fromPublicKey: input.wallet,
-    programId: PROGRAMIDS.OPENBOOK_MARKET,
+    programId: openbookProgram,
   });
   const eventQueue = generatePubKey({
     fromPublicKey: input.wallet,
-    programId: PROGRAMIDS.OPENBOOK_MARKET,
+    programId: openbookProgram,
   });
   const bids = generatePubKey({
     fromPublicKey: input.wallet,
-    programId: PROGRAMIDS.OPENBOOK_MARKET,
+    programId: openbookProgram,
   });
   const asks = generatePubKey({
     fromPublicKey: input.wallet,
-    programId: PROGRAMIDS.OPENBOOK_MARKET,
+    programId: openbookProgram,
   });
   const baseVault = generatePubKey({
     fromPublicKey: input.wallet,
@@ -84,14 +80,6 @@ export async function getCreateMarketTransactions(
     programId: TOKEN_PROGRAM_ID,
   });
 
-  console.log("market: ", market.publicKey);
-  console.log("requestQueue: ", requestQueue.publicKey);
-  console.log("eventQueue: ", eventQueue.publicKey);
-  console.log("bids: ", bids.publicKey);
-  console.log("asks: ", asks.publicKey);
-  console.log("baseVault: ", baseVault.publicKey);
-  console.log("quoteVault: ", quoteVault.publicKey);
-
   const createMarketInstruments =
     await MarketV2.makeCreateMarketInstructionSimple({
       connection: input.connection,
@@ -101,7 +89,7 @@ export async function getCreateMarketTransactions(
       // set based on https://docs.raydium.io/raydium/updates/archive/creating-an-openbook-amm-pool
       lotSize: 1,
       tickSize: 0.000001,
-      dexProgramId: PROGRAMIDS.OPENBOOK_MARKET,
+      dexProgramId: openbookProgram,
       makeTxVersion,
     });
 
