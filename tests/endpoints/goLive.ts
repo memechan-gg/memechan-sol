@@ -38,25 +38,6 @@ export function test() {
     });
 
     it("go live", async () => {
-      // signer: Keypair;
-      // staking: PublicKey;
-      // stakingPoolSignerPda: PublicKey;
-      // poolMemeVault: PublicKey;
-      // poolWsolVault: PublicKey;
-      // memeMint: PublicKey;
-      // quoteMint: PublicKey;
-      // openOrders: PublicKey;
-      // targetOrders: PublicKey;
-      // marketAccount: PublicKey;
-      // raydiumAmm: PublicKey;
-      // raydiumAmmAuthority: PublicKey;
-      // raydiumLpMint: PublicKey;
-      // raydiumMemeVault: PublicKey;
-      // raydiumQuoteVault: PublicKey;
-      // ammConfig: PublicKey;
-      // feeDestination: PublicKey;
-      // userDestinationLpTokenAta: PublicKey;
-
       await pool.goLive({
         signer: user,
       });

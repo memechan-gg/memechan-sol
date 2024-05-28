@@ -22,6 +22,7 @@ import {
   Keypair,
   Signer,
   SystemProgram,
+  ComputeBudgetProgram,
 } from "@solana/web3.js";
 import {
   airdrop,
@@ -51,24 +52,18 @@ import { createMarket } from "./raydium/openbook";
 import {
   MEMECHAN_MEME_TOKEN_DECIMALS,
   MEMECHAN_QUOTE_TOKEN_DECIMALS,
+  openbookPubkey,
   QUOTE_TOKEN_DECIMALS,
+  raydiumFeeVault,
+  raydiumPrograms,
+  raydiumPubkey,
   // MEMECHAN_QUOTE_MINT,
   // MEMECHAN_QUOTE_TOKEN,
 } from "./config";
-import { ATA_PROGRAM_ID, PROGRAMIDS } from "./raydium/config";
+import { ATA_PROGRAM_ID } from "./raydium/config";
 import { getCreateMarketTransactions } from "./raydium/openBookCreateMarket";
 import { sendTx } from "./util";
 import { formatAmmKeysById } from "./raydium/formatAmmKeysById";
-
-const RAYDIUM_PROGRAM_ID = new PublicKey(
-  "HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8"
-);
-const OPENBOOK_PROGRAM_ID = new PublicKey(
-  "EoTcMgcDRTJVZDMZWBoU6rhYHZfkNTVEAfz3uUJRcYGj"
-);
-const SLERF_MINT = new PublicKey(
-  "HX2pp5za2aBkrA5X5iTioZXcrpWb2q9DiaeWPW3qKMaw"
-);
 
 export interface NewTargetConfig {
   sender: Keypair;
@@ -586,10 +581,12 @@ export class BoundPool {
     const stakingSigner =
       input.stakingSignerPda ?? this.stakingSignerPda(staking);
 
+    const raydiumProgram = raydiumPubkey();
+
     const raydiumLpMint =
       input.raydiumLpMint ??
       this.getRaydiumLpMint({
-        programId: PROGRAMIDS.AmmV4,
+        programId: raydiumProgram,
         marketId: this.marketId!,
       });
 
@@ -612,37 +609,37 @@ export class BoundPool {
     const raydiumAmm =
       input.raydiumAmm ??
       this.raydiumAmmPubkey({
-        programId: PROGRAMIDS.AmmV4,
+        programId: raydiumProgram,
         marketId: this.marketId!,
       });
     const raydiumAmmAuthority =
       input.raydiumAmmAuthority ??
       this.raydiumAuthority({
-        programId: PROGRAMIDS.AmmV4,
+        programId: raydiumProgram,
       }).publicKey;
     const openOrders =
       input.openOrders ??
       this.getAssociatedOpenOrders({
-        programId: PROGRAMIDS.AmmV4,
+        programId: raydiumProgram,
         marketId: this.marketId!,
       });
     const targetOrders =
       input.targetOrders ??
       this.getAssociatedTargetOrders({
-        programId: PROGRAMIDS.AmmV4,
+        programId: raydiumProgram,
         marketId: this.marketId!,
       });
 
     const raydiumMemeVault =
       input.raydiumMemeVault ??
       this.getRaydiumBaseVault({
-        programId: PROGRAMIDS.AmmV4,
+        programId: raydiumProgram,
         marketId: this.marketId!,
       });
     const raydiumQuoteVault =
       input.raydiumQuoteVault ??
       this.getRaydiumQuoteVault({
-        programId: PROGRAMIDS.AmmV4,
+        programId: raydiumProgram,
         marketId: this.marketId!,
       });
 
@@ -1082,40 +1079,41 @@ export class BoundPool {
 
     await airdrop(stakingSigner);
 
-    const feeDestination =
-      input.feeDestination ??
-      new PublicKey("3XMrhbv989VxAMi3DErLV9eJht1pHppW5LbKxe9fkEFR");
+    const feeDestination = input.feeDestination ?? raydiumFeeVault();
+
+    const raydiumProgram = raydiumPubkey();
 
     const ammId = this.raydiumAmmPubkey({
-      programId: PROGRAMIDS.AmmV4,
+      programId: raydiumProgram,
       marketId,
     });
     const raydiumAmmAuthority = this.raydiumAuthority({
-      programId: PROGRAMIDS.AmmV4,
+      programId: raydiumProgram,
     });
     const openOrders = this.getAssociatedOpenOrders({
-      programId: PROGRAMIDS.AmmV4,
+      programId: raydiumProgram,
       marketId,
     });
     const targetOrders = this.getAssociatedTargetOrders({
-      programId: PROGRAMIDS.AmmV4,
+      programId: raydiumProgram,
       marketId,
     });
     const ammConfig = this.getRaydiumConfigId({
-      programId: PROGRAMIDS.AmmV4,
+      programId: raydiumProgram,
     });
 
-    console.log("ammConfig: " + ammConfig);
+    const openBook = openbookPubkey();
+
     const raydiumLpMint = this.getRaydiumLpMint({
-      programId: PROGRAMIDS.AmmV4,
+      programId: raydiumProgram,
       marketId,
     });
     const raydiumMemeVault = this.getRaydiumBaseVault({
-      programId: PROGRAMIDS.AmmV4,
+      programId: raydiumProgram,
       marketId,
     });
     const raydiumWsolVault = this.getRaydiumQuoteVault({
-      programId: PROGRAMIDS.AmmV4,
+      programId: raydiumProgram,
       marketId,
     });
 
@@ -1127,24 +1125,7 @@ export class BoundPool {
 
     this.marketId = marketId;
 
-    console.log("user signer: ", user.publicKey);
-    console.log("poolMemeVault,", poolMemeVault);
-    console.log("poolQuoteVault,", poolQuoteVault);
-    console.log("quoteMint: ", quoteMint);
-    console.log("staking:,", staking);
-    console.log("stakingPoolSignerPda: ,", stakingSigner);
-    console.log("raydiumLpMint: ,", raydiumLpMint);
-    console.log("raydiumAmm: ,", ammId);
-    console.log("raydiumAmmAuthority: ,", raydiumAmmAuthority.publicKey);
-    console.log("raydiumMemeVault: ,", raydiumMemeVault);
-    console.log("raydiumQuoteVault: ,", raydiumWsolVault);
-    console.log("marketAccount: ,", marketId);
-    console.log("openOrders: ,", openOrders);
-    console.log("targetOrders: ,", targetOrders);
-    console.log("memeMint: ,", memeMint);
-    console.log("ammConfig: ,", ammConfig);
-    console.log("feeDestinationInfo: ,", feeDestination);
-    console.log("userDestinationLpTokenAta: ,", userDestinationLpTokenAta);
+    const openbookProgram = openbookPubkey();
 
     await memechan.methods
       .goLive(raydiumAmmAuthority.nonce)
@@ -1160,7 +1141,7 @@ export class BoundPool {
         raydiumAmmAuthority: raydiumAmmAuthority.publicKey,
         raydiumMemeVault: raydiumMemeVault,
         raydiumQuoteVault: raydiumWsolVault,
-        marketProgramId: PROGRAMIDS.OPENBOOK_MARKET,
+        marketProgramId: openbookProgram,
         systemProgram: SystemProgram.programId,
         tokenProgram: TOKEN_PROGRAM_ID,
         marketAccount: marketId,
@@ -1173,9 +1154,14 @@ export class BoundPool {
         ataProgram: ATA_PROGRAM_ID,
         feeDestinationInfo: feeDestination,
         userDestinationLpTokenAta: userDestinationLpTokenAta,
-        raydiumProgram: PROGRAMIDS.AmmV4,
+        raydiumProgram: raydiumProgram,
       })
       .signers([user])
+      .preInstructions([
+        ComputeBudgetProgram.setComputeUnitLimit({
+          units: 250000,
+        }),
+      ])
       .rpc({ skipPreflight: true });
   }
 
