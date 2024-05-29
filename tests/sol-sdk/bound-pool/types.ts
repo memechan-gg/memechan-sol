@@ -88,6 +88,7 @@ export interface BoundPoolArgs {
   client: MemechanClient;
   quoteToken: Token;
   tokenMetadata: TokenMetadata;
+  lutAddr?: PublicKey;
 }
 
 export type GetCreateNewBondingPoolAndTokenTransactionArgs = Omit<

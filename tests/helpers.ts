@@ -13,12 +13,15 @@ import {
   Signer,
   ConfirmOptions,
   sendAndConfirmTransaction,
+  AddressLookupTableProgram,
 } from "@solana/web3.js";
 import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
 import { expect } from "chai";
 import { MemechanSol } from "../target/types/memechan_sol";
 import { mintTo } from "@solana/spl-token";
 import { config } from "dotenv";
+
+import * as bigintBuffer from "bigint-buffer";
 
 export const conf = config();
 
@@ -40,6 +43,8 @@ export const adminSigner = Keypair.fromSecretKey(
 export const QUOTE_MINT = new PublicKey(
   "HX2pp5za2aBkrA5X5iTioZXcrpWb2q9DiaeWPW3qKMaw"
 );
+
+export const LUTSLOT: number = 2;
 
 export function getSendAndConfirmTransactionMethod({
   connection,
@@ -127,4 +132,18 @@ export async function assertApproxCurrentSlot(
 
 export function getCurrentSlot(): Promise<number> {
   return provider.connection.getSlot();
+}
+
+export function getLUTPDA(params: {
+  recentSlot: number;
+  authority: PublicKey;
+}) {
+  const [lookupTableAddress, bumpSeed] = PublicKey.findProgramAddressSync(
+    [
+      params.authority.toBuffer(),
+      bigintBuffer.toBufferLE(BigInt(params.recentSlot), 8),
+    ],
+    AddressLookupTableProgram.programId
+  );
+  return lookupTableAddress;
 }

@@ -1,10 +1,12 @@
 import { Keypair, PublicKey, SystemProgram } from "@solana/web3.js";
 import {
+  LUTSLOT,
   QUOTE_MINT,
   admin,
   adminSigner,
   airdrop,
   findProgramAddress,
+  getLUTPDA,
   memechan,
   payer,
   provider,
@@ -113,6 +115,10 @@ export class BoundPoolWrapper {
         decimals: 9,
       },
       tokenMetadata: DUMMY_TOKEN_METADATA,
+      lutAddr: getLUTPDA({
+        authority: admin,
+        recentSlot: LUTSLOT,
+      }),
     });
 
     return new BoundPoolWrapper(bpClient);

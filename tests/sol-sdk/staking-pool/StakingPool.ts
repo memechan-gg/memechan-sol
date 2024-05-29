@@ -13,7 +13,7 @@ import {
   WithdrawFeesArgs,
 } from "./types";
 import { getSendAndConfirmTransactionMethod } from "../util/getSendAndConfirmTransactionMethod";
-import { getCreateAccountInstructions } from "../util/getCreateAccountInstruction";
+import { getCreateTokenAccountInstructions } from "../util/getCreateAccountInstruction";
 import { retry } from "../util/retry";
 import { MEMECHAN_QUOTE_MINT } from "../config/config";
 import { formatAmmKeysById } from "../raydium/formatAmmKeysById";
@@ -171,25 +171,27 @@ export class StakingPool {
 
     const memeAccountKeypair = Keypair.generate();
     const memeAccountPublicKey = memeAccountKeypair.publicKey;
-    const createMemeAccountInstructions = await getCreateAccountInstructions(
-      this.client.connection,
-      args.user.publicKey,
-      stakingInfo.memeMint,
-      args.user.publicKey,
-      memeAccountKeypair
-    );
+    const createMemeAccountInstructions =
+      await getCreateTokenAccountInstructions(
+        this.client.connection,
+        args.user.publicKey,
+        stakingInfo.memeMint,
+        args.user.publicKey,
+        memeAccountKeypair
+      );
 
     tx.add(...createMemeAccountInstructions);
 
     const quoteAccountKeypair = Keypair.generate();
     const quoteAccountPublicKey = quoteAccountKeypair.publicKey;
-    const createQuoteAccountInstructions = await getCreateAccountInstructions(
-      this.client.connection,
-      args.user.publicKey,
-      MEMECHAN_QUOTE_MINT,
-      args.user.publicKey,
-      quoteAccountKeypair
-    );
+    const createQuoteAccountInstructions =
+      await getCreateTokenAccountInstructions(
+        this.client.connection,
+        args.user.publicKey,
+        MEMECHAN_QUOTE_MINT,
+        args.user.publicKey,
+        quoteAccountKeypair
+      );
 
     tx.add(...createQuoteAccountInstructions);
 
@@ -251,25 +253,27 @@ export class StakingPool {
 
     const memeAccountKeypair = Keypair.generate();
     const memeAccountPublicKey = memeAccountKeypair.publicKey;
-    const createMemeAccountInstructions = await getCreateAccountInstructions(
-      this.client.connection,
-      args.user.publicKey,
-      stakingInfo.memeMint,
-      args.user.publicKey,
-      memeAccountKeypair
-    );
+    const createMemeAccountInstructions =
+      await getCreateTokenAccountInstructions(
+        this.client.connection,
+        args.user.publicKey,
+        stakingInfo.memeMint,
+        args.user.publicKey,
+        memeAccountKeypair
+      );
 
     tx.add(...createMemeAccountInstructions);
 
     const quoteAccountKeypair = Keypair.generate();
     const quoteAccountPublicKey = quoteAccountKeypair.publicKey;
-    const createWSolAccountInstructions = await getCreateAccountInstructions(
-      this.client.connection,
-      args.user.publicKey,
-      MEMECHAN_QUOTE_MINT,
-      args.user.publicKey,
-      quoteAccountKeypair
-    );
+    const createWSolAccountInstructions =
+      await getCreateTokenAccountInstructions(
+        this.client.connection,
+        args.user.publicKey,
+        MEMECHAN_QUOTE_MINT,
+        args.user.publicKey,
+        quoteAccountKeypair
+      );
 
     tx.add(...createWSolAccountInstructions);
 
