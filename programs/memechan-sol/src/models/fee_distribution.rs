@@ -66,6 +66,11 @@ pub fn update_stake(
     state.stakes_total -= user_stake_diff;
 
     if state.stakes_total == 0 && user_stake_diff > 0 {
+        let withdrawal = Withdrawal {
+            max_withdrawal_meme: state.fees_x_total,
+            max_withdrawal_quote: state.fees_y_total,
+        };
+
         state.stakes_total = 0;
         state.fees_x_total = 0;
         state.fees_y_total = 0;
@@ -73,10 +78,7 @@ pub fn update_stake(
         lp_ticket.withdraws_meme = 0;
         lp_ticket.withdraws_quote = 0;
 
-        return Ok(Withdrawal {
-            max_withdrawal_meme: state.fees_x_total,
-            max_withdrawal_quote: state.fees_y_total,
-        });
+        return Ok(withdrawal);
     }
 
     let rem_withdrawal =
