@@ -63,13 +63,7 @@ pub fn update_stake(
 ) -> Result<Withdrawal> {
     let withdrawal = calc_withdraw(state, lp_ticket).unwrap();
     let rem_withdrawal = calc_withdraw_inner(state, user_stake_diff, 0, 0).unwrap();
-    msg!(
-        "lpm: {} wdm: {} lpq: {} wdq: {}",
-        lp_ticket.withdraws_meme,
-        withdrawal.max_withdrawal_meme,
-        lp_ticket.withdraws_quote,
-        withdrawal.max_withdrawal_quote
-    );
+
     lp_ticket.withdraws_meme = lp_ticket
         .withdraws_meme
         .checked_add(withdrawal.max_withdrawal_meme)
@@ -83,13 +77,7 @@ pub fn update_stake(
 
     let wdiff_meme = rem_withdrawal.max_withdrawal_meme; // get_withdraw_diff(lp_ticket.withdraws_meme, stake_diff);
     let wdiff_quote = rem_withdrawal.max_withdrawal_quote; // get_withdraw_diff(lp_ticket.withdraws_quote, stake_diff);
-    msg!(
-        "lpm: {} wdm: {} lpq: {} wdq: {}",
-        lp_ticket.withdraws_meme,
-        wdiff_meme,
-        lp_ticket.withdraws_quote,
-        wdiff_quote
-    );
+
     lp_ticket.withdraws_meme = lp_ticket.withdraws_meme.checked_sub(wdiff_meme).unwrap();
     lp_ticket.withdraws_quote = lp_ticket.withdraws_quote.checked_sub(wdiff_quote).unwrap();
     state.stakes_total -= user_stake_diff;
@@ -109,7 +97,7 @@ fn get_max_withdraw(
         U256::from(user_stake),
         U256::from(stakes_total),
         U256::from(PRECISION),
-        U256::from(PRECISION + PRECISION / 100),
+        U256::from(PRECISION + PRECISION / 1000),
     );
 
     let max_user_withdrawal = (fees_total * user_stake * wad) / stakes_total;
