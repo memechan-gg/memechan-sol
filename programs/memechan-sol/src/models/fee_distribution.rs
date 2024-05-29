@@ -10,6 +10,7 @@ use super::staked_lp::MemeTicket;
 
 const PRECISION: u128 = 1_000_000_000_000_000;
 
+#[derive(Debug)]
 pub struct Withdrawal {
     pub max_withdrawal_meme: u64,
     pub max_withdrawal_quote: u64,
