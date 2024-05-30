@@ -12,7 +12,7 @@ use core as core_;
 
 use endpoints::*;
 
-declare_id!("kKRWbmqpGqPzkAb9aLmhCFcJsr3oBkqCcZYK21dWYRz");
+declare_id!("cYsHcSU42XESLPquuN1ga94jm1wVMg11wVcxqvofA3k");
 
 #[program]
 pub mod memechan_sol {

@@ -36,8 +36,6 @@ pub const RAYDIUM_PROGRAM_ID: Pubkey =
 pub const RAYDIUM_PROGRAM_ID: Pubkey =
     solana_program::pubkey!("675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8"); // Mainnet
 
-pub const RAYDIUM_PROGRAM_ID_: &'static [Pubkey] = &[RAYDIUM_PROGRAM_ID];
-
 #[cfg(not(feature = "mainnet"))]
 pub const OPENBOOK_PROGRAM_ID: Pubkey =
     solana_program::pubkey!("EoTcMgcDRTJVZDMZWBoU6rhYHZfkNTVEAfz3uUJRcYGj"); // Devnet
@@ -51,7 +49,16 @@ pub const SLERF_MINT: Pubkey =
 
 #[cfg(feature = "mainnet")]
 pub const SLERF_MINT: Pubkey =
-    solana_program::pubkey!("7BgBvyjrZX1YKz4oh9mjb8ZScatkkwb8DzFx7LoiVkM3"); // Mainnet
+    solana_program::pubkey!("9pECN2xxLQo22bFYpsNr3T3eW1UdEDtSqPQopFrGv7n4"); // Mainnet
 
+#[cfg(not(feature = "mainnet"))]
 pub const ADMIN_KEY: Pubkey =
     solana_program::pubkey!("8SvkUtJZCyJwSQGkiszwcRcPv7c8pPSr8GVEppGNN7DV");
+#[cfg(feature = "mainnet")]
+pub const ADMIN_KEY: Pubkey =
+    solana_program::pubkey!("KZbAoMgCcb2gDEn2Ucea86ux84y25y3ybbWQGQpd9D6");
+
+#[cfg(not(feature = "mainnet"))]
+pub const FEE_KEY: Pubkey = solana_program::pubkey!("feeLPZEfzJFwDR11cdMWE3nSa4nr7sPPM4u6tmDTw3Y");
+#[cfg(feature = "mainnet")]
+pub const FEE_KEY: Pubkey = solana_program::pubkey!("feeLPZEfzJFwDR11cdMWE3nSa4nr7sPPM4u6tmDTw3Y");
