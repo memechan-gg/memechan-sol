@@ -7,8 +7,6 @@ use crate::{
     raydium::{self, models::AmmInfo},
 };
 
-use crate::err::AmmError;
-use crate::math::Decimal;
 use crate::raydium::RaydiumAmm;
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token, TokenAccount};

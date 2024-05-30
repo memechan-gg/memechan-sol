@@ -5,7 +5,7 @@ use crate::raydium;
 use crate::raydium::RaydiumAmm;
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
-use anchor_spl::token::{Mint, SetAuthority, Token, TokenAccount};
+use anchor_spl::token::{Mint, Token, TokenAccount};
 
 #[derive(Accounts)]
 pub struct GoLive<'info> {

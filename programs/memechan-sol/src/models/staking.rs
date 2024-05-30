@@ -119,6 +119,7 @@ pub fn token_fee_ratio(reserve_balance: u64, cumulated_fees: u64) -> Result<Deci
     Decimal::from(cumulated_fees).try_div(Decimal::from(reserve_balance))
 }
 
+#[test]
 mod tests {
     use crate::{
         consts::{MAX_TICKET_TOKENS, MEME_TOKEN_DECIMALS},

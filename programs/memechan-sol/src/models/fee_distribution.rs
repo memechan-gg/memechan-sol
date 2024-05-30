@@ -1,8 +1,5 @@
 use crate::err::AmmError;
-use crate::{
-    math::{Decimal, TryAdd, TryDiv, TryMul, TryRound, TrySub},
-    models::staking::StakingPool,
-};
+use crate::models::staking::StakingPool;
 use anchor_lang::prelude::*;
 use spl_math::uint::U256;
 
@@ -126,9 +123,4 @@ fn get_max_withdraw(
     let allowed_withdrawal = max_user_withdrawal - user_withdrawals_total * wad;
 
     Ok((allowed_withdrawal / wad1p).as_u64())
-}
-
-fn get_withdraw_diff(user_withdrawals: u64, stake_diff: u128) -> u64 {
-    let withdraw_diff_x = ((U256::from(user_withdrawals)) * U256::from(stake_diff)) / PRECISION;
-    withdraw_diff_x.as_u64()
 }
