@@ -26,7 +26,7 @@ pub struct InitStakingPool<'info> {
     #[account(
         mut,
         close = signer,
-        has_one = admin_vault_quote,
+        has_one = fee_vault_quote,
         constraint = pool.locked
             @ err::acc("Pool must be locked before proceeding to live phase"),
     )]
@@ -49,9 +49,9 @@ pub struct InitStakingPool<'info> {
     /// Bonding Pool Admin Vault
     #[account(
         mut,
-        constraint = pool.admin_vault_quote == admin_vault_quote.key()
+        constraint = pool.fee_vault_quote == fee_vault_quote.key()
     )]
-    pub admin_vault_quote: Box<Account<'info, TokenAccount>>,
+    pub fee_vault_quote: Box<Account<'info, TokenAccount>>,
     //
     //
     //
@@ -155,7 +155,7 @@ impl<'info> InitStakingPool<'info> {
     fn send_admin_fee_sol(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
             from: self.pool_quote_vault.to_account_info(),
-            to: self.admin_vault_quote.to_account_info(),
+            to: self.fee_vault_quote.to_account_info(),
             authority: self.bound_pool_signer_pda.to_account_info(),
         };
 

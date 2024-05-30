@@ -1,5 +1,5 @@
 use crate::consts::{
-    ADMIN_KEY, DEFAULT_MAX_M, DEFAULT_MAX_M_LP, DEFAULT_PRICE_FACTOR, MAX_MEME_TOKENS,
+    ADMIN_KEY, DEFAULT_MAX_M, DEFAULT_MAX_M_LP, DEFAULT_PRICE_FACTOR, FEE_KEY, MAX_MEME_TOKENS,
     MAX_TICKET_TOKENS, MEME_TOKEN_DECIMALS, SLERF_MINT,
 };
 use crate::err;
@@ -45,12 +45,12 @@ pub struct NewPool<'info> {
     )]
     pub quote_mint: Account<'info, Mint>,
     #[account(
-        constraint = admin_quote_vault.mint == quote_mint.key()
+        constraint = fee_quote_vault.mint == quote_mint.key()
             @ err::acc("Admin quote vault must be of SLERF mint"),
-        constraint = admin_quote_vault.owner == ADMIN_KEY
+        constraint = fee_quote_vault.owner == FEE_KEY
             @ err::acc("Admin quote vault authority must match admin"),
     )]
-    pub admin_quote_vault: Account<'info, TokenAccount>,
+    pub fee_quote_vault: Account<'info, TokenAccount>,
     #[account(
         mut,
         constraint = meme_vault.mint == meme_mint.key()
@@ -105,7 +105,7 @@ pub fn handle(ctx: Context<NewPool>) -> Result<()> {
     .unwrap();
 
     let pool = &mut accs.pool;
-    pool.admin_vault_quote = accs.admin_quote_vault.key();
+    pool.fee_vault_quote = accs.fee_quote_vault.key();
     pool.quote_reserve = Reserve {
         tokens: 0,
         mint: accs.quote_mint.key(),
