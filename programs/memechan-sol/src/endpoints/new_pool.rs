@@ -34,9 +34,13 @@ pub struct NewPool<'info> {
     pub meme_mint: Account<'info, Mint>,
     #[account(
         constraint = quote_vault.mint == quote_mint.key()
-            @ err::acc("ticket vault must be of ticket mint"),
+            @ err::acc("quote vault must be of ticket mint"),
         constraint = quote_vault.owner == pool_signer.key()
-            @ err::acc("ticket vault authority must match pool pda"),
+            @ err::acc("quote vault authority must match pool pda"),
+        constraint = quote_vault.close_authority == COption::None
+            @ err::acc("Quote vault must not have close authority"),
+        constraint = quote_vault.delegate == COption::None
+            @ err::acc("Quote vault must not have delegate"),
     )]
     pub quote_vault: Account<'info, TokenAccount>,
     #[account(
@@ -46,9 +50,13 @@ pub struct NewPool<'info> {
     pub quote_mint: Account<'info, Mint>,
     #[account(
         constraint = fee_quote_vault.mint == quote_mint.key()
-            @ err::acc("Admin quote vault must be of SLERF mint"),
+            @ err::acc("Fee quote vault must be of SLERF mint"),
         constraint = fee_quote_vault.owner == FEE_KEY
-            @ err::acc("Admin quote vault authority must match admin"),
+            @ err::acc("Fee quote vault authority must match admin"),
+        constraint = fee_quote_vault.close_authority == COption::None
+            @ err::acc("Fee quote vault must not have close authority"),
+        constraint = fee_quote_vault.delegate == COption::None
+            @ err::acc("Fee quote vault must not have delegate"),
     )]
     pub fee_quote_vault: Account<'info, TokenAccount>,
     #[account(
@@ -57,6 +65,10 @@ pub struct NewPool<'info> {
             @ err::acc("admin ticket vault must be of ticket mint"),
         constraint = meme_vault.owner == pool_signer.key()
             @ err::acc("Meme vault authority must match admin"),
+        constraint = meme_vault.close_authority == COption::None
+            @ err::acc("Meme vault must not have close authority"),
+        constraint = meme_vault.delegate == COption::None
+            @ err::acc("Meme vault must not have delegate"),
     )]
     pub meme_vault: Account<'info, TokenAccount>,
     #[account(

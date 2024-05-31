@@ -22,6 +22,7 @@ pub struct GoLive<'info> {
     /// Staking Pool Account
     #[account(
         mut,
+        constraint = staking.raydium_amm.key() == system_program.key(),
         seeds = [StakingPool::POOL_PREFIX, meme_mint.key().as_ref()],
         bump
     )]
