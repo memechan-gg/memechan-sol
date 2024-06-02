@@ -12,6 +12,7 @@ pub struct CloseTicket<'info> {
     pub ticket: Account<'info, MemeTicket>,
     #[account(mut)]
     pub owner: Signer<'info>,
+    pub system_program: Program<'info, System>,
 }
 
 pub fn handle(ctx: Context<CloseTicket>) -> Result<()> {

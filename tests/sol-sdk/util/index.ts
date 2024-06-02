@@ -1,9 +1,8 @@
 import {
   buildSimpleTransaction,
-  findProgramAddress,
+  InnerSimpleV0Transaction,
   SPL_ACCOUNT_LAYOUT,
   TOKEN_PROGRAM_ID,
-  InnerSimpleV0Transaction,
   TokenAccount,
 } from "@raydium-io/raydium-sdk";
 
@@ -16,30 +15,56 @@ import {
   Transaction,
   VersionedTransaction,
 } from "@solana/web3.js";
-import { addLookupTableInfo, makeTxVersion } from "./config";
+import { ATA_PROGRAM_ID, addLookupTableInfo, makeTxVersion } from "../raydium/config";
+import { findProgramAddress } from "../common/helpers";
 
 export async function buildAndSendTx(
   connection: Connection,
   payer: Signer,
   innerSimpleV0Transaction: InnerSimpleV0Transaction[],
-  options?: SendOptions
+  options?: SendOptions,
 ) {
-  const willSendTx = await buildSimpleTransaction({
+
+  const willSendTx = await buildTxs(connection, payer, innerSimpleV0Transaction);
+
+  return await sendTx(connection, payer, willSendTx, options);
+}
+
+export async function buildTxs(
+  connection: Connection,
+  payer: Signer,
+  innerSimpleV0Transaction: InnerSimpleV0Transaction[],
+): Promise<(Transaction | VersionedTransaction)[]> {
+
+  let responseBlock;
+
+  try {
+      responseBlock = await connection.getLatestBlockhash("confirmed")
+  } catch (error) {
+      console.log(error)
+      console.log("Refetching latest Blockhash")
+      responseBlock = await connection.getLatestBlockhash("confirmed")
+  }
+
+  const recentBlockhash = (responseBlock).blockhash;
+
+  const transactions = await buildSimpleTransaction({
     connection,
     makeTxVersion,
     payer: payer.publicKey,
     innerTransactions: innerSimpleV0Transaction,
+    recentBlockhash,
     addLookupTableInfo: addLookupTableInfo,
   });
 
-  return await sendTx(connection, payer, willSendTx, options);
+  return transactions;
 }
 
 export async function sendTx(
   connection: Connection,
   payer: Keypair | Signer,
   txs: (VersionedTransaction | Transaction)[],
-  options?: SendOptions
+  options?: SendOptions,
 ): Promise<string[]> {
   const txids: string[] = [];
   for (const iTx of txs) {
@@ -53,10 +78,7 @@ export async function sendTx(
   return txids;
 }
 
-export async function getWalletTokenAccount(
-  connection: Connection,
-  wallet: PublicKey
-): Promise<TokenAccount[]> {
+export async function getWalletTokenAccount(connection: Connection, wallet: PublicKey): Promise<TokenAccount[]> {
   const walletTokenAccount = await connection.getTokenAccountsByOwner(wallet, {
     programId: TOKEN_PROGRAM_ID,
   });
@@ -67,14 +89,10 @@ export async function getWalletTokenAccount(
   }));
 }
 
-export function getATAAddress(
-  programId: PublicKey,
-  owner: PublicKey,
-  mint: PublicKey
-) {
+export function getATAAddress(programId: PublicKey, owner: PublicKey, mint: PublicKey) {
   const { publicKey, nonce } = findProgramAddress(
     [owner.toBuffer(), programId.toBuffer(), mint.toBuffer()],
-    new PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL")
+    new PublicKey(ATA_PROGRAM_ID),
   );
   return { publicKey, nonce };
 }

@@ -124,6 +124,13 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<
     accs.meme_vault.reload().unwrap();
     accs.quote_vault.reload().unwrap();
 
+    msg!(
+        "meme_vault_amt {} meme_vault_initial_amt {} quote_vault_amt {} quote_vault_initial_amt {}",
+        accs.meme_vault.amount,
+        meme_vault_initial_amt,
+        accs.quote_vault.amount,
+        quote_vault_initial_amt
+    );
     let state = &mut accs.staking;
 
     state.raydium_fees.last_cum_meme_fees = cumulated_fees_meme;

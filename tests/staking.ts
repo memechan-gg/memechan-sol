@@ -3,35 +3,42 @@ import {
   TOKEN_PROGRAM_ID,
   createAccount,
   getAccount,
+  getOrCreateAssociatedTokenAccount,
 } from "@solana/spl-token";
-import {
-  PublicKey,
-  Keypair
-} from "@solana/web3.js";
-import { memechan, payer, amm, provider } from "./helpers";
+import { PublicKey, Keypair } from "@solana/web3.js";
+import { QUOTE_MINT, memechan, payer, provider } from "./helpers";
 import { AmmPool } from "./pool";
-import { Address, BN } from "@project-serum/anchor";
-import { MemeTicket } from "./ticket";
+import { Address, BN } from "@coral-xyz/anchor";
+import { MemeTicketWrapper } from "./ticket";
 
 export interface UnstakeArgs {
-  ticket: MemeTicket;
+  ticket: MemeTicketWrapper;
   amount: BN;
   user: Keypair;
 }
 
 export interface WithdrawFeesArgs {
-  ticket: MemeTicket;
+  ticket: MemeTicketWrapper;
   user: Keypair;
 }
 
-export class Staking {
+export class StakingWrapper {
   public constructor(public id: PublicKey) {
     //
   }
 
-
   public async fetch() {
     return memechan.account.stakingPool.fetch(this.id);
+  }
+
+  public static findSignerPda(
+    publicKey: PublicKey,
+    memechanProgramId: PublicKey
+  ): PublicKey {
+    return PublicKey.findProgramAddressSync(
+      [Buffer.from("staking"), publicKey.toBytes()],
+      memechanProgramId
+    )[0];
   }
 
   public static signerFrom(publicKey: PublicKey): PublicKey {
@@ -41,55 +48,20 @@ export class Staking {
     )[0];
   }
 
-  public async add_fees(ammPool: AmmPool) {
-
-    const info = await this.fetch();
-
-    const pda = this.signerPda()
-    const staking = this.id;
-
-    const ammInfo = await ammPool.fetch()
-
-    const getAccountMetaFromPublicKey = (pk) => {
-      return { isSigner: false, isWritable: true, pubkey: pk };
-    };
-
-    await memechan.methods.addFees()
-      .accounts({
-        memeVault: info.memeVault,
-        wsolVault: info.wsolVault,
-        staking,
-        aldrinPoolAcc: ammPool.id,
-        aldrinAmmProgram: amm.programId,
-        aldrinLpMint: ammInfo.mint,
-        aldrinPoolLpWallet: ammInfo.programTollWallet,
-        aldrinPoolSigner: ammPool.signer(),
-        stakingSignerPda: this.signer(),
-        tokenProgram: TOKEN_PROGRAM_ID,
-      })
-      .remainingAccounts([
-        getAccountMetaFromPublicKey(ammInfo.reserves[0].vault),
-        getAccountMetaFromPublicKey(ammInfo.reserves[1].vault)
-      ])
-      .signers([payer])
-      .rpc();
-  }
+  public async add_fees(ammPool: AmmPool) {}
 
   public signer(): PublicKey {
-    return Staking.signerFrom(this.id);
+    return StakingWrapper.signerFrom(this.id);
   }
 
   public signerPda(): PublicKey {
-    return Staking.signerFrom(this.id);
+    return StakingWrapper.signerFrom(this.id);
   }
 
-  public async unstake(
-    input: UnstakeArgs
-  ): Promise<[PublicKey, PublicKey]> {
-
+  public async unstake(input: UnstakeArgs): Promise<[PublicKey, PublicKey]> {
     let user = input.user;
 
-    let stakingInfo = await this.fetch()
+    let stakingInfo = await this.fetch();
 
     const memeAccKey = Keypair.generate();
     const memeAcc = await createAccount(
@@ -101,39 +73,38 @@ export class Staking {
     );
 
     const wsolAccKey = Keypair.generate();
-    const wsolAcc = await createAccount(
+    const quoteAcc = await getOrCreateAssociatedTokenAccount(
       provider.connection,
       user,
-      NATIVE_MINT,
-      user.publicKey,
-      wsolAccKey
+      QUOTE_MINT,
+      user.publicKey
     );
 
-    await memechan.methods.unstake(input.amount)
+    await memechan.methods
+      .unstake(input.amount)
       .accounts({
         memeTicket: input.ticket.id,
         signer: input.user.publicKey,
         stakingSignerPda: this.signer(),
         memeVault: stakingInfo.memeVault,
-        wsolVault: stakingInfo.wsolVault,
+        quoteVault: stakingInfo.quoteVault,
         staking: this.id,
         userMeme: memeAcc,
-        userWsol: wsolAcc,
-        tokenProgram: TOKEN_PROGRAM_ID
+        userQuote: quoteAcc.address,
+        tokenProgram: TOKEN_PROGRAM_ID,
       })
       .signers([user])
       .rpc();
 
-    return [memeAcc, wsolAcc];
+    return [memeAcc, quoteAcc.address];
   }
 
   public async withdraw_fees(
     input: WithdrawFeesArgs
   ): Promise<[PublicKey, PublicKey]> {
-
     let user = input.user;
 
-    let stakingInfo = await this.fetch()
+    let stakingInfo = await this.fetch();
 
     const memeAccKey = Keypair.generate();
     const memeAcc = await createAccount(
@@ -145,29 +116,29 @@ export class Staking {
     );
 
     const wsolAccKey = Keypair.generate();
-    const wsolAcc = await createAccount(
+    const quoteAcc = await getOrCreateAssociatedTokenAccount(
       provider.connection,
       user,
-      NATIVE_MINT,
-      user.publicKey,
-      wsolAccKey
+      QUOTE_MINT,
+      user.publicKey
     );
 
-    await memechan.methods.withdrawFees()
+    await memechan.methods
+      .withdrawFees()
       .accounts({
         memeTicket: input.ticket.id,
         stakingSignerPda: this.signer(),
         memeVault: stakingInfo.memeVault,
-        wsolVault: stakingInfo.wsolVault,
+        quoteVault: stakingInfo.quoteVault,
         staking: this.id,
         userMeme: memeAcc,
-        userWsol: wsolAcc,
+        userQuote: quoteAcc.address,
         signer: user.publicKey,
-        tokenProgram: TOKEN_PROGRAM_ID
+        tokenProgram: TOKEN_PROGRAM_ID,
       })
       .signers([user])
       .rpc();
 
-    return [memeAcc, wsolAcc];
+    return [memeAcc, quoteAcc.address];
   }
 }
