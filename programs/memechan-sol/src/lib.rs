@@ -9,10 +9,12 @@ pub mod vesting;
 
 use anchor_lang::prelude::*;
 use core as core_;
-
 use endpoints::*;
 
-declare_id!("3ZSoMaLkD4QBVY94hiqRsi7wtxhXHn1cQxKzPnXyB2KP");
+#[cfg(not(feature = "mainnet"))]
+declare_id!("3ZSoMaLkD4QBVY94hiqRsi7wtxhXHn1cQxKzPnXyB2KP"); // localnet
+#[cfg(feature = "mainnet")]
+declare_id!("cYsHcSU42XESLPquuN1ga94jm1wVMg11wVcxqvofA3k"); // mainnet test
 
 #[program]
 pub mod memechan_sol {
