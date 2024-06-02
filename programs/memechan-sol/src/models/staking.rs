@@ -5,6 +5,7 @@ use crate::{
 use anchor_lang::prelude::*;
 use std::mem;
 
+#[derive(Default)]
 #[account]
 pub struct StakingPool {
     pub pool: Pubkey,
@@ -111,14 +112,22 @@ pub fn arithmetic_fee_ratio(
 ) -> Result<Decimal> {
     token_fee_ratio(reserve_meme, cumulated_fees_meme)?
         .try_add(token_fee_ratio(reserve_quote, cumulated_fees_quote)?)?
-        .try_div(Decimal::from(2 as u64))
+        .try_div(Decimal::from(2u64))
 }
 
 pub fn token_fee_ratio(reserve_balance: u64, cumulated_fees: u64) -> Result<Decimal> {
     Decimal::from(cumulated_fees).try_div(Decimal::from(reserve_balance))
 }
 
+#[cfg(test)]
 mod tests {
+    use crate::{
+        consts::{MAX_TICKET_TOKENS, MEME_TOKEN_DECIMALS},
+        math::{ScaledVal, U192},
+        models::{fee_distribution::calc_withdraw, staked_lp::MemeTicket},
+        vesting::VestingData,
+    };
+
     use super::*;
 
     #[test]
@@ -225,6 +234,85 @@ mod tests {
             .iter()
             .zip(lp_tokens_to_burn.clone())
             .for_each(|(expected, actual)| assert_eq!(&actual, expected));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_staking_cycle() -> Result<()> {
+        // Init stakign pool
+        let mut staking = StakingPool {
+            raydium_fees: RaydiumAmmFees {
+                last_cum_quote_fees: 0,
+                last_cum_meme_fees: 0,
+            },
+            stakes_total: MAX_TICKET_TOKENS * MEME_TOKEN_DECIMALS,
+            fees_x_total: 0,
+            fees_y_total: 0,
+            ..Default::default()
+        };
+
+        let mut lp_tokens_supply: u64 = 1_000_000;
+        let mut lp_tokens_owned: u64 = 1_000_000;
+
+        // Mocking trading fee accumulation
+
+        let mut meme_balance: u64 = 180_000_000_000_000;
+        let mut quote_balance: u64 = 100_000_000_000;
+
+        // Add fees
+        let fee_ratio = compute_fee_ratio(
+            staking.raydium_fees.last_cum_quote_fees,
+            staking.raydium_fees.last_cum_meme_fees,
+            meme_balance,
+            20_000, // cumulated_fees_meme
+            quote_balance,
+            10_000, // cumulated_fees_quote
+        )?;
+
+        let lp_tokens_to_burn = lp_tokens_to_burn(fee_ratio, lp_tokens_owned)?;
+
+        staking.raydium_fees.last_cum_meme_fees = 20_000;
+        staking.raydium_fees.last_cum_quote_fees = 10_000;
+
+        let fees_x = Decimal::from(meme_balance)
+            .try_div(Decimal::from(lp_tokens_supply))?
+            .try_mul(Decimal::from(lp_tokens_owned))?
+            .try_round()?;
+
+        let fees_y = Decimal::from(quote_balance)
+            .try_div(Decimal::from(lp_tokens_supply))?
+            .try_mul(Decimal::from(lp_tokens_owned))?
+            .try_round()?;
+
+        staking.fees_x_total += fees_x;
+        staking.fees_y_total += fees_y;
+
+        meme_balance -= fees_x;
+        quote_balance -= fees_y;
+
+        lp_tokens_supply -= lp_tokens_to_burn;
+        lp_tokens_owned -= lp_tokens_to_burn;
+
+        // Compute Withdrawals
+
+        let mut lp_ticket = MemeTicket {
+            amount: 100_000_000,
+            withdraws_meme: 0,
+            withdraws_quote: 0,
+            vesting: VestingData {
+                notional: 100_000_000,
+                released: 0,
+            },
+            ..Default::default()
+        };
+
+        let withdrawal = calc_withdraw(&staking, &lp_ticket).unwrap();
+
+        lp_ticket.withdraws_meme += withdrawal.max_withdrawal_meme;
+        lp_ticket.withdraws_quote += withdrawal.max_withdrawal_quote;
+
+        println!("{:?}", withdrawal);
 
         Ok(())
     }

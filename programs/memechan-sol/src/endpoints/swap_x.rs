@@ -81,6 +81,7 @@ pub fn handle(ctx: Context<SwapCoinX>, coin_in_amount: u64, coin_y_min_value: u6
     pool_state.quote_reserve.tokens -= swap_amount.amount_out + swap_amount.admin_fee_out;
 
     user_ticket.amount -= coin_in_amount;
+    user_ticket.vesting.notional -= coin_in_amount;
 
     let seeds = &[
         BoundPool::SIGNER_PDA_PREFIX,

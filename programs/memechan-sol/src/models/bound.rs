@@ -17,7 +17,7 @@ pub struct BoundPool {
     pub quote_reserve: Reserve,
     pub admin_fees_meme: u64,
     pub admin_fees_quote: u64,
-    pub admin_vault_quote: Pubkey,
+    pub fee_vault_quote: Pubkey,
     pub creator_addr: Pubkey,
     pub fees: Fees,
     pub config: Config,

@@ -82,9 +82,11 @@ pub fn handle(ctx: Context<Unstake>, release_amount: u64) -> Result<()> {
         return Err(error!(AmmError::NotEnoughTokensToRelease));
     }
 
+    let ticket = &mut accs.meme_ticket;
+
     let withdrawal = update_stake(
         &mut accs.staking,
-        &mut accs.meme_ticket,
+        ticket,
         vesting_data.current_stake(),
         release_amount,
     )?;
@@ -105,6 +107,11 @@ pub fn handle(ctx: Context<Unstake>, release_amount: u64) -> Result<()> {
         withdrawal.max_withdrawal_meme,
         withdrawal.max_withdrawal_quote,
     );
+
+    if withdrawal.max_withdrawal_meme + release_amount == 0 && withdrawal.max_withdrawal_quote == 0
+    {
+        return Err(error!(AmmError::NoTokensToWithdraw));
+    }
 
     token::transfer(
         accs.send_meme_to_user().with_signer(staking_signer_seeds),

@@ -1,11 +1,13 @@
 use crate::err::AmmError;
 use crate::models::staking::StakingPool;
 use anchor_lang::prelude::*;
+use spl_math::uint::U256;
 
 use super::staked_lp::MemeTicket;
 
 const PRECISION: u128 = 1_000_000_000_000_000;
 
+#[derive(Debug)]
 pub struct Withdrawal {
     pub max_withdrawal_meme: u64,
     pub max_withdrawal_quote: u64,
@@ -15,7 +17,20 @@ pub fn calc_withdraw(fee_state: &StakingPool, lp_ticket: &MemeTicket) -> Result<
     let user_stake: u64 = lp_ticket.vesting.current_stake();
     let user_withdrawals_meme = lp_ticket.withdraws_meme;
     let user_withdrawals_quote = lp_ticket.withdraws_quote;
+    return calc_withdraw_inner(
+        fee_state,
+        user_stake,
+        user_withdrawals_meme,
+        user_withdrawals_quote,
+    );
+}
 
+pub fn calc_withdraw_inner(
+    fee_state: &StakingPool,
+    user_stake: u64,
+    user_withdrawals_meme: u64,
+    user_withdrawals_quote: u64,
+) -> Result<Withdrawal> {
     let max_withdrawal_meme = get_max_withdraw(
         user_withdrawals_meme,
         fee_state.fees_x_total,
@@ -41,17 +56,44 @@ pub fn calc_withdraw(fee_state: &StakingPool, lp_ticket: &MemeTicket) -> Result<
 pub fn update_stake(
     state: &mut StakingPool,
     lp_ticket: &mut MemeTicket,
-    user_old_stake: u64,
+    user_current_stake: u64,
     user_stake_diff: u64,
 ) -> Result<Withdrawal> {
     let withdrawal = calc_withdraw(state, lp_ticket).unwrap();
 
-    let stake_diff = ((user_stake_diff as u128) * PRECISION) / (user_old_stake as u128);
+    state.stakes_total = state.stakes_total.checked_sub(user_stake_diff).unwrap();
+    state.fees_x_total = state.fees_x_total.checked_sub(withdrawal.max_withdrawal_meme).unwrap();
+    state.fees_y_total = state.fees_y_total.checked_sub(withdrawal.max_withdrawal_quote).unwrap();
 
-    lp_ticket.withdraws_meme -= get_withdraw_diff(lp_ticket.withdraws_meme, stake_diff);
-    lp_ticket.withdraws_quote -= get_withdraw_diff(lp_ticket.withdraws_quote, stake_diff);
+    if state.stakes_total == 0 && user_stake_diff > 0 {
+        let withdrawal = Withdrawal {
+            max_withdrawal_meme: state.fees_x_total,
+            max_withdrawal_quote: state.fees_y_total,
+        };
 
-    state.stakes_total -= user_stake_diff;
+        state.stakes_total = 0;
+        state.fees_x_total = 0;
+        state.fees_y_total = 0;
+
+        lp_ticket.withdraws_meme = 0;
+        lp_ticket.withdraws_quote = 0;
+
+        return Ok(withdrawal);
+    }
+
+    let rem_withdrawal =
+        calc_withdraw_inner(state, user_current_stake.checked_sub(user_stake_diff).unwrap(), 0, 0).unwrap();
+
+    msg!(
+        "lwm {} rwm {} lwq {} rwq {}",
+        lp_ticket.withdraws_meme,
+        rem_withdrawal.max_withdrawal_meme,
+        lp_ticket.withdraws_quote,
+        rem_withdrawal.max_withdrawal_quote
+    );
+
+    lp_ticket.withdraws_meme = rem_withdrawal.max_withdrawal_meme;
+    lp_ticket.withdraws_quote = rem_withdrawal.max_withdrawal_quote;
 
     Ok(withdrawal)
 }
@@ -62,25 +104,22 @@ fn get_max_withdraw(
     user_stake: u64,
     stakes_total: u64,
 ) -> Result<u64> {
-    let (user_withdrawals_total, fees_total, user_stake, stakes_total) = (
-        user_withdrawals as u128,
-        fees_total as u128,
-        user_stake as u128,
-        stakes_total as u128,
+    let (user_withdrawals_total, fees_total, user_stake, stakes_total, wad, wad1p) = (
+        U256::from(user_withdrawals),
+        U256::from(fees_total),
+        U256::from(user_stake),
+        U256::from(stakes_total),
+        U256::from(PRECISION),
+        U256::from(PRECISION + PRECISION / 10000),
     );
 
-    let max_user_withdrawal = fees_total * ((user_stake * PRECISION) / stakes_total);
+    let max_user_withdrawal = (fees_total * user_stake * wad) / stakes_total;
 
-    if max_user_withdrawal <= user_withdrawals_total * PRECISION {
+    if max_user_withdrawal <= user_withdrawals_total * wad {
         return Err(error!(AmmError::NoTokensToWithdraw));
     }
 
-    let allowed_withdrawal = max_user_withdrawal - user_withdrawals_total * PRECISION;
+    let allowed_withdrawal = max_user_withdrawal - user_withdrawals_total * wad;
 
-    Ok((allowed_withdrawal / PRECISION) as u64)
-}
-
-fn get_withdraw_diff(user_withdrawals: u64, stake_diff: u128) -> u64 {
-    let withdraw_diff_x = ((user_withdrawals as u128) * stake_diff) / PRECISION;
-    withdraw_diff_x as u64
+    Ok((allowed_withdrawal / wad1p).as_u64())
 }

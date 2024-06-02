@@ -1,13 +1,11 @@
 use crate::{
     consts::RAYDIUM_PROGRAM_ID,
-    models::{
-        staking::{lp_tokens_to_burn, StakingPool},
-        OpenBook,
+    models::{staking::{lp_tokens_to_burn, StakingPool},
+        OpenBook
     },
     raydium::{self, models::AmmInfo},
 };
 
-use crate::err::AmmError;
 use crate::raydium::RaydiumAmm;
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token, TokenAccount};
@@ -141,19 +139,6 @@ impl<'info> AddFees<'info> {
 
         Ok(())
     }
-
-    // pub fn withdraw_fees_ctx(&self) -> CpiContext<'_, '_, '_, 'info, RedeemLiquidity<'info>> {
-    //     let cpi_program = self.aldrin_amm_program.to_account_info();
-    //     let cpi_accounts = RedeemLiquidity {
-    //         user: self.staking_signer_pda.to_account_info(),
-    //         pool: self.aldrin_pool_acc.to_account_info(),
-    //         pool_signer: self.aldrin_pool_signer.to_account_info(),
-    //         lp_mint: self.aldrin_lp_mint.to_account_info(),
-    //         lp_token_wallet: self.aldrin_pool_lp_wallet.to_account_info(),
-    //         token_program: self.token_program.to_account_info(),
-    //     };
-    //     CpiContext::new(cpi_program, cpi_accounts)
-    // }
 }
 
 pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<()> {

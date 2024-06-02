@@ -5,7 +5,10 @@ pub mod staked_lp;
 pub mod staking;
 pub mod target_config;
 
+use crate::consts::OPENBOOK_PROGRAM_ID;
 use anchor_lang::prelude::*;
+
+extern crate std;
 
 #[derive(AnchorDeserialize, AnchorSerialize, Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct TokenLimit {
@@ -39,9 +42,6 @@ pub struct OpenBook;
 
 impl anchor_lang::Id for OpenBook {
     fn id() -> Pubkey {
-        // Devnet
-        solana_program::pubkey!("EoTcMgcDRTJVZDMZWBoU6rhYHZfkNTVEAfz3uUJRcYGj")
-        // Mainnet
-        // solana_program::pubkey!("srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX")
+        OPENBOOK_PROGRAM_ID
     }
 }

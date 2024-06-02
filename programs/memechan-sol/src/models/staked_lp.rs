@@ -2,8 +2,14 @@ use crate::vesting::VestingData;
 use anchor_lang::prelude::*;
 use std::mem;
 
-pub const LOCK_TIME: i64 = 60; // * 3600;
 
+#[cfg(not(feature = "mainnet"))]
+pub const LOCK_TIME: i64 = 60; // 1 minute
+#[cfg(feature = "mainnet")]
+pub const LOCK_TIME: i64 = 3600; // 1 hour
+
+
+#[derive(Default)]
 #[account]
 pub struct MemeTicket {
     pub owner: Pubkey,
