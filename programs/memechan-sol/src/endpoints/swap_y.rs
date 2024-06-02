@@ -1,4 +1,3 @@
-use crate::consts::SLERF_MINT;
 use crate::err;
 use crate::err::AmmError;
 use crate::models::bound::BoundPool;
@@ -15,11 +14,7 @@ pub struct SwapCoinY<'info> {
         constraint = pool.quote_reserve.vault == quote_vault.key()
     )]
     quote_vault: Account<'info, TokenAccount>,
-    #[account(
-        mut,
-        constraint = user_sol.mint == SLERF_MINT
-            @ err::acc("Quote mint should be SLERF mint")
-    )]
+    #[account(mut)]
     user_sol: Account<'info, TokenAccount>,
     #[account(init, payer = owner, space = MemeTicket::space())]
     meme_ticket: Account<'info, MemeTicket>,
