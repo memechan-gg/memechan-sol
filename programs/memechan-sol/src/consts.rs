@@ -11,6 +11,22 @@ pub const DEFAULT_MAX_M: u128 = 800_000_000_000_000;
 
 pub const DECIMALS_S: u128 = 1_000_000_000;
 
+#[cfg(not(feature = "mainnet"))]
+pub const LOCK_TIME: i64 = 60; // 1 minute
+#[cfg(feature = "mainnet")]
+pub const LOCK_TIME: i64 = 3600; // 1 hour
+
+#[cfg(not(feature = "mainnet"))]
+pub const DEFAULT_CLIFF: i64 = 180; // 3 minutes; TODO: test
+#[cfg(feature = "mainnet")]
+pub const DEFAULT_CLIFF: i64 = 86_400; // 1 day;
+
+#[cfg(not(feature = "mainnet"))]
+pub const DEFAULT_LINEAR: i64 = 1800; // 1 hour; TODO: test
+#[cfg(feature = "mainnet")]
+pub const DEFAULT_LINEAR: i64 = 864_000; // 10 days;
+
+
 // Raydium seeds
 /// Suffix for amm authority seed
 pub const AUTHORITY_AMM: &'static [u8] = b"amm authority";

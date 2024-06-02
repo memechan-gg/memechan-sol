@@ -1,13 +1,7 @@
 use crate::vesting::VestingData;
 use anchor_lang::prelude::*;
 use std::mem;
-
-
-#[cfg(not(feature = "mainnet"))]
-pub const LOCK_TIME: i64 = 60; // 1 minute
-#[cfg(feature = "mainnet")]
-pub const LOCK_TIME: i64 = 3600; // 1 hour
-
+use crate::consts::LOCK_TIME;
 
 #[derive(Default)]
 #[account]
