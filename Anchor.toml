@@ -28,12 +28,12 @@ startup_wait = 10000
 url = "https://api.devnet.solana.com"
 
 [[test.genesis]]
-address = "HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8"  
-program = "tests/programs/devnet/raydium.so"
+address = "CPMDWBwJDtYax9qW7AyRuVC19Cc4L4Vcy4n2BHAbHkCW"
+program = "tests/programs/devnet/raydium-cpmm.so"
 
 [[test.genesis]]
-address = "EoTcMgcDRTJVZDMZWBoU6rhYHZfkNTVEAfz3uUJRcYGj"  
-program = "tests/programs/devnet/openbook.so"
+address = "adMCyoCgfkg7bQiJ9aBJ59H3BXLY3r5LNLfPpQfMzBe"
+program = "tests/programs/devnet/raydium.so"
 
 [[test.genesis]]
 address = "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"  
@@ -47,5 +47,12 @@ address = "3XMrhbv989VxAMi3DErLV9eJht1pHppW5LbKxe9fkEFR"
 address = "3XT1xcsgwjrfsBpQNeYcDhNj9NGJFzGjGAqfx6UWvhjk"
 [[test.validator.clone]]
 address = "8QN9yfKqWDoKjvZmqFsgCzAqwZBQuzVVnC388dN5RCPo"
+[[test.validator.clone]]
+address = "75q3G81vDnyzfwK87GiPxAjAAYytYotqaTdTw3vqWMnp"
+[[test.validator.clone]]
+address = "9zSzfkYy6awexsHvmggeH36pfVUdDGyCcwmjT3AQPBj6"
+[[test.validator.clone]]
+address = "G11FKBRaAkHAKuLCgLM6K6NUc9rTjPAznRCjZifrTQe2"
+
 
 

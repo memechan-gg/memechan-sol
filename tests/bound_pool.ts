@@ -1,4 +1,9 @@
-import { Keypair, PublicKey, SystemProgram } from "@solana/web3.js";
+import {
+  Keypair,
+  PublicKey,
+  SystemProgram,
+  Transaction,
+} from "@solana/web3.js";
 import {
   LUTSLOT,
   QUOTE_MINT,
@@ -15,7 +20,9 @@ import BN from "bn.js";
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
+  createAssociatedTokenAccount,
   createMint,
+  getAssociatedTokenAddressSync,
   getOrCreateAssociatedTokenAccount,
 } from "@solana/spl-token";
 import { DUMMY_TOKEN_METADATA, client } from "./common";
@@ -26,6 +33,12 @@ import { AmmPool } from "./pool";
 import { StakingWrapper } from "./staking";
 import { IdlAccounts } from "@coral-xyz/anchor";
 import { MemechanSol } from "../target/types/memechan_sol";
+import { StakingPool } from "./sol-sdk/staking-pool/StakingPool";
+import {
+  getCreateAssociatedTokenAccountInstructions,
+  getCreateTokenAccountInstructions,
+} from "./sol-sdk/util/getCreateAccountInstruction";
+import { MEMECHAN_QUOTE_MINT } from "./sol-sdk/config/config";
 
 export const RAYDIUM_PROGRAM_ID = new PublicKey(
   "HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8"
@@ -35,7 +48,7 @@ export const OPENBOOK_ID = new PublicKey(
 );
 export const MEMECHAN_MEME_TOKEN_DECIMALS = 6;
 export const FEE_DESTINATION_ID = new PublicKey(
-  "3XMrhbv989VxAMi3DErLV9eJht1pHppW5LbKxe9fkEFR"
+  "G11FKBRaAkHAKuLCgLM6K6NUc9rTjPAznRCjZifrTQe2"
 );
 
 export type BoundPoolType = IdlAccounts<MemechanSol>["boundPool"];
@@ -52,10 +65,12 @@ export class BoundPoolWrapper {
     return memechan.account.boundPool.fetch(this.bpClient.id);
   }
   public async go_live(): Promise<[AmmPool, StakingWrapper]> {
+    console.log("go_live");
     const res = await this.bpClient.initStakingPool({
       boundPoolInfo: this.bpClient.poolInfo,
       payer,
       user: payer,
+      pool: this.bpClient.id,
     });
 
     const staking = await this.bpClient.goLive2({
@@ -66,6 +81,7 @@ export class BoundPoolWrapper {
       payer,
       user: payer,
     });
+    console.log("goLive2 END");
 
     return [new AmmPool(staking.amm), new StakingWrapper(staking.id)];
   }

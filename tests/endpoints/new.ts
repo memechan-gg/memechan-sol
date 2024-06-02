@@ -10,7 +10,6 @@ import {
   provider,
   sleep,
 } from "../helpers";
-import { client } from "../common";
 import {
   Keypair,
   AddressLookupTableProgram,
@@ -60,7 +59,7 @@ export function test() {
       });
 
       const tx = new Transaction().add(createLUTix, extendIxs);
-      const txDig = client.connection.sendTransaction(tx, [adminSigner]);
+      const txDig = provider.connection.sendTransaction(tx, [adminSigner]);
       console.log(
         LUTaddr,
         getLUTPDA({
@@ -76,6 +75,9 @@ export function test() {
       await airdrop(user.publicKey);
 
       const boundPool = await BoundPoolWrapper.new();
+      console.log(
+        await memechan.account.boundPool.fetch(boundPool.bpClient.id)
+      );
       const info = await boundPool.fetch();
       console.log(info);
     });

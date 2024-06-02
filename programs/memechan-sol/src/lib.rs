@@ -11,7 +11,7 @@ use core as core_;
 use endpoints::*;
 
 #[cfg(not(feature = "mainnet"))]
-declare_id!("3ZSoMaLkD4QBVY94hiqRsi7wtxhXHn1cQxKzPnXyB2KP"); // localnet
+declare_id!("EWsBchGns4n9dtcsBvByHRfHhZ2iseNkjA3CsEUaGZFo"); // localnet
 #[cfg(feature = "mainnet")]
 declare_id!("cYsHcSU42XESLPquuN1ga94jm1wVMg11wVcxqvofA3k"); // mainnet test
 

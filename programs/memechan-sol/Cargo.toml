@@ -14,7 +14,7 @@ cpi = ["no-entrypoint"]
 no-entrypoint = []
 no-idl = []
 no-log-ix-name = []
-localnet = []
+localnet = ["raydium-cp-swap/devnet"]
 devnet = []
 mainnet = []
 

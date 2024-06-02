@@ -1,5 +1,5 @@
 import { Wallet } from "@coral-xyz/anchor";
-import { Keypair } from "@solana/web3.js";
+import { Keypair, PublicKey } from "@solana/web3.js";
 import {
   IS_TEST_ENV,
   RPC_API_CLUSTER,
@@ -22,6 +22,14 @@ export const client = new MemechanClient({
   wssApiUrl: WSS_API_CLUSTER,
   isTest: IS_TEST_ENV,
 });
+
+export const FEE_VAULT = new PublicKey(
+  "75q3G81vDnyzfwK87GiPxAjAAYytYotqaTdTw3vqWMnp"
+);
+
+export const CPMM = new PublicKey(
+  "CPMDWBwJDtYax9qW7AyRuVC19Cc4L4Vcy4n2BHAbHkCW"
+);
 
 export const DUMMY_TOKEN_METADATA = {
   name: "Best Token Ever",

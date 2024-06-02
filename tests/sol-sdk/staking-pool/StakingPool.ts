@@ -1,5 +1,5 @@
 import { Program } from "@coral-xyz/anchor";
-import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { AccountMeta, Keypair, PublicKey, Transaction } from "@solana/web3.js";
 import { MemechanClient } from "../MemechanClient";
 import { BoundPoolClient } from "../bound-pool/BoundPool";
@@ -17,9 +17,11 @@ import { getCreateTokenAccountInstructions } from "../util/getCreateAccountInstr
 import { retry } from "../util/retry";
 import { MEMECHAN_QUOTE_MINT } from "../config/config";
 import { formatAmmKeysById } from "../raydium/formatAmmKeysById";
-import { RAYDIUM_MAINNET } from "@raydium-io/raydium-sdk";
+import { MEMO_PROGRAM_ID, RAYDIUM_MAINNET } from "@raydium-io/raydium-sdk";
 import { PROGRAMIDS } from "../raydium/config";
 import { MemechanSol } from "../../../target/types/memechan_sol";
+import { QUOTE_MINT } from "../../helpers";
+import { CPMM } from "../../common";
 
 export class StakingPool {
   constructor(
@@ -106,28 +108,22 @@ export class StakingPool {
       .addFees()
       .accounts({
         memeVault: stakingInfo.memeVault,
+        memeMint: stakingInfo.memeMint,
         quoteVault: stakingInfo.quoteVault,
+        quoteMint: QUOTE_MINT,
         staking: this.id,
         stakingSignerPda: stakingSignerPda,
-        tokenProgram: TOKEN_PROGRAM_ID,
-        marketAccount: ammPool.marketId,
-        marketAsks: ammPool.marketAsks,
-        marketBids: ammPool.marketBids,
-        marketEventQueue: ammPool.marketEventQueue,
-        marketCoinVault: ammPool.marketBaseVault,
-        marketPcVault: ammPool.marketQuoteVault,
-        marketProgramId: ammPool.marketProgramId,
-        marketVaultSigner: ammPool.marketAuthority,
-        openOrders: ammPool.openOrders,
         raydiumAmm: ammPool.id,
         raydiumAmmAuthority: ammPool.authority,
         raydiumLpMint: ammPool.lpMint,
         raydiumMemeVault: ammPool.baseVault,
         raydiumQuoteVault: ammPool.quoteVault,
-        raydiumProgram: PROGRAMIDS.AmmV4,
+        raydiumProgram: CPMM,
         signer: payer.publicKey,
-        targetOrders: ammPool.targetOrders,
         stakingLpWallet: stakingLpWallet,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        tokenProgram22: TOKEN_2022_PROGRAM_ID,
+        memoProgram: MEMO_PROGRAM_ID,
       })
       .instruction();
 

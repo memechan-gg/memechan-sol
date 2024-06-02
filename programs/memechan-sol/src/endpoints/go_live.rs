@@ -1,6 +1,5 @@
 use crate::consts::{MAX_TICKET_TOKENS, MEME_TOKEN_DECIMALS};
 use crate::models::staking::StakingPool;
-use crate::models::OpenBook;
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token::{Mint, Token, TokenAccount};
@@ -11,10 +10,6 @@ pub struct GoLive<'info> {
     /// Signer
     #[account(mut)]
     pub signer: Signer<'info>,
-    //
-    //
-    //
-    //
     //
     // ===== Staking Pool Accounts =====
     //
@@ -45,8 +40,6 @@ pub struct GoLive<'info> {
     /// Staking Pool Quote vault
     pub pool_quote_vault: Box<Account<'info, TokenAccount>>,
     //
-    //
-    //
     // ===== Memechan Mint Accounts =====
     //
     /// Mint Account for Meme
@@ -57,8 +50,6 @@ pub struct GoLive<'info> {
     //
     /// Mint Account for WSOL
     pub quote_mint: Box<Account<'info, Mint>>,
-    //
-    //
     //
     // ===== Raydium Accounts =====
     //
@@ -106,8 +97,6 @@ pub struct GoLive<'info> {
     pub raydium_program: Program<'info, Raydium>,
     /// CHECK: Checks done in cpi call to raydium
     pub ata_program: Program<'info, AssociatedToken>,
-    // Checked by raydium account
-    pub market_program_id: Program<'info, OpenBook>,
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
 }

@@ -6,7 +6,6 @@ use crate::models::bound::BoundPool;
 use crate::models::fees::{LAUNCH_FEE, PRECISION};
 use crate::models::staked_lp::MemeTicket;
 use crate::models::staking::StakingPool;
-use crate::models::OpenBook;
 use crate::vesting;
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::program_option::COption;
@@ -54,10 +53,6 @@ pub struct InitStakingPool<'info> {
     )]
     pub fee_vault_quote: Box<Account<'info, TokenAccount>>,
     //
-    //
-    //
-    //
-    //
     // ===== Memechan Mint Accounts =====
     //
     /// Mint Account for Meme
@@ -92,7 +87,6 @@ pub struct InitStakingPool<'info> {
     /// CHECK: live phase pda signer
     #[account(mut, seeds = [StakingPool::SIGNER_PDA_PREFIX, staking.key().as_ref()], bump)]
     pub staking_pool_signer_pda: AccountInfo<'info>,
-
     #[account(
         mut,
         constraint = staking_meme_vault.owner == staking_pool_signer_pda.key()
@@ -141,7 +135,6 @@ pub struct InitStakingPool<'info> {
     /// CHECK: Checks done in cpi call to raydium
     pub ata_program: Program<'info, AssociatedToken>,
     // Checked by raydium account
-    pub market_program_id: Program<'info, OpenBook>,
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
 }

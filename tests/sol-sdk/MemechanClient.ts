@@ -49,7 +49,6 @@ export class MemechanClient {
     // const provider = new AnchorProvider(this.connection, wallet, {
     //   commitment: "confirmed",
     // });
-    setProvider(provider);
     this.anchorProvider = provider;
 
     console.log("program id: " + MEMECHAN_PROGRAM_ID);
