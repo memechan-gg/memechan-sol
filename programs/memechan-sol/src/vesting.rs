@@ -3,12 +3,12 @@ use anchor_lang::prelude::*;
 #[cfg(not(feature = "mainnet"))]
 const DEFAULT_CLIFF: i64 = 180; // 3 minutes; TODO: test
 #[cfg(feature = "mainnet")]
-const DEFAULT_CLIFF: i64 = 172_800; // 48 hours;
+const DEFAULT_CLIFF: i64 = 86_400; // 1 day;
 
 #[cfg(not(feature = "mainnet"))]
 const DEFAULT_LINEAR: i64 = 1800; // 1 hour; TODO: test
 #[cfg(feature = "mainnet")]
-const DEFAULT_LINEAR: i64 = 1_209_600; // 14 days;
+const DEFAULT_LINEAR: i64 = 864_000; // 10 days;
 
 #[derive(AnchorDeserialize, AnchorSerialize, Copy, Clone, Debug, Eq, PartialEq, Default)]
 pub struct VestingConfig {

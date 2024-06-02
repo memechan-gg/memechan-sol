@@ -8,6 +8,8 @@ pub mod target_config;
 use crate::consts::OPENBOOK_PROGRAM_ID;
 use anchor_lang::prelude::*;
 
+extern crate std;
+
 #[derive(AnchorDeserialize, AnchorSerialize, Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct TokenLimit {
     pub mint: Pubkey,
