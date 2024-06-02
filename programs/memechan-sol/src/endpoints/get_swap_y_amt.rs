@@ -1,10 +1,6 @@
-use crate::consts::SLERF_MINT;
-use crate::err;
-use crate::err::AmmError;
 use crate::models::bound::BoundPool;
-use crate::models::staked_lp::MemeTicket;
 use anchor_lang::prelude::*;
-use anchor_spl::token::{self, Token, TokenAccount, Transfer};
+use anchor_spl::token::TokenAccount;
 
 #[derive(Accounts)]
 pub struct GetSwapYAmt<'info> {

@@ -1,8 +1,7 @@
 use crate::vesting::VestingData;
 use anchor_lang::prelude::*;
 use std::mem;
-
-pub const LOCK_TIME: i64 = 60; // * 3600;
+use crate::consts::LOCK_TIME;
 
 #[derive(Default)]
 #[account]

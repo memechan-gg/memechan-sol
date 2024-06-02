@@ -108,17 +108,3 @@ pub mod memechan_sol {
         close_ticket::handle(ctx)
     }
 }
-
-//
-// // We keep track of how much each address ownes of coin_m
-// add_from_token_acc(pool, swap_amount, sender(ctx));
-// staked_lp
-// }
-//
-// fun new_fees(
-// fee_in_percent: u256,
-// fee_out_percent: u256,
-// ): Fees {
-// fees::new(fee_in_percent, fee_out_percent)
-// }
-//

@@ -15,7 +15,7 @@ pub struct CloseTicket<'info> {
 }
 
 pub fn handle(ctx: Context<CloseTicket>) -> Result<()> {
-    if ctx.accounts.ticket.amount != 0 {
+    if ctx.accounts.ticket.amount != 0 || ctx.accounts.ticket.vesting.current_stake() != 0 {
         return Err(error!(AmmError::NonZeroAmountTicket));
     }
 

@@ -1,4 +1,4 @@
-use crate::consts::{ADMIN_KEY, MAX_TICKET_TOKENS, MEME_TOKEN_DECIMALS, SLERF_MINT};
+use crate::consts::{FEE_KEY, MAX_TICKET_TOKENS, MEME_TOKEN_DECIMALS, SLERF_MINT};
 use crate::err;
 use crate::err::AmmError;
 use crate::libraries::MulDiv;
@@ -9,6 +9,7 @@ use crate::models::staking::StakingPool;
 use crate::models::OpenBook;
 use crate::vesting;
 use anchor_lang::prelude::*;
+use anchor_lang::solana_program::program_option::COption;
 use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token;
 use anchor_spl::token::{Mint, Token, TokenAccount, Transfer};
@@ -26,7 +27,7 @@ pub struct InitStakingPool<'info> {
     #[account(
         mut,
         close = signer,
-        has_one = admin_vault_quote,
+        has_one = fee_vault_quote,
         constraint = pool.locked
             @ err::acc("Pool must be locked before proceeding to live phase"),
     )]
@@ -49,9 +50,9 @@ pub struct InitStakingPool<'info> {
     /// Bonding Pool Admin Vault
     #[account(
         mut,
-        constraint = pool.admin_vault_quote == admin_vault_quote.key()
+        constraint = pool.fee_vault_quote == fee_vault_quote.key()
     )]
-    pub admin_vault_quote: Box<Account<'info, TokenAccount>>,
+    pub fee_vault_quote: Box<Account<'info, TokenAccount>>,
     //
     //
     //
@@ -95,11 +96,25 @@ pub struct InitStakingPool<'info> {
     #[account(
         mut,
         constraint = staking_meme_vault.owner == staking_pool_signer_pda.key()
+            @ err::acc("Staking meme vault authority must match staking pool pda"),
+        constraint = staking_meme_vault.mint == meme_mint.key()
+            @ err::acc("Staking meme vault must be of ticket mint"),
+        constraint = staking_meme_vault.close_authority == COption::None
+            @ err::acc("Staking meme vault must not have close authority"),
+        constraint = staking_meme_vault.delegate == COption::None
+            @ err::acc("Staking meme vault must not have delegate"),
     )]
     pub staking_meme_vault: Box<Account<'info, TokenAccount>>,
     #[account(
         mut,
         constraint = staking_quote_vault.owner == staking_pool_signer_pda.key()
+            @ err::acc("Staking quote vault authority must match staking pool pda"),
+        constraint = staking_quote_vault.mint == quote_mint.key()
+            @ err::acc("Staking quote vault must be of ticket mint"),
+        constraint = staking_quote_vault.close_authority == COption::None
+            @ err::acc("Staking quote vault must not have close authority"),
+        constraint = staking_quote_vault.delegate == COption::None
+            @ err::acc("Staking quote vault must not have delegate"),
     )]
     /// Bonding Pool WSOL vault
     pub staking_quote_vault: Box<Account<'info, TokenAccount>>,
@@ -155,7 +170,7 @@ impl<'info> InitStakingPool<'info> {
     fn send_admin_fee_sol(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
             from: self.pool_quote_vault.to_account_info(),
-            to: self.admin_vault_quote.to_account_info(),
+            to: self.fee_vault_quote.to_account_info(),
             authority: self.bound_pool_signer_pda.to_account_info(),
         };
 
@@ -179,7 +194,7 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, InitStakingPool<'info>>) ->
     msg!("0");
     let meme_ticket = &mut accs.meme_ticket;
 
-    meme_ticket.setup(accs.pool.key(), ADMIN_KEY.key(), accs.pool.admin_fees_meme);
+    meme_ticket.setup(accs.pool.key(), FEE_KEY.key(), accs.pool.admin_fees_meme);
 
     if accs.pool.admin_fees_quote != 0 {
         token::transfer(

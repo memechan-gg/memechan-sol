@@ -1,8 +1,5 @@
 use crate::err::AmmError;
-use crate::{
-    math::{Decimal, TryAdd, TryDiv, TryMul, TryRound, TrySub},
-    models::staking::StakingPool,
-};
+use crate::models::staking::StakingPool;
 use anchor_lang::prelude::*;
 use spl_math::uint::U256;
 
@@ -64,7 +61,9 @@ pub fn update_stake(
 ) -> Result<Withdrawal> {
     let withdrawal = calc_withdraw(state, lp_ticket).unwrap();
 
-    state.stakes_total -= user_stake_diff;
+    state.stakes_total = state.stakes_total.checked_sub(user_stake_diff).unwrap();
+    state.fees_x_total = state.fees_x_total.checked_sub(withdrawal.max_withdrawal_meme).unwrap();
+    state.fees_y_total = state.fees_y_total.checked_sub(withdrawal.max_withdrawal_quote).unwrap();
 
     if state.stakes_total == 0 && user_stake_diff > 0 {
         let withdrawal = Withdrawal {
@@ -83,7 +82,7 @@ pub fn update_stake(
     }
 
     let rem_withdrawal =
-        calc_withdraw_inner(state, user_current_stake - user_stake_diff, 0, 0).unwrap();
+        calc_withdraw_inner(state, user_current_stake.checked_sub(user_stake_diff).unwrap(), 0, 0).unwrap();
 
     msg!(
         "lwm {} rwm {} lwq {} rwq {}",
@@ -95,9 +94,6 @@ pub fn update_stake(
 
     lp_ticket.withdraws_meme = rem_withdrawal.max_withdrawal_meme;
     lp_ticket.withdraws_quote = rem_withdrawal.max_withdrawal_quote;
-
-    state.fees_x_total -= withdrawal.max_withdrawal_meme;
-    state.fees_y_total -= withdrawal.max_withdrawal_quote;
 
     Ok(withdrawal)
 }
@@ -126,9 +122,4 @@ fn get_max_withdraw(
     let allowed_withdrawal = max_user_withdrawal - user_withdrawals_total * wad;
 
     Ok((allowed_withdrawal / wad1p).as_u64())
-}
-
-fn get_withdraw_diff(user_withdrawals: u64, stake_diff: u128) -> u64 {
-    let withdraw_diff_x = ((U256::from(user_withdrawals)) * U256::from(stake_diff)) / PRECISION;
-    withdraw_diff_x.as_u64()
 }

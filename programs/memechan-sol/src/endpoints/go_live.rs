@@ -5,7 +5,7 @@ use crate::raydium;
 use crate::raydium::RaydiumAmm;
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
-use anchor_spl::token::{Mint, SetAuthority, Token, TokenAccount};
+use anchor_spl::token::{Mint, Token, TokenAccount};
 
 #[derive(Accounts)]
 pub struct GoLive<'info> {
@@ -22,6 +22,7 @@ pub struct GoLive<'info> {
     /// Staking Pool Account
     #[account(
         mut,
+        constraint = staking.raydium_amm.key() == system_program.key(),
         seeds = [StakingPool::POOL_PREFIX, meme_mint.key().as_ref()],
         bump
     )]
@@ -42,8 +43,7 @@ pub struct GoLive<'info> {
         mut,
         constraint = staking.quote_vault == pool_quote_vault.key()
     )]
-    //
-    /// Staking Pool WSOL vault
+    /// Staking Pool Quote vault
     pub pool_quote_vault: Box<Account<'info, TokenAccount>>,
     //
     //

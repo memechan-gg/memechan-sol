@@ -112,13 +112,14 @@ pub fn arithmetic_fee_ratio(
 ) -> Result<Decimal> {
     token_fee_ratio(reserve_meme, cumulated_fees_meme)?
         .try_add(token_fee_ratio(reserve_quote, cumulated_fees_quote)?)?
-        .try_div(Decimal::from(2 as u64))
+        .try_div(Decimal::from(2u64))
 }
 
 pub fn token_fee_ratio(reserve_balance: u64, cumulated_fees: u64) -> Result<Decimal> {
     Decimal::from(cumulated_fees).try_div(Decimal::from(reserve_balance))
 }
 
+#[cfg(test)]
 mod tests {
     use crate::{
         consts::{MAX_TICKET_TOKENS, MEME_TOKEN_DECIMALS},
