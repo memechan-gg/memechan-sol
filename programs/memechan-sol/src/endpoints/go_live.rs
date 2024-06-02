@@ -1,11 +1,10 @@
 use crate::consts::{MAX_TICKET_TOKENS, MEME_TOKEN_DECIMALS};
 use crate::models::staking::StakingPool;
 use crate::models::OpenBook;
-use crate::raydium;
-use crate::raydium::RaydiumAmm;
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token::{Mint, Token, TokenAccount};
+use raydium_cp_swap::program::RaydiumCpSwap as Raydium;
 
 #[derive(Accounts)]
 pub struct GoLive<'info> {
@@ -61,23 +60,6 @@ pub struct GoLive<'info> {
     //
     //
     //
-    // ===== OpenBook Accounts =====
-    //
-    /// Open Orders Account
-    /// CHECK: Checks done in cpi call to raydium
-    #[account(mut)]
-    pub open_orders: UncheckedAccount<'info>,
-    /// Target Orders Account
-    /// CHECK: Checks done in cpi call to raydium
-    #[account(mut)]
-    pub target_orders: UncheckedAccount<'info>,
-    /// Market Orders Account
-    /// CHECK: Checks done in cpi call to raydium
-    #[account(mut)]
-    pub market_account: UncheckedAccount<'info>,
-    //
-    //
-    //
     // ===== Raydium Accounts =====
     //
     /// Raydium AMM Account
@@ -111,6 +93,9 @@ pub struct GoLive<'info> {
     pub fee_destination_info: AccountInfo<'info>,
     /// CHECK: Checks done in cpi call to raydium
     #[account(mut)]
+    pub observation_state: AccountInfo<'info>,
+    /// CHECK: Checks done in cpi call to raydium
+    #[account(mut)]
     pub user_destination_lp_token_ata: AccountInfo<'info>,
     //
     // Sysvars
@@ -118,7 +103,7 @@ pub struct GoLive<'info> {
     pub clock: Sysvar<'info, Clock>,
     //
     // Programs
-    pub raydium_program: Program<'info, RaydiumAmm>,
+    pub raydium_program: Program<'info, Raydium>,
     /// CHECK: Checks done in cpi call to raydium
     pub ata_program: Program<'info, AssociatedToken>,
     // Checked by raydium account
@@ -130,75 +115,40 @@ pub struct GoLive<'info> {
 impl<'info> GoLive<'info> {
     fn create_raydium_pool(
         &self,
-        nonce: u8,
         open_time: u64,
         init_pc_amount: u64,
         init_coin_amount: u64,
         seeds: &[&[&[u8]]],
     ) -> Result<()> {
-        let instruction = raydium::initialize2(
-            &self.raydium_program.key(),
-            // Params
-            nonce,
-            open_time,
-            init_pc_amount,
-            init_coin_amount,
-            // Accounts
-            &self.token_program.key(),
-            &self.ata_program.key(),
-            &self.system_program.key(),
-            &self.rent.key(),
-            &self.raydium_amm.key(),
-            &self.raydium_amm_authority.key(),
-            &self.open_orders.key(),
-            &self.raydium_lp_mint.key(),     // lp mint
-            &self.meme_mint.key(),           // coin mint
-            &self.quote_mint.key(),          // pc_mint
-            &self.raydium_meme_vault.key(),  // coin_vault
-            &self.raydium_quote_vault.key(), // pc_vault
-            &self.target_orders.key(),
-            &self.amm_config.key(),
-            &self.fee_destination_info.key(),
-            &self.market_program_id.key(),
-            &self.market_account.key(),
-            &self.staking_pool_signer_pda.key(), // user/signer
-            &self.pool_meme_vault.key(),
-            &self.pool_quote_vault.key(),
-            &self.user_destination_lp_token_ata.key(),
-        );
-        solana_program::program::invoke_signed(
-            &instruction,
-            &[
-                self.token_program.to_account_info().clone(), // 0. `[]` Spl Token program id
-                self.ata_program.to_account_info().clone(),   // 1. `[]` Associated Token program id
-                self.system_program.to_account_info().clone(), // 2. `[]` Sys program id
-                self.rent.to_account_info().clone(),          // 3. `[]` Rent program id
-                self.raydium_amm.to_account_info().clone(), // 4. `[writable]` New AMM Account to create.
-                self.raydium_amm_authority.to_account_info().clone(), // 5. `[]` $authority derived from `create_program_address(&[AUTHORITY_AMM, &[nonce]])`.
-                self.open_orders.to_account_info().clone(), // 6. `[writable]` AMM open orders Account
-                self.raydium_lp_mint.to_account_info().clone(), // 7. `[writable]` AMM lp mint Account
-                self.meme_mint.to_account_info().clone(),       // 8. `[]` AMM coin mint Account
-                self.quote_mint.to_account_info().clone(),      // 9. `[]` AMM pc mint Account
-                self.raydium_meme_vault.to_account_info().clone(), // 10. `[writable]` AMM coin vault Account. Must be non zero, owned by $authority.
-                self.raydium_quote_vault.to_account_info().clone(), // 11. `[writable]` AMM pc vault Account. Must be non zero, owned by $authority.
-                self.target_orders.to_account_info().clone(), // 12. `[writable]` AMM target orders Account. To store plan orders informations.
-                self.amm_config.to_account_info().clone(), // 13. `[]` AMM config Account, derived from `find_program_address(&[&&AMM_CONFIG_SEED])`.
-                self.fee_destination_info.to_account_info().clone(), // 14. `[]` AMM create pool fee destination Account
-                self.market_program_id.to_account_info().clone(),    // 15. `[]` Market program id
-                self.market_account.to_account_info().clone(), // 16. `[writable]` Market Account. Market program is the owner.
-                self.staking_pool_signer_pda.to_account_info().clone(), // 17. `[writable, singer]` User wallet Account
-                self.pool_meme_vault.to_account_info().clone(), // 18. `[]` User token coin Account
-                self.pool_quote_vault.to_account_info().clone(), // 19. '[]` User token pc Account
-                self.user_destination_lp_token_ata.to_account_info().clone(), // 20. `[writable]` User destination lp token ATA Account
-            ],
-            seeds,
-        )?;
-
-        Ok(())
+        let program = self.raydium_program.to_account_info();
+        let cpi  = raydium_cp_swap::cpi::accounts::Initialize {
+            creator: self.staking_pool_signer_pda.to_account_info(),
+            amm_config: self.amm_config.to_account_info(),
+            authority: self.raydium_amm_authority.to_account_info(),
+            pool_state: self.raydium_amm.to_account_info(),
+            token_0_mint: self.meme_mint.to_account_info(),
+            token_1_mint: self.quote_mint.to_account_info(),
+            lp_mint: self.raydium_lp_mint.to_account_info(),
+            creator_token_0: self.pool_meme_vault.to_account_info(),
+            creator_token_1: self.pool_quote_vault.to_account_info(),
+            creator_lp_token: self.user_destination_lp_token_ata.to_account_info(),
+            token_0_vault: self.raydium_meme_vault.to_account_info(),
+            token_1_vault: self.raydium_quote_vault.to_account_info(),
+            create_pool_fee: self.fee_destination_info.to_account_info(),
+            observation_state: self.observation_state.to_account_info(),
+            token_program: self.token_program.to_account_info(),
+            token_0_program: self.token_program.to_account_info(),
+            token_1_program: self.token_program.to_account_info(),
+            associated_token_program: self.ata_program.to_account_info(),
+            system_program: self.system_program.to_account_info(),
+            rent: self.rent.to_account_info(),
+        };
+        let cpi_ctx = CpiContext::new_with_signer(program, cpi, seeds);
+        raydium_cp_swap::cpi::initialize(cpi_ctx, init_coin_amount, init_pc_amount, open_time)
     }
 }
 
-pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, GoLive<'info>>, nonce: u8) -> Result<()> {
+pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, GoLive<'info>>) -> Result<()> {
     let accs = ctx.accounts;
 
     let staking_seeds = &[
@@ -221,7 +171,6 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, GoLive<'info>>, nonce: u8) 
     msg!("3");
     // 3. Initialize pool & Add liquidity to the pool
     accs.create_raydium_pool(
-        nonce,
         accs.clock.unix_timestamp as u64, // open time
         quote_supply,                     // init_pc_amount
         amm_meme_balance,                 // init_coin_amount

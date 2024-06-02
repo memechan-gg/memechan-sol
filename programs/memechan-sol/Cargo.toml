@@ -27,6 +27,7 @@ uint = "0.9.5"
 # serum_dex = { git = "https://github.com/openbook-dex/program.git", features = ["no-entrypoint"] }
 bytemuck = "*"
 spl-math = {version = "0.2.0", features = [ "no-entrypoint" ]}
+raydium-cp-swap = {path = "../../../raydium-cp-swap/programs/cp-swap", features = ["cpi"]}
 
 [dev-dependencies]
 csv = "1.1"

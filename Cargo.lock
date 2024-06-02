@@ -1269,6 +1269,7 @@ dependencies = [
  "csv",
  "num-integer",
  "proptest",
+ "raydium-cp-swap",
  "solana-program",
  "spl-math",
  "uint",
@@ -1662,6 +1663,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6f97cdb2a36ed4183de61b2f824cc45c9f1037f28afe0a322e9fff4c108b5aaa"
 dependencies = [
  "rand_core 0.6.4",
+]
+
+[[package]]
+name = "raydium-cp-swap"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "anchor-spl",
+ "solana-security-txt",
+ "spl-math",
+ "spl-memo",
+ "spl-token",
+ "uint",
 ]
 
 [[package]]
@@ -2092,6 +2106,12 @@ dependencies = [
  "rustversion",
  "syn 2.0.53",
 ]
+
+[[package]]
+name = "solana-security-txt"
+version = "1.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "468aa43b7edb1f9b7b7b686d5c3aeb6630dc1708e86e31343499dd5c4d775183"
 
 [[package]]
 name = "solana-zk-token-sdk"

@@ -4,7 +4,6 @@ pub mod err;
 pub mod libraries;
 pub mod math;
 pub mod models;
-pub mod raydium;
 pub mod vesting;
 
 use anchor_lang::prelude::*;
@@ -80,8 +79,8 @@ pub mod memechan_sol {
         change_target_config::handle(ctx, target_amount)
     }
 
-    pub fn go_live<'info>(ctx: Context<'_, '_, '_, 'info, GoLive<'info>>, nonce: u8) -> Result<()> {
-        go_live::handle(ctx, nonce)
+    pub fn go_live<'info>(ctx: Context<'_, '_, '_, 'info, GoLive<'info>>) -> Result<()> {
+        go_live::handle(ctx)
     }
 
     pub fn add_fees<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<()> {
