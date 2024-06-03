@@ -1,4 +1,3 @@
-use crate::err;
 use crate::err::AmmError;
 use crate::models::bound::BoundPool;
 use crate::models::staked_lp::MemeTicket;

@@ -80,8 +80,8 @@ pub fn update_stake(
         return Ok(withdrawal);
     }
 
-    state.fees_x_total = mul_div(state.fees_x_total, state.stakes_total, new_stakes_total).unwrap();
-    state.fees_y_total = mul_div(state.fees_y_total, state.stakes_total, new_stakes_total).unwrap();
+    state.fees_x_total = mul_div(state.fees_x_total, new_stakes_total, state.stakes_total).unwrap();
+    state.fees_y_total = mul_div(state.fees_y_total, new_stakes_total, state.stakes_total).unwrap();
     state.stakes_total = new_stakes_total;
 
     msg!(
@@ -98,13 +98,13 @@ pub fn update_stake(
 }
 
 fn mul_div(amt: u64, num: u64, denom: u64) -> Result<u64> {
-    let (fee_amt, stake_old, stake_new) = (
+    let (fee_amt, num, denom) = (
         U256::from(amt),
         U256::from(num),
         U256::from(denom),
     );
 
-    Ok(fee_amt.mul(stake_new).div(stake_old).as_u64())
+    Ok(fee_amt.mul(num).div(denom).as_u64())
 }
 
 fn get_max_withdraw(
