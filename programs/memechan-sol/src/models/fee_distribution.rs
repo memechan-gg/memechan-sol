@@ -98,13 +98,13 @@ pub fn update_stake(
 }
 
 fn mul_div(amt: u64, num: u64, denom: u64) -> Result<u64> {
-    let (fee_amt, num, denom) = (
+    let (amt, num, denom) = (
         U256::from(amt),
         U256::from(num),
         U256::from(denom),
     );
 
-    Ok(fee_amt.mul(num).div(denom).as_u64())
+    Ok(amt.mul(num).div(denom).as_u64())
 }
 
 fn get_max_withdraw(
