@@ -1,3 +1,4 @@
+use std::ops::{Div, Mul};
 use crate::err::AmmError;
 use crate::models::staking::StakingPool;
 use anchor_lang::prelude::*;
@@ -56,16 +57,14 @@ pub fn calc_withdraw_inner(
 pub fn update_stake(
     state: &mut StakingPool,
     lp_ticket: &mut MemeTicket,
-    user_current_stake: u64,
+    user_old_stake: u64,
     user_stake_diff: u64,
 ) -> Result<Withdrawal> {
     let withdrawal = calc_withdraw(state, lp_ticket).unwrap();
 
-    state.stakes_total = state.stakes_total.checked_sub(user_stake_diff).unwrap();
-    state.fees_x_total = state.fees_x_total.checked_sub(withdrawal.max_withdrawal_meme).unwrap();
-    state.fees_y_total = state.fees_y_total.checked_sub(withdrawal.max_withdrawal_quote).unwrap();
+    let new_stakes_total = state.stakes_total.checked_sub(user_stake_diff).unwrap();
 
-    if state.stakes_total == 0 && user_stake_diff > 0 {
+    if new_stakes_total == 0 && user_stake_diff > 0 {
         let withdrawal = Withdrawal {
             max_withdrawal_meme: state.fees_x_total,
             max_withdrawal_quote: state.fees_y_total,
@@ -81,21 +80,31 @@ pub fn update_stake(
         return Ok(withdrawal);
     }
 
-    let rem_withdrawal =
-        calc_withdraw_inner(state, user_current_stake.checked_sub(user_stake_diff).unwrap(), 0, 0).unwrap();
+    state.fees_x_total = mul_div(state.fees_x_total, state.stakes_total, new_stakes_total).unwrap();
+    state.fees_y_total = mul_div(state.fees_y_total, state.stakes_total, new_stakes_total).unwrap();
+    state.stakes_total = new_stakes_total;
 
     msg!(
-        "lwm {} rwm {} lwq {} rwq {}",
+        "lwm {} lwq {}",
         lp_ticket.withdraws_meme,
-        rem_withdrawal.max_withdrawal_meme,
         lp_ticket.withdraws_quote,
-        rem_withdrawal.max_withdrawal_quote
     );
 
-    lp_ticket.withdraws_meme = rem_withdrawal.max_withdrawal_meme;
-    lp_ticket.withdraws_quote = rem_withdrawal.max_withdrawal_quote;
+    let user_new_stake = user_old_stake.checked_sub(user_stake_diff).unwrap();
+    lp_ticket.withdraws_meme = mul_div(lp_ticket.withdraws_meme + withdrawal.max_withdrawal_meme, user_new_stake, user_old_stake).unwrap();
+    lp_ticket.withdraws_quote = mul_div(lp_ticket.withdraws_quote + withdrawal.max_withdrawal_quote, user_new_stake, user_old_stake).unwrap();
 
     Ok(withdrawal)
+}
+
+fn mul_div(amt: u64, num: u64, denom: u64) -> Result<u64> {
+    let (fee_amt, stake_old, stake_new) = (
+        U256::from(amt),
+        U256::from(num),
+        U256::from(denom),
+    );
+
+    Ok(fee_amt.mul(stake_new).div(stake_old).as_u64())
 }
 
 fn get_max_withdraw(
