@@ -65,7 +65,7 @@ pub const SLERF_MINT: Pubkey =
 
 #[cfg(feature = "mainnet")]
 pub const SLERF_MINT: Pubkey =
-    solana_program::pubkey!("9pECN2xxLQo22bFYpsNr3T3eW1UdEDtSqPQopFrGv7n4"); // Mainnet
+    solana_program::pubkey!("7BgBvyjrZX1YKz4oh9mjb8ZScatkkwb8DzFx7LoiVkM3"); // Mainnet
 
 #[cfg(not(feature = "mainnet"))]
 pub const ADMIN_KEY: Pubkey =
