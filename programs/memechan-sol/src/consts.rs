@@ -24,7 +24,7 @@ pub const DEFAULT_CLIFF: i64 = 86_400; // 1 day;
 #[cfg(not(feature = "mainnet"))]
 pub const DEFAULT_LINEAR: i64 = 1800; // 0.5 hours;
 #[cfg(feature = "mainnet")]
-pub const DEFAULT_LINEAR: i64 = 864_000; // 10 days;
+pub const DEFAULT_LINEAR: i64 = 604_800; // 7 days;
 
 
 // Raydium seeds

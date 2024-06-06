@@ -59,8 +59,9 @@ pub mod memechan_sol {
         ctx: Context<SwapCoinY>,
         coin_in_amount: u64,
         coin_x_min_value: u64,
+        ticket_number: u64
     ) -> Result<()> {
-        swap_y::handle(ctx, coin_in_amount, coin_x_min_value)
+        swap_y::handle(ctx, coin_in_amount, coin_x_min_value, ticket_number)
     }
 
     pub fn init_staking_pool<'info>(
