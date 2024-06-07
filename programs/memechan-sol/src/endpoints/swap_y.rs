@@ -5,6 +5,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 
 #[derive(Accounts)]
+#[instruction(coin_in_amount: u64, coin_x_min_value: u64, ticket_number: u64)]
 pub struct SwapCoinY<'info> {
     #[account(mut)]
     pool: Account<'info, BoundPool>,
@@ -15,7 +16,13 @@ pub struct SwapCoinY<'info> {
     quote_vault: Account<'info, TokenAccount>,
     #[account(mut)]
     user_sol: Account<'info, TokenAccount>,
-    #[account(init, payer = owner, space = MemeTicket::space())]
+    #[account(
+        init,
+        payer = owner,
+        space = MemeTicket::space(),
+        seeds = [pool.key().as_ref(), owner.key().as_ref(), ticket_number.to_le_bytes().as_ref()],
+        bump,
+    )]
     meme_ticket: Account<'info, MemeTicket>,
     #[account(mut)]
     owner: Signer<'info>,
@@ -39,7 +46,7 @@ impl<'info> SwapCoinY<'info> {
     }
 }
 
-pub fn handle(ctx: Context<SwapCoinY>, coin_in_amount: u64, coin_x_min_value: u64) -> Result<()> {
+pub fn handle(ctx: Context<SwapCoinY>, coin_in_amount: u64, coin_x_min_value: u64, ticket_number: u64) -> Result<()> {
     let accs = ctx.accounts;
 
     if coin_in_amount == 0 {
