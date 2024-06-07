@@ -55,7 +55,9 @@ pub struct GoLive<'info> {
         constraint = pool_meme_vault.mint == meme_mint.key()
     )]
     pub meme_mint: Box<Account<'info, Mint>>,
-    //
+    #[account(
+        constraint = pool_quote_vault.mint == quote_mint.key()
+    )]
     /// Mint Account for WSOL
     pub quote_mint: Box<Account<'info, Mint>>,
     //
