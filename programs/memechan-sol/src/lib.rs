@@ -12,7 +12,7 @@ use core as core_;
 
 use endpoints::*;
 
-declare_id!("DvjfvJdXsHXX44MqA7BdB3vuEMEQMFuxE8S6DrYiC67z");
+declare_id!("cYsHcSU42XESLPquuN1ga94jm1wVMg11wVcxqvofA3k");
 
 #[program]
 pub mod memechan_sol {
@@ -107,5 +107,9 @@ pub mod memechan_sol {
 
     pub fn close_ticket(ctx: Context<CloseTicket>) -> Result<()> {
         close_ticket::handle(ctx)
+    }
+
+    pub fn withdraw_admin_fee(ctx: Context<WithdrawAdminFee>) -> Result<()> {
+        withdraw_admin_fees::handle(ctx)
     }
 }
