@@ -1,18 +1,18 @@
-use crate::consts::{MAX_TICKET_TOKENS, MEME_TOKEN_DECIMALS, SLERF_MINT};
+use crate::consts::{FEE_KEY, MAX_TICKET_TOKENS, MEME_TOKEN_DECIMALS};
 use crate::err;
+use crate::err::AmmError;
 use crate::libraries::MulDiv;
 use crate::models::bound::BoundPool;
 use crate::models::fees::{LAUNCH_FEE, PRECISION};
 use crate::models::staked_lp::MemeTicket;
 use crate::models::staking::StakingPool;
 use crate::models::OpenBook;
-use crate::{admin, vesting};
+use crate::vesting;
 use anchor_lang::prelude::*;
+use anchor_lang::solana_program::program_option::COption;
 use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token;
 use anchor_spl::token::{Mint, Token, TokenAccount, Transfer};
-
-// const SOL_THRESHOLD: u64 = 300; // TODO: add
 
 #[derive(Accounts)]
 pub struct InitStakingPool<'info> {
@@ -27,7 +27,9 @@ pub struct InitStakingPool<'info> {
     #[account(
         mut,
         close = signer,
-        has_one = admin_vault_quote
+        has_one = fee_vault_quote,
+        constraint = pool.locked
+            @ err::acc("Pool must be locked before proceeding to live phase"),
     )]
     pub pool: Box<Account<'info, BoundPool>>,
     /// CHECK: bound-curve phase pda signer
@@ -48,9 +50,9 @@ pub struct InitStakingPool<'info> {
     /// Bonding Pool Admin Vault
     #[account(
         mut,
-        constraint = pool.admin_vault_quote == admin_vault_quote.key()
+        constraint = pool.fee_vault_quote == fee_vault_quote.key()
     )]
-    pub admin_vault_quote: Box<Account<'info, TokenAccount>>,
+    pub fee_vault_quote: Box<Account<'info, TokenAccount>>,
     //
     //
     //
@@ -60,13 +62,14 @@ pub struct InitStakingPool<'info> {
     //
     /// Mint Account for Meme
     #[account(
-        constraint = pool_meme_vault.mint == meme_mint.key()
+        constraint = meme_mint.key() == pool_meme_vault.mint
+            @ err::acc("Meme mint should be the same for both pool and staking")
     )]
     pub meme_mint: Box<Account<'info, Mint>>,
     /// Mint Account for WSOL
     #[account(
-        constraint = quote_mint.key() == SLERF_MINT
-            @ err::acc("Quote mint should be native SLERF mint")
+        constraint = quote_mint.key() == pool_quote_vault.mint
+            @ err::acc("Quote mint should be the same for both pool and staking")
     )]
     pub quote_mint: Box<Account<'info, Mint>>,
     //
@@ -94,11 +97,25 @@ pub struct InitStakingPool<'info> {
     #[account(
         mut,
         constraint = staking_meme_vault.owner == staking_pool_signer_pda.key()
+            @ err::acc("Staking meme vault authority must match staking pool pda"),
+        constraint = staking_meme_vault.mint == meme_mint.key()
+            @ err::acc("Staking meme vault must be of ticket mint"),
+        constraint = staking_meme_vault.close_authority == COption::None
+            @ err::acc("Staking meme vault must not have close authority"),
+        constraint = staking_meme_vault.delegate == COption::None
+            @ err::acc("Staking meme vault must not have delegate"),
     )]
     pub staking_meme_vault: Box<Account<'info, TokenAccount>>,
     #[account(
         mut,
         constraint = staking_quote_vault.owner == staking_pool_signer_pda.key()
+            @ err::acc("Staking quote vault authority must match staking pool pda"),
+        constraint = staking_quote_vault.mint == quote_mint.key()
+            @ err::acc("Staking quote vault must be of ticket mint"),
+        constraint = staking_quote_vault.close_authority == COption::None
+            @ err::acc("Staking quote vault must not have close authority"),
+        constraint = staking_quote_vault.delegate == COption::None
+            @ err::acc("Staking quote vault must not have delegate"),
     )]
     /// Bonding Pool WSOL vault
     pub staking_quote_vault: Box<Account<'info, TokenAccount>>,
@@ -154,7 +171,7 @@ impl<'info> InitStakingPool<'info> {
     fn send_admin_fee_sol(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
             from: self.pool_quote_vault.to_account_info(),
-            to: self.admin_vault_quote.to_account_info(),
+            to: self.fee_vault_quote.to_account_info(),
             authority: self.bound_pool_signer_pda.to_account_info(),
         };
 
@@ -178,7 +195,7 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, InitStakingPool<'info>>) ->
     msg!("0");
     let meme_ticket = &mut accs.meme_ticket;
 
-    meme_ticket.setup(accs.pool.key(), admin::id(), accs.pool.admin_fees_meme);
+    meme_ticket.setup(accs.pool.key(), FEE_KEY.key(), accs.pool.admin_fees_meme);
 
     if accs.pool.admin_fees_quote != 0 {
         token::transfer(
@@ -192,10 +209,18 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, InitStakingPool<'info>>) ->
     msg!("1");
     accs.pool_quote_vault.reload().unwrap();
     let quote_supply = accs.pool_quote_vault.amount;
-    // TODO: Add back
-    // if quote_supply != SOL_THRESHOLD * 10_u64.checked_pow(native_mint::DECIMALS as u32).unwrap() {
-    //     return Err(error!(AmmError::InvariantViolation));
-    // }
+    let target_token_amt = accs.pool.config.gamma_s;
+    let quote_decimals = accs.pool.config.decimals.quote;
+    msg!(
+        "quote {}, supply {}, decimals {}",
+        quote_supply,
+        target_token_amt,
+        quote_decimals
+    );
+
+    if quote_supply != target_token_amt * quote_decimals {
+        return Err(error!(AmmError::InvariantViolation));
+    }
 
     // 2. Collect live fees
     msg!("2");
@@ -243,7 +268,8 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, InitStakingPool<'info>>) ->
     staking.vesting_config = vesting::default_config();
     staking.fees_x_total = 0;
     staking.fees_y_total = 0;
-    staking.lp_tokens_withdrawn = 0;
+    staking.raydium_fees.last_cum_quote_fees = 0;
+    staking.raydium_fees.last_cum_meme_fees = 0;
     staking.pool = accs.pool.key();
 
     msg!("5");

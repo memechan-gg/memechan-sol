@@ -1,16 +1,9 @@
-use crate::consts::DEFAULT_MAX_M;
-use crate::consts::DEFAULT_MAX_M_LP;
-use crate::consts::DEFAULT_PRICE_FACTOR;
-use crate::consts::MAX_MEME_TOKENS;
-use crate::consts::MAX_TICKET_TOKENS;
-use crate::consts::MEME_TOKEN_DECIMALS;
-use crate::consts::SLERF_MINT;
+use crate::consts::{
+    DEFAULT_MAX_M, DEFAULT_MAX_M_LP, DEFAULT_PRICE_FACTOR, FEE_KEY, MAX_MEME_TOKENS,
+    MAX_TICKET_TOKENS, MEME_TOKEN_DECIMALS, SLERF_MINT,
+};
 use crate::err;
-use crate::models::bound::compute_alpha_abs;
-use crate::models::bound::compute_beta;
-use crate::models::bound::BoundPool;
-use crate::models::bound::Config;
-use crate::models::bound::Decimals;
+use crate::models::bound::{compute_alpha_abs, compute_beta, BoundPool, Config, Decimals};
 use crate::models::fees::Fees;
 use crate::models::fees::FEE;
 use crate::models::target_config::TargetConfig;
@@ -41,9 +34,13 @@ pub struct NewPool<'info> {
     pub meme_mint: Account<'info, Mint>,
     #[account(
         constraint = quote_vault.mint == quote_mint.key()
-            @ err::acc("ticket vault must be of ticket mint"),
+            @ err::acc("quote vault must be of ticket mint"),
         constraint = quote_vault.owner == pool_signer.key()
-            @ err::acc("ticket vault authority must match pool pda"),
+            @ err::acc("quote vault authority must match pool pda"),
+        constraint = quote_vault.close_authority == COption::None
+            @ err::acc("Quote vault must not have close authority"),
+        constraint = quote_vault.delegate == COption::None
+            @ err::acc("Quote vault must not have delegate"),
     )]
     pub quote_vault: Account<'info, TokenAccount>,
     #[account(
@@ -52,18 +49,26 @@ pub struct NewPool<'info> {
     )]
     pub quote_mint: Account<'info, Mint>,
     #[account(
-        constraint = admin_quote_vault.mint == quote_mint.key()
-            @ err::acc("Admin quote vault must be of SLERF mint"),
-        constraint = admin_quote_vault.owner == crate::admin::id()
-            @ err::acc("Admin quote vault authority must match admin"),
+        constraint = fee_quote_vault.mint == quote_mint.key()
+            @ err::acc("Fee quote vault must be of SLERF mint"),
+        constraint = fee_quote_vault.owner == FEE_KEY
+            @ err::acc("Fee quote vault authority must match admin"),
+        constraint = fee_quote_vault.close_authority == COption::None
+            @ err::acc("Fee quote vault must not have close authority"),
+        constraint = fee_quote_vault.delegate == COption::None
+            @ err::acc("Fee quote vault must not have delegate"),
     )]
-    pub admin_quote_vault: Account<'info, TokenAccount>,
+    pub fee_quote_vault: Account<'info, TokenAccount>,
     #[account(
         mut,
         constraint = meme_vault.mint == meme_mint.key()
             @ err::acc("admin ticket vault must be of ticket mint"),
         constraint = meme_vault.owner == pool_signer.key()
             @ err::acc("Meme vault authority must match admin"),
+        constraint = meme_vault.close_authority == COption::None
+            @ err::acc("Meme vault must not have close authority"),
+        constraint = meme_vault.delegate == COption::None
+            @ err::acc("Meme vault must not have delegate"),
     )]
     pub meme_vault: Account<'info, TokenAccount>,
     #[account(
@@ -112,7 +117,7 @@ pub fn handle(ctx: Context<NewPool>) -> Result<()> {
     .unwrap();
 
     let pool = &mut accs.pool;
-    pool.admin_vault_quote = accs.admin_quote_vault.key();
+    pool.fee_vault_quote = accs.fee_quote_vault.key();
     pool.quote_reserve = Reserve {
         tokens: 0,
         mint: accs.quote_mint.key(),
@@ -123,8 +128,8 @@ pub fn handle(ctx: Context<NewPool>) -> Result<()> {
         fee_out_percent: FEE,
     };
 
-    let gamma_s = (accs.target_config.token_target_amount
-        / 10u64.pow(accs.quote_mint.decimals as u32)) as u128;
+    let mint_decimals = 10_u64.checked_pow(accs.quote_mint.decimals as u32).unwrap();
+    let gamma_s = (accs.target_config.token_target_amount / mint_decimals) as u128;
     let gamma_m = DEFAULT_MAX_M;
     let omega_m = DEFAULT_MAX_M_LP;
     let price_factor = DEFAULT_PRICE_FACTOR;
@@ -141,7 +146,7 @@ pub fn handle(ctx: Context<NewPool>) -> Result<()> {
         decimals: Decimals {
             alpha: decimals,
             beta: decimals,
-            quote: accs.quote_mint.decimals as u64,
+            quote: mint_decimals,
         },
     };
 
@@ -149,6 +154,7 @@ pub fn handle(ctx: Context<NewPool>) -> Result<()> {
     pool.meme_reserve.mint = accs.meme_mint.key();
     pool.meme_reserve.vault = accs.meme_vault.key();
     pool.locked = false;
+    pool.creator_addr = accs.sender.key();
 
     Ok(())
 }

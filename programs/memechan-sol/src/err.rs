@@ -47,6 +47,11 @@ pub enum AmmError {
     BondingCurveInterceptMustBePositive,
     EGammaSAboveRelativeLimit,
     EScaleTooLow,
+    InvalidAmmAccountOwner,
+    ExpectedAccount,
+    InvalidStatus,
+    CantUnstakeBeforeCliff,
+    NoFeesToAdd,
 }
 
 #[allow(dead_code)]

@@ -1,7 +1,6 @@
 use anchor_lang::prelude::*;
+use crate::consts::{DEFAULT_CLIFF, DEFAULT_LINEAR};
 
-const DEFAULT_CLIFF: i64 = 172800000; // 48 hours; TODO: test
-const DEFAULT_LINEAR: i64 = 1209600000; // 14 days; TODO: test
 
 #[derive(AnchorDeserialize, AnchorSerialize, Copy, Clone, Debug, Eq, PartialEq, Default)]
 pub struct VestingConfig {
@@ -45,7 +44,7 @@ impl VestingData {
         to_release
     }
 
-    pub fn release(mut self, amount: u64) {
+    pub fn release(&mut self, amount: u64) {
         self.released += amount;
     }
 

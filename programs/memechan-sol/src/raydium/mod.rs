@@ -184,7 +184,7 @@ pub fn withdraw(
         AccountMeta::new(*user_lp_wallet, false), // `[writable]` User lp token Account.
         AccountMeta::new(*user_coin_wallet, false), // `[writable]` User token coin Account. user Account to credit.
         AccountMeta::new(*user_pc_wallet, false), // `[writable]` User token pc Account. user Account to credit.
-        AccountMeta::new(*user, false),           // `[singer]` User wallet Account
+        AccountMeta::new(*user, true),            // `[singer]` User wallet Account
         AccountMeta::new(*market_event_queue, false), // `[writable]` Market event queue Account
         AccountMeta::new(*market_bids, false),    // `[writable]` Market bids Account
         AccountMeta::new(*market_asks, false),    // `[writable]` Market asks Account

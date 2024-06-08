@@ -1,7 +1,7 @@
 use crate::libraries::MulDiv;
 use anchor_lang::prelude::*;
 
-pub const FEE: u64 = 1_000_000; // 0.1%
+pub const FEE: u64 = 5_000_000; // 0.5%
 pub const LAUNCH_FEE: u64 = 50_000_000; // 5%
 pub const PRECISION: u64 = 1_000_000_000;
 

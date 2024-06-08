@@ -12,12 +12,7 @@ use core as core_;
 
 use endpoints::*;
 
-declare_id!("BDRDLhqbfEQx2LZQ9Js7k1Dt1S9AArTw44q1rM96YrwC");
-
-pub mod admin {
-    use anchor_lang::prelude::declare_id;
-    declare_id!("8RSDaghj3qZLBNvRBiN5oULX66dgng9pW2HxHubpR8TW");
-}
+declare_id!("cYsHcSU42XESLPquuN1ga94jm1wVMg11wVcxqvofA3k");
 
 #[program]
 pub mod memechan_sol {
@@ -36,6 +31,14 @@ pub mod memechan_sol {
         create_metadata::handle(ctx, name, symbol, uri)
     }
 
+    pub fn get_swap_x_amt(
+        ctx: Context<GetSwapXAmt>,
+        coin_in_amount: u64,
+        coin_y_min_value: u64,
+    ) -> Result<()> {
+        get_swap_x_amt::handle(ctx, coin_in_amount, coin_y_min_value)
+    }
+
     pub fn swap_x(
         ctx: Context<SwapCoinX>,
         coin_in_amount: u64,
@@ -44,12 +47,21 @@ pub mod memechan_sol {
         swap_x::handle(ctx, coin_in_amount, coin_y_min_value)
     }
 
+    pub fn get_swap_y_amt(
+        ctx: Context<GetSwapYAmt>,
+        coin_in_amount: u64,
+        coin_x_min_value: u64,
+    ) -> Result<()> {
+        get_swap_y_amt::handle(ctx, coin_in_amount, coin_x_min_value)
+    }
+
     pub fn swap_y(
         ctx: Context<SwapCoinY>,
         coin_in_amount: u64,
         coin_x_min_value: u64,
+        ticket_number: u64
     ) -> Result<()> {
-        swap_y::handle(ctx, coin_in_amount, coin_x_min_value)
+        swap_y::handle(ctx, coin_in_amount, coin_x_min_value, ticket_number)
     }
 
     pub fn init_staking_pool<'info>(
@@ -96,18 +108,8 @@ pub mod memechan_sol {
     pub fn close_ticket(ctx: Context<CloseTicket>) -> Result<()> {
         close_ticket::handle(ctx)
     }
-}
 
-//
-// // We keep track of how much each address ownes of coin_m
-// add_from_token_acc(pool, swap_amount, sender(ctx));
-// staked_lp
-// }
-//
-// fun new_fees(
-// fee_in_percent: u256,
-// fee_out_percent: u256,
-// ): Fees {
-// fees::new(fee_in_percent, fee_out_percent)
-// }
-//
+    pub fn withdraw_admin_fee(ctx: Context<WithdrawAdminFee>) -> Result<()> {
+        withdraw_admin_fees::handle(ctx)
+    }
+}

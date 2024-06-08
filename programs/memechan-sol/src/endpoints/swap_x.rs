@@ -1,5 +1,3 @@
-use crate::consts::SLERF_MINT;
-use crate::err;
 use crate::err::AmmError;
 use crate::models::bound::BoundPool;
 use crate::models::staked_lp::MemeTicket;
@@ -16,11 +14,7 @@ pub struct SwapCoinX<'info> {
         has_one = owner
     )]
     pub meme_ticket: Account<'info, MemeTicket>,
-    #[account(
-        mut,
-        constraint = user_sol.mint == SLERF_MINT
-            @ err::acc("Quote mint should be SLERF mint")
-    )]
+    #[account(mut)]
     pub user_sol: Account<'info, TokenAccount>,
     #[account(
         mut,
@@ -81,6 +75,7 @@ pub fn handle(ctx: Context<SwapCoinX>, coin_in_amount: u64, coin_y_min_value: u6
     pool_state.quote_reserve.tokens -= swap_amount.amount_out + swap_amount.admin_fee_out;
 
     user_ticket.amount -= coin_in_amount;
+    user_ticket.vesting.notional -= coin_in_amount;
 
     let seeds = &[
         BoundPool::SIGNER_PDA_PREFIX,
@@ -95,6 +90,12 @@ pub fn handle(ctx: Context<SwapCoinX>, coin_in_amount: u64, coin_y_min_value: u6
         swap_amount.amount_out,
     )
     .unwrap();
+
+    msg!(
+        "swapped_in: {}\n swapped_out: {}",
+        swap_amount.amount_in,
+        swap_amount.amount_out
+    );
 
     Ok(())
 }

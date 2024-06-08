@@ -1,3 +1,4 @@
+use crate::err::AmmError;
 use crate::models::fee_distribution::calc_withdraw;
 use crate::models::staked_lp::MemeTicket;
 use crate::models::staking::StakingPool;
@@ -19,10 +20,12 @@ pub struct WithdrawFees<'info> {
     )]
     pub meme_ticket: Account<'info, MemeTicket>,
     #[account(
+        mut,
         constraint = user_meme.owner == signer.key()
     )]
     pub user_meme: Account<'info, TokenAccount>,
     #[account(
+        mut,
         constraint = user_quote.owner == signer.key()
     )]
     pub user_quote: Account<'info, TokenAccount>,
@@ -68,6 +71,10 @@ pub fn handle(ctx: Context<WithdrawFees>) -> Result<()> {
 
     let withdrawal = calc_withdraw(staking, lp_ticket).unwrap();
 
+    if withdrawal.max_withdrawal_meme == 0 && withdrawal.max_withdrawal_quote == 0 {
+        return Err(error!(AmmError::NoTokensToWithdraw));
+    }
+
     let staking_seeds = &[
         StakingPool::SIGNER_PDA_PREFIX,
         &accs.staking.key().to_bytes()[..],
@@ -79,17 +86,27 @@ pub fn handle(ctx: Context<WithdrawFees>) -> Result<()> {
     lp_ticket.withdraws_meme += withdrawal.max_withdrawal_meme;
     lp_ticket.withdraws_quote += withdrawal.max_withdrawal_quote;
 
-    token::transfer(
-        accs.send_meme_fees_to_user()
-            .with_signer(staking_signer_seeds),
+    msg!(
+        "fees_meme: {} fees_quote: {}",
         withdrawal.max_withdrawal_meme,
-    )?;
-
-    token::transfer(
-        accs.send_quote_fees_to_user()
-            .with_signer(staking_signer_seeds),
         withdrawal.max_withdrawal_quote,
-    )?;
+    );
+
+    if withdrawal.max_withdrawal_meme > 0 {
+        token::transfer(
+            accs.send_meme_fees_to_user()
+                .with_signer(staking_signer_seeds),
+            withdrawal.max_withdrawal_meme,
+        )?;
+    }
+
+    if withdrawal.max_withdrawal_quote > 0 {
+        token::transfer(
+            accs.send_quote_fees_to_user()
+                .with_signer(staking_signer_seeds),
+            withdrawal.max_withdrawal_quote,
+        )?;
+    }
 
     Ok(())
 }
