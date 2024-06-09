@@ -26,6 +26,12 @@ pub const DEFAULT_LINEAR: i64 = 1800; // 0.5 hours;
 #[cfg(feature = "mainnet")]
 pub const DEFAULT_LINEAR: i64 = 604_800; // 7 days;
 
+pub const UNSTAKE_PERCENTAGE_NUM: u64 =     5_000_000;
+pub const UNSTAKE_PERCENTAGE_DENOM: u64 = 100_000_000;
+#[cfg(not(feature = "mainnet"))]
+pub const DEFAULT_VESTING_LOCK: i64 = 180; // 3 minutes;
+#[cfg(feature = "mainnet")]
+pub const DEFAULT_VESTING_LOCK: i64 = 86_400; // 1 day
 
 // Raydium seeds
 /// Suffix for amm authority seed

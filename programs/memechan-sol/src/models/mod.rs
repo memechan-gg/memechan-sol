@@ -4,6 +4,7 @@ pub mod fees;
 pub mod staked_lp;
 pub mod staking;
 pub mod target_config;
+pub mod ticket_schedule;
 
 use crate::consts::OPENBOOK_PROGRAM_ID;
 use anchor_lang::prelude::*;

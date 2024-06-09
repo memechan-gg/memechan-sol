@@ -13,6 +13,7 @@ pub mod swap_x;
 pub mod swap_y;
 pub mod unstake;
 pub mod withdraw_fees;
+mod new_schedule;
 
 pub use add_fees::*;
 pub use admin::*;

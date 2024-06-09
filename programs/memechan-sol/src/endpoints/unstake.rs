@@ -1,3 +1,4 @@
+use std::cmp::{max, min};
 use crate::err::AmmError;
 use crate::models::fee_distribution::update_stake;
 use crate::models::staked_lp::MemeTicket;
@@ -5,6 +6,9 @@ use crate::models::staking::StakingPool;
 use anchor_lang::prelude::*;
 use anchor_spl::token;
 use anchor_spl::token::{Token, TokenAccount, Transfer};
+use crate::consts::{DEFAULT_VESTING_LOCK, UNSTAKE_PERCENTAGE_DENOM, UNSTAKE_PERCENTAGE_NUM};
+use crate::libraries::MulDiv;
+use crate::models::ticket_schedule::TicketSchedule;
 
 #[derive(Accounts)]
 pub struct Unstake<'info> {
@@ -20,6 +24,11 @@ pub struct Unstake<'info> {
         constraint = meme_ticket.owner == signer.key()
     )]
     pub meme_ticket: Account<'info, MemeTicket>,
+    #[account(
+        mut,
+        has_one = meme_ticket
+    )]
+    pub ticket_schedule: Account<'info, TicketSchedule>,
     #[account(
         mut,
         constraint = user_meme.owner == signer.key()
@@ -77,6 +86,20 @@ pub fn handle(ctx: Context<Unstake>, release_amount: u64) -> Result<()> {
     }
 
     let amount_available_to_release = vesting_data.to_release(&vesting_config, current_ts);
+
+    let schedule = &mut accs.ticket_schedule;
+
+    let max_release_amount = vesting_data.notional.mul_div_floor(UNSTAKE_PERCENTAGE_NUM, UNSTAKE_PERCENTAGE_DENOM).unwrap();
+    let max_available_release = if current_ts >= schedule.until_ts {
+        schedule.until_ts = current_ts + DEFAULT_VESTING_LOCK;
+        max_release_amount
+    } else {
+        max_release_amount - min(schedule.withdrawn, max_release_amount)
+    };
+
+    if release_amount > max_available_release  {
+        return Err(error!(AmmError::CannotWithdrawBeforeSchedule));
+    }
 
     if release_amount > amount_available_to_release {
         return Err(error!(AmmError::NotEnoughTokensToRelease));
