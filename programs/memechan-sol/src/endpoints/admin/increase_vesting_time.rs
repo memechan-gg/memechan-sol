@@ -9,11 +9,11 @@ pub struct IncreaseVestingTime<'info> {
     )]
     pub sender: Signer<'info>,
     #[account(mut)]
-    pub ticket: Account<'info, StakingPool>,
+    pub staking: Account<'info, StakingPool>,
 }
 
 pub fn handle<'info>(ctx: Context<IncreaseVestingTime<'info>>, vesting_ts_increase: u64) -> Result<()> {
-    let staking = &mut ctx.accounts.ticket;
+    let staking = &mut ctx.accounts.staking;
 
     staking.vesting_config.end_ts += vesting_ts_increase as i64;
 
