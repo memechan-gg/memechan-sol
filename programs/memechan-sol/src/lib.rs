@@ -112,4 +112,8 @@ pub mod memechan_sol {
     pub fn withdraw_admin_fee(ctx: Context<WithdrawAdminFee>) -> Result<()> {
         withdraw_admin_fees::handle(ctx)
     }
+
+    pub fn increase_vesting(ctx: Context<IncreaseVestingTime>, vesting_ts_increase: u64) -> Result<()> {
+        increase_vesting_time::handle(ctx, vesting_ts_increase)
+    }
 }
