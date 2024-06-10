@@ -105,6 +105,10 @@ pub mod memechan_sol {
         staking_merge_tickets::handle(ctx)
     }
 
+    pub fn staking_merge_tickets_non_zero(ctx: Context<StakingMergeTicketsNonZero>) -> Result<()> {
+        staking_merge_tickets_nz::handle(ctx)
+    }
+
     pub fn close_ticket(ctx: Context<CloseTicket>) -> Result<()> {
         close_ticket::handle(ctx)
     }

@@ -205,7 +205,7 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, InitStakingPool<'info>>) ->
         .unwrap();
     };
 
-    // 1. Verify if we reached the threshold of SUI amount raised
+    // 1. Verify if we reached the threshold of SLERF amount raised
     msg!("1");
     accs.pool_quote_vault.reload().unwrap();
     let quote_supply = accs.pool_quote_vault.amount;

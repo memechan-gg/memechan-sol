@@ -52,7 +52,8 @@ pub enum AmmError {
     InvalidStatus,
     CantUnstakeBeforeCliff,
     NoFeesToAdd,
-    CannotWithdrawBeforeSchedule
+    CannotWithdrawBeforeSchedule,
+    CannotDefaultMergeWithUnstake
 }
 
 #[allow(dead_code)]

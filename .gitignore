@@ -14,3 +14,6 @@ test-ledger
 
 !target/idl/*
 !target/types/*
+
+*key.json
+.env
