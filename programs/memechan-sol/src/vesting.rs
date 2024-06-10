@@ -27,15 +27,16 @@ pub fn default_config() -> VestingConfig {
 
 impl VestingData {
     pub fn total_vested(&self, config: &VestingConfig, current_ts: i64) -> u64 {
-        if current_ts < config.cliff_ts {
+        if current_ts <= config.cliff_ts {
             return 0;
         }
 
-        if current_ts > config.end_ts {
+        if current_ts >= config.end_ts {
             return self.notional;
         }
 
-        (self.notional * (current_ts - config.start_ts) as u64) / config.duration() as u64
+        let available_vested = (self.notional as u128 * (current_ts - config.cliff_ts) as u128) / config.duration() as u128;
+        available_vested as u64
     }
 
     pub fn to_release(&self, config: &VestingConfig, current_ts: i64) -> u64 {
@@ -55,6 +56,6 @@ impl VestingData {
 
 impl VestingConfig {
     pub fn duration(&self) -> i64 {
-        self.end_ts - self.start_ts
+        self.end_ts - self.cliff_ts
     }
 }
