@@ -98,10 +98,11 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<
     let meme_vault_initial_amt = accs.meme_vault.amount;
     let quote_vault_initial_amt = accs.quote_vault.amount;
 
-    let amm_info = &accs.raydium_amm.load().unwrap();
+    let (cumulated_fees_meme, cumulated_fees_quote) = {
+        let amm_info = &accs.raydium_amm.load().unwrap();
 
-    let cumulated_fees_meme = amm_info.fund_fees_token_0;
-    let cumulated_fees_quote = amm_info.fund_fees_token_1;
+        (amm_info.fund_fees_token_0, amm_info.fund_fees_token_1)
+    };
 
     let fee_ratio = accs.staking.compute_fee_ratio(
         accs.raydium_meme_vault.amount,

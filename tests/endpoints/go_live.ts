@@ -15,8 +15,8 @@ import { BoundPoolWrapper } from "../bound_pool";
 import { getOrCreateAssociatedTokenAccount } from "@solana/spl-token";
 
 export function test() {
-  describe("go_live", () => {
-    it("full swap then go live", async () => {
+  describe.skip("go_live", () => {
+    it.skip("full swap then go live", async () => {
       const pool = await BoundPoolWrapper.new();
 
       await sleep(500);

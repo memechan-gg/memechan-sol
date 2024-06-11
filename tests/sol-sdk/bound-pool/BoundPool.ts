@@ -95,7 +95,7 @@ import {
   getPoolAddress,
   getPoolLpMintAddress,
   getPoolVaultAddress,
-} from "../../utils/pda";
+} from "../../raydium/utils/pda";
 import { ASSOCIATED_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
 
 export class BoundPoolClient {

@@ -1,5 +1,5 @@
 import { Program, BN } from "@coral-xyz/anchor";
-import { RaydiumCpSwap } from "../../target/types/raydium_cp_swap";
+import { RaydiumCpSwap } from "../raydium_cp_swap";
 import {
   Connection,
   ConfirmOptions,
@@ -516,12 +516,21 @@ export async function swap_base_input(
   confirmOptions?: ConfirmOptions
 ) {
   const [auth] = await getAuthAddress(program.programId);
-  const [poolAddress] = await getPoolAddress(
+  let [poolAddress] = await getPoolAddress(
     configAddress,
     inputToken,
     outputToken,
     program.programId
   );
+
+  if (!(await program.account.poolState.fetchNullable(poolAddress))) {
+    [poolAddress] = await getPoolAddress(
+      configAddress,
+      outputToken,
+      inputToken,
+      program.programId
+    );
+  }
 
   const [inputVault] = await getPoolVaultAddress(
     poolAddress,
@@ -550,7 +559,7 @@ export async function swap_base_input(
     poolAddress,
     program.programId
   );
-
+  console.log("s2");
   const tx = await program.methods
     .swapBaseInput(amount_in, minimum_amount_out)
     .accounts({

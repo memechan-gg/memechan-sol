@@ -24,6 +24,8 @@ import {
   createMint,
   getAssociatedTokenAddressSync,
   getOrCreateAssociatedTokenAccount,
+  mintTo,
+  transfer,
 } from "@solana/spl-token";
 import { DUMMY_TOKEN_METADATA, client } from "./common";
 import { Token, publicKey } from "@raydium-io/raydium-sdk";
@@ -39,6 +41,7 @@ import {
   getCreateTokenAccountInstructions,
 } from "./sol-sdk/util/getCreateAccountInstruction";
 import { MEMECHAN_QUOTE_MINT } from "./sol-sdk/config/config";
+import { associatedAddress } from "@coral-xyz/anchor/dist/cjs/utils/token";
 
 export const RAYDIUM_PROGRAM_ID = new PublicKey(
   "HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8"
@@ -83,7 +86,10 @@ export class BoundPoolWrapper {
     });
     console.log("goLive2 END");
 
-    return [new AmmPool(staking.amm), new StakingWrapper(staking.id)];
+    return [
+      new AmmPool(staking.amm, staking.memeMint, QUOTE_MINT),
+      new StakingWrapper(staking.id),
+    ];
   }
   public async swap_y(args: SwapYArgs): Promise<MemeTicketWrapper> {
     const user = args.user ?? payer;
@@ -97,10 +103,18 @@ export class BoundPoolWrapper {
           client.connection,
           payer,
           QUOTE_MINT,
-          payer.publicKey
+          user.publicKey
         )
       ).address;
     console.log(userQuoteAcc);
+    await transfer(
+      provider.connection,
+      payer,
+      associatedAddress({ mint: QUOTE_MINT, owner: payer.publicKey }),
+      userQuoteAcc,
+      payer,
+      quoteAmountIn.toNumber()
+    );
     const ticket = await this.bpClient.swapY({
       memeTokensOut,
       quoteAmountIn,
