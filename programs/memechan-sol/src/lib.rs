@@ -13,7 +13,7 @@ use endpoints::*;
 #[cfg(not(feature = "mainnet"))]
 declare_id!("EWsBchGns4n9dtcsBvByHRfHhZ2iseNkjA3CsEUaGZFo"); // localnet
 #[cfg(feature = "mainnet")]
-declare_id!("cYsHcSU42XESLPquuN1ga94jm1wVMg11wVcxqvofA3k"); // mainnet test
+declare_id!("memeVtsr1AqAjfRzW2PuzymQdP2m7SgL6FQ1xgMc9MR"); // mainnet test
 
 #[program]
 pub mod memechan_sol {
