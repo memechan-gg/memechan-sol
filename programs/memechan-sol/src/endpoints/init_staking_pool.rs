@@ -1,4 +1,4 @@
-use crate::consts::{FEE_KEY, MAX_TICKET_TOKENS, MEME_TOKEN_DECIMALS, SLERF_MINT};
+use crate::consts::{FEE_KEY, MAX_TICKET_TOKENS, MEME_TOKEN_DECIMALS};
 use crate::err;
 use crate::err::AmmError;
 use crate::libraries::MulDiv;
@@ -57,13 +57,14 @@ pub struct InitStakingPool<'info> {
     //
     /// Mint Account for Meme
     #[account(
-        constraint = pool_meme_vault.mint == meme_mint.key()
+        constraint = meme_mint.key() == pool_meme_vault.mint
+            @ err::acc("Meme mint should be the same for both pool and staking")
     )]
     pub meme_mint: Box<Account<'info, Mint>>,
     /// Mint Account for WSOL
     #[account(
-        constraint = quote_mint.key() == SLERF_MINT
-            @ err::acc("Quote mint should be native SLERF mint")
+        constraint = quote_mint.key() == pool_quote_vault.mint
+            @ err::acc("Quote mint should be the same for both pool and staking")
     )]
     pub quote_mint: Box<Account<'info, Mint>>,
     //

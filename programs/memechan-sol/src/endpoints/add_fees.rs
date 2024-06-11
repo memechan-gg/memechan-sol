@@ -13,7 +13,8 @@ pub struct AddFees<'info> {
     #[account(
         mut,
         has_one = meme_vault,
-        has_one = quote_vault
+        has_one = quote_vault,
+        has_one = raydium_amm
     )]
     pub staking: Account<'info, StakingPool>,
     #[account(mut)]

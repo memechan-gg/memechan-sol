@@ -13,32 +13,32 @@ pub struct Unstake<'info> {
         has_one = meme_vault,
         has_one = quote_vault,
     )]
-    staking: Account<'info, StakingPool>,
+    pub staking: Account<'info, StakingPool>,
     #[account(
         mut,
         constraint = meme_ticket.pool == staking.pool,
         constraint = meme_ticket.owner == signer.key()
     )]
-    meme_ticket: Account<'info, MemeTicket>,
+    pub meme_ticket: Account<'info, MemeTicket>,
     #[account(
         mut,
         constraint = user_meme.owner == signer.key()
     )]
-    user_meme: Account<'info, TokenAccount>,
+    pub user_meme: Account<'info, TokenAccount>,
     #[account(
         mut,
         constraint = user_quote.owner == signer.key()
     )]
-    user_quote: Account<'info, TokenAccount>,
+    pub user_quote: Account<'info, TokenAccount>,
     #[account(mut)]
-    meme_vault: Account<'info, TokenAccount>,
+    pub meme_vault: Account<'info, TokenAccount>,
     #[account(mut)]
-    quote_vault: Account<'info, TokenAccount>,
-    signer: Signer<'info>,
+    pub quote_vault: Account<'info, TokenAccount>,
+    pub signer: Signer<'info>,
     /// CHECK: checked by AMM
     #[account(seeds = [StakingPool::SIGNER_PDA_PREFIX, staking.key().as_ref()], bump)]
-    staking_signer_pda: AccountInfo<'info>,
-    token_program: Program<'info, Token>,
+    pub staking_signer_pda: AccountInfo<'info>,
+    pub token_program: Program<'info, Token>,
 }
 
 impl<'info> Unstake<'info> {
