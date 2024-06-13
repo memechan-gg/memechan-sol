@@ -99,6 +99,7 @@ export function test() {
       const user = users[0];
       await Promise.all(users.map((user) => airdrop(user.publicKey)));
       const pool = await BoundPoolWrapper.new();
+      console.log("\nbpclient\n", pool.bpClient.id);
 
       const addr = await getOrCreateAssociatedTokenAccount(
         provider.connection,
@@ -134,7 +135,7 @@ export function test() {
           quoteTokensIn: new BN(28180 * 1e9),
         })
       );
-
+      sleep(500);
       console.log("-2");
       const [amm, staking] = await pool.go_live();
       sleep(1000);

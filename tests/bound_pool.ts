@@ -61,6 +61,7 @@ export interface SwapYArgs {
   memeTokensOut: BN;
   quoteTokensIn: BN;
   userQuoteAcc?: PublicKey;
+  ticketNumber?: number;
 }
 
 export class BoundPoolWrapper {

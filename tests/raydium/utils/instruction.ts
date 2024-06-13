@@ -497,8 +497,7 @@ export async function withdraw(
       lpMint: lpMintAddress,
       memoProgram: new PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"),
     })
-    .rpc(confirmOptions)
-    .catch();
+    .rpc(confirmOptions);
 
   return tx;
 }

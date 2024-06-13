@@ -25,6 +25,28 @@ import { memechan } from "../../helpers";
 export type MemeTicketFields = IdlAccounts<MemechanSol>["memeTicket"];
 
 export class MemeTicket {
+  public static getMemeTicketPDA({
+    ticketNumber,
+    poolId,
+    userId,
+  }: {
+    ticketNumber: number;
+    poolId: PublicKey;
+    userId: PublicKey;
+  }): PublicKey {
+    // 8 bytes array
+    const dv = new DataView(new ArrayBuffer(8), 0);
+    // set u64 in little endian format
+    dv.setBigUint64(0, BigInt(ticketNumber), true);
+
+    // find pda
+    const pda = PublicKey.findProgramAddressSync(
+      [poolId.toBytes(), userId.toBytes(), new Uint8Array(dv.buffer)],
+      new PublicKey(memechan.programId)
+    )[0];
+
+    return pda;
+  }
   public constructor(public id: PublicKey, public client: MemechanClient) {
     //
   }

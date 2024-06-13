@@ -648,11 +648,16 @@ export class BoundPoolClient {
   }
 
   public async swapY(input: SwapYArgs): Promise<MemeTicket> {
-    const id = Keypair.generate();
     const user = input.user!;
     const payer = input.payer!;
 
+    const ticketNumber = input.ticketNumber ?? 1;
     const pool = input.pool ?? this.id;
+    const id = MemeTicket.getMemeTicketPDA({
+      ticketNumber,
+      poolId: pool,
+      userId: user.publicKey,
+    });
     const poolSignerPda = BoundPoolClient.findSignerPda(
       pool,
       this.client.memechanProgram.programId
@@ -696,9 +701,9 @@ export class BoundPoolClient {
     //console.log("3 transferResult: " + transferResult);
 
     await this.client.memechanProgram.methods
-      .swapY(new BN(sol_in), new BN(meme_out))
+      .swapY(new BN(sol_in), new BN(meme_out), new BN(ticketNumber))
       .accounts({
-        memeTicket: id.publicKey,
+        memeTicket: id,
         owner: user.publicKey,
         pool: pool,
         poolSignerPda: poolSignerPda,
@@ -707,11 +712,10 @@ export class BoundPoolClient {
         systemProgram: SystemProgram.programId,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
-      .signers([user, id])
-      .rpc({ skipPreflight: true, commitment: "confirmed" })
-      .catch((e) => console.error(e));
+      .signers([user])
+      .rpc({ skipPreflight: true, commitment: "confirmed" });
 
-    return new MemeTicket(id.publicKey, this.client);
+    return new MemeTicket(id, this.client);
   }
 
   /**
