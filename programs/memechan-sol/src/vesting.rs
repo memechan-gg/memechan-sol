@@ -1,6 +1,6 @@
-use anchor_lang::prelude::*;
 use crate::consts::{DEFAULT_CLIFF, DEFAULT_LINEAR};
-
+use crate::libraries::big_num::U128;
+use anchor_lang::prelude::*;
 
 #[derive(AnchorDeserialize, AnchorSerialize, Copy, Clone, Debug, Eq, PartialEq, Default)]
 pub struct VestingConfig {
@@ -35,8 +35,12 @@ impl VestingData {
             return self.notional;
         }
 
-        let available_vested = (self.notional as u128 * (current_ts - config.cliff_ts) as u128) / config.duration() as u128;
-        available_vested as u64
+        let available_vested = U128::from(self.notional)
+            .checked_mul(U128::from(current_ts - config.cliff_ts))
+            .unwrap()
+            .checked_div(U128::from(config.duration()))
+            .unwrap();
+        available_vested.as_u64()
     }
 
     pub fn to_release(&self, config: &VestingConfig, current_ts: i64) -> u64 {
