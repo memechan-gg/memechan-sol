@@ -29,45 +29,38 @@ pub struct GoLive<'info> {
     /// Staking Pool Meme vault
     #[account(
         mut,
-        constraint = staking.meme_vault == pool_meme_vault.key()
+        constraint = staking.meme_vault == staking_meme_vault.key()
     )]
-    pub pool_meme_vault: Box<Account<'info, TokenAccount>>,
+    pub staking_meme_vault: Box<Account<'info, TokenAccount>>,
     #[account(
         mut,
-        constraint = staking.quote_vault == pool_quote_vault.key()
+        constraint = staking.quote_vault == staking_quote_vault.key()
     )]
     /// Staking Pool Quote vault
-    pub pool_quote_vault: Box<Account<'info, TokenAccount>>,
+    pub staking_quote_vault: Box<Account<'info, TokenAccount>>,
     /// Mint Account for Meme
     #[account(
-        constraint = pool_meme_vault.mint == meme_mint.key()
+        constraint = staking_meme_vault.mint == meme_mint.key()
     )]
     pub meme_mint: Box<Account<'info, Mint>>,
     #[account(
-        constraint = pool_quote_vault.mint == quote_mint.key()
+        constraint = staking_quote_vault.mint == quote_mint.key()
     )]
     /// Mint Account for WSOL
     pub quote_mint: Box<Account<'info, Mint>>,
-
-    // Meteora Vault Program accounts
-    /// CHECK: meteora cpi account
-    pub vault: AccountInfo<'info>,
-    /// CHECK: meteora cpi account
-    pub token_vault: AccountInfo<'info>,
+    // Meteora Amm Program accounts
     /// CHECK: meteora cpi account
     pub lp_mint: AccountInfo<'info>,
-
-    // Meteora Amm Program accounts
     /// CHECK: meteora cpi account
     pub fee_owner: AccountInfo<'info>,
     /// CHECK: meteora cpi account
-    pub payer_pool_lp: Account<'info, TokenAccount>,
+    pub payer_pool_lp: Box<Account<'info, TokenAccount>>,
     /// CHECK: meteora cpi account
     pub amm_pool: AccountInfo<'info>,
     /// CHECK: meteora cpi account
     pub mint_metadata: AccountInfo<'info>,
     /// CHECK: meteora cpi account
-    pub a_token_vault: AccountInfo<'info>,
+    pub a_token_vault: Box<Account<'info, TokenAccount>>,
     /// CHECK: meteora cpi account
     pub a_vault: AccountInfo<'info>,
     /// CHECK: meteora cpi account
@@ -75,11 +68,7 @@ pub struct GoLive<'info> {
     /// CHECK: meteora cpi account
     pub a_vault_lp_mint: AccountInfo<'info>,
     /// CHECK: meteora cpi account
-    pub token_a_mint: AccountInfo<'info>,
-    /// CHECK: meteora cpi account
-    pub token_b_mint: AccountInfo<'info>,
-    /// CHECK: meteora cpi account
-    pub b_token_vault: AccountInfo<'info>,
+    pub b_token_vault: Box<Account<'info, TokenAccount>>,
     /// CHECK: meteora cpi account
     pub b_vault: AccountInfo<'info>,
     /// CHECK: meteora cpi account
@@ -90,10 +79,8 @@ pub struct GoLive<'info> {
     pub admin_token_a_fee: AccountInfo<'info>,
     /// CHECK: meteora cpi account
     pub admin_token_b_fee: AccountInfo<'info>,
-    /// CHECK: meteora cpi account
-    pub payer_token_a: AccountInfo<'info>,
-    /// CHECK: meteora cpi account
-    pub payer_token_b: AccountInfo<'info>,
+
+    // Lock
     /// CHECK: meteora cpi account
     pub lock_escrow: AccountInfo<'info>,
     /// CHECK: meteora cpi account
@@ -111,22 +98,6 @@ pub struct GoLive<'info> {
 }
 
 impl<'info> GoLive<'info> {
-    fn create_vault(&self, seeds: &[&[&[u8]]]) -> Result<()> {
-        let program = self.vault_program.to_account_info();
-        let cpi = dynamic_vault::cpi::accounts::Initialize {
-            vault: self.vault.to_account_info(),
-            token_mint: self.meme_mint.to_account_info(),
-            token_vault: self.token_vault.to_account_info(),
-            lp_mint: self.lp_mint.to_account_info(),
-            payer: self.staking_pool_signer_pda.to_account_info(),
-            rent: self.rent.to_account_info(),
-            token_program: self.token_program.to_account_info(),
-            system_program: self.system_program.to_account_info(),
-        };
-        let cpi_ctx = CpiContext::new_with_signer(program, cpi, seeds);
-        dynamic_vault::cpi::initialize(cpi_ctx)
-    }
-
     fn create_pool(
         &self,
         seeds: &[&[&[u8]]],
@@ -155,8 +126,8 @@ impl<'info> GoLive<'info> {
             b_vault_lp_mint: self.b_vault_lp_mint.to_account_info(),
             admin_token_a_fee: self.admin_token_a_fee.to_account_info(),
             admin_token_b_fee: self.admin_token_b_fee.to_account_info(),
-            payer_token_a: self.payer_token_a.to_account_info(),
-            payer_token_b: self.payer_token_b.to_account_info(),
+            payer_token_a: self.staking_meme_vault.to_account_info(),
+            payer_token_b: self.staking_quote_vault.to_account_info(),
             metadata_program: self.metadata_program.to_account_info(),
             associated_token_program: self.ata_program.to_account_info(),
             vault_program: self.vault_program.to_account_info(),
@@ -221,20 +192,16 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, GoLive<'info>>) -> Result<(
     let staking_signer_seeds = &[&staking_seeds[..]];
 
     // 1. Get Sol Supply
-    let quote_supply = accs.pool_quote_vault.amount;
+    let quote_supply = accs.staking_quote_vault.amount;
 
     // 2. Split MEME balance amounts into 80/20
-    let meme_supply = accs.pool_meme_vault.amount;
+    let meme_supply = accs.staking_meme_vault.amount;
     let meme_supply_80 = MAX_TICKET_TOKENS * MEME_TOKEN_DECIMALS;
 
     let amm_meme_balance = meme_supply.checked_sub(meme_supply_80).unwrap();
 
     msg!("3");
-    // 3. Initialize vault
-    accs.create_vault(staking_signer_seeds)?;
-
-    msg!("4");
-    // 4. Initialize pool & Add liquidity to the pool
+    // 3. Initialize pool & Add liquidity to the pool
     let trade_fee_bps = 100u64;
     accs.create_pool(
         staking_signer_seeds,
@@ -243,19 +210,19 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, GoLive<'info>>) -> Result<(
         quote_supply,
     )?;
 
-    msg!("5");
-    // 5. Create lock
+    msg!("4");
+    // 4. Create lock
     accs.create_lock_escrow(staking_signer_seeds)?;
 
-    msg!("6");
-    // 6. Lock tokens
+    msg!("5");
+    // 5. Lock tokens
     accs.payer_pool_lp.reload()?;
     let lp_amount = accs.payer_pool_lp.amount;
 
     accs.lock(lp_amount, staking_signer_seeds)?;
 
-    msg!("7");
-    // 7. Setup staking
+    msg!("6");
+    // 6. Setup staking
     // Add LP vault and mint to staking pool
     accs.staking.lp_mint = accs.lp_mint.key();
     accs.staking.lp_vault = accs.payer_pool_lp.key();

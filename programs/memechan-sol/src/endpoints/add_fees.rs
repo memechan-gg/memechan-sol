@@ -17,11 +17,11 @@ pub struct AddFees<'info> {
     )]
     pub staking: Account<'info, StakingPool>,
     #[account(mut)]
-    pub meme_vault: Account<'info, TokenAccount>,
-    pub meme_mint: Account<'info, Mint>,
+    pub meme_vault: Box<Account<'info, TokenAccount>>,
+    pub meme_mint: Box<Account<'info, Mint>>,
     #[account(mut)]
-    pub quote_vault: Account<'info, TokenAccount>,
-    pub quote_mint: Account<'info, Mint>,
+    pub quote_vault: Box<Account<'info, TokenAccount>>,
+    pub quote_mint: Box<Account<'info, Mint>>,
     /// CHECK: pda
     #[account(mut, seeds = [StakingPool::SIGNER_PDA_PREFIX, staking.key().as_ref()], bump)]
     pub staking_signer_pda: AccountInfo<'info>,
@@ -45,7 +45,7 @@ pub struct AddFees<'info> {
     pub b_vault_lp: AccountInfo<'info>,
     /// CHECK: meteora cpi account
     pub b_vault_lp_mint: AccountInfo<'info>,
-    pub lock_escrow: Account<'info, dynamic_amm::state::LockEscrow>,
+    pub lock_escrow: Box<Account<'info, dynamic_amm::state::LockEscrow>>,
     /// CHECK: meteora cpi account
     pub escrow_vault: AccountInfo<'info>,
     /// CHECK: meteora cpi account

@@ -19,7 +19,6 @@ pub struct InitStakingPool<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
     //
-    //
     // ===== Bonding Pool =====
     //
     /// Bonding Pool account
@@ -67,10 +66,6 @@ pub struct InitStakingPool<'info> {
             @ err::acc("Quote mint should be the same for both pool and staking")
     )]
     pub quote_mint: Box<Account<'info, Mint>>,
-    //
-    //
-    //
-    //
     //
     // ===== Staking Pool Accounts =====
     //
@@ -123,10 +118,6 @@ pub struct InitStakingPool<'info> {
         bump
     )]
     pub meme_ticket: Box<Account<'info, MemeTicket>>,
-    //
-    //
-    //
-    //
     //
     // Sysvars
     pub rent: Sysvar<'info, Rent>,

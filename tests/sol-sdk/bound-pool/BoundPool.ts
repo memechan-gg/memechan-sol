@@ -759,6 +759,7 @@ export class BoundPoolClient {
       minOutputAmount,
       slippagePercentage,
       user,
+      ticketNumber,
       transaction = new Transaction(),
     } = input;
     let { inputTokenAccount } = input;
@@ -821,7 +822,7 @@ export class BoundPoolClient {
     }
 
     const buyMemeInstruction = await this.client.memechanProgram.methods
-      .swapY(inputAmountBN, minOutputBN)
+      .swapY(inputAmountBN, minOutputBN, new BN(ticketNumber))
       .accounts({
         memeTicket: memeTicketKeypair.publicKey,
         owner: user,
@@ -1113,27 +1114,12 @@ export class BoundPoolClient {
       .goLive()
       .accounts({
         signer: user.publicKey,
-        poolMemeVault: memeVault,
-        poolQuoteVault: quoteVault,
-        quoteMint: this.quoteTokenMint,
-        staking: stakingId,
-        stakingPoolSignerPda: stakingSigner,
-        raydiumLpMint: lpMintAddress,
-        raydiumAmm: poolAddress,
-        raydiumAmmAuthority: auth,
-        raydiumMemeVault: vault0,
-        raydiumQuoteVault: vault1,
-        observationState: observationAddress,
-        systemProgram: SystemProgram.programId,
-        tokenProgram: TOKEN_PROGRAM_ID,
-        clock: SYSVAR_CLOCK_PUBKEY,
+
         rent: SYSVAR_RENT_PUBKEY,
         memeMint: boundPoolInfo.memeReserve.mint,
-        ammConfig: configAddress,
+
         ataProgram: ATA_PROGRAM_ID,
-        feeDestinationInfo: feeDestinationWalletAddress,
-        userDestinationLpTokenAta: creatorLpTokenAddress,
-        raydiumProgram: CPMM,
+        ammProgram: ATA_PROGRAM_ID,
       })
       .instruction();
 

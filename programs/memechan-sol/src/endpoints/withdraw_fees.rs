@@ -12,27 +12,27 @@ pub struct WithdrawFees<'info> {
         has_one = meme_vault,
         has_one = quote_vault,
     )]
-    pub staking: Account<'info, StakingPool>,
+    pub staking: Box<Account<'info, StakingPool>>,
     #[account(
         mut,
         constraint = meme_ticket.pool == staking.pool,
         constraint = meme_ticket.owner == signer.key()
     )]
-    pub meme_ticket: Account<'info, MemeTicket>,
+    pub meme_ticket: Box<Account<'info, MemeTicket>>,
     #[account(
         mut,
         constraint = user_meme.owner == signer.key()
     )]
-    pub user_meme: Account<'info, TokenAccount>,
+    pub user_meme: Box<Account<'info, TokenAccount>>,
     #[account(
         mut,
         constraint = user_quote.owner == signer.key()
     )]
-    pub user_quote: Account<'info, TokenAccount>,
+    pub user_quote: Box<Account<'info, TokenAccount>>,
     #[account(mut)]
-    pub meme_vault: Account<'info, TokenAccount>,
+    pub meme_vault: Box<Account<'info, TokenAccount>>,
     #[account(mut)]
-    pub quote_vault: Account<'info, TokenAccount>,
+    pub quote_vault: Box<Account<'info, TokenAccount>>,
     /// CHECK: pda signer
     #[account(seeds = [StakingPool::SIGNER_PDA_PREFIX, staking.key().as_ref()], bump)]
     pub staking_signer_pda: AccountInfo<'info>,

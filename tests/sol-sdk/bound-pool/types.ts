@@ -23,6 +23,7 @@ export type GetBuyMemeTransactionArgs = {
   inputAmount: string;
   minOutputAmount: string;
   slippagePercentage: number;
+  ticketNumber?: number;
   transaction?: Transaction;
 };
 
