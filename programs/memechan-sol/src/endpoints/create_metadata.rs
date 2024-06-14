@@ -3,14 +3,14 @@ use crate::models::bound::BoundPool;
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::program_option::COption;
 use anchor_spl::metadata::create_metadata_accounts_v3;
-use anchor_spl::metadata::mpl_token_metadata::types::Creator;
-use anchor_spl::metadata::mpl_token_metadata::types::DataV2;
 use anchor_spl::metadata::CreateMetadataAccountsV3;
 use anchor_spl::metadata::Metadata;
 use anchor_spl::token;
 use anchor_spl::token::spl_token::instruction::AuthorityType::MintTokens;
 use anchor_spl::token::SetAuthority;
 use anchor_spl::token::{Mint, Token};
+use mpl_token_metadata::state::Creator;
+use mpl_token_metadata::state::DataV2;
 
 #[derive(Accounts)]
 pub struct CreateMetadata<'info> {
@@ -122,7 +122,7 @@ pub fn handle(
 ) -> Result<()> {
     let accs = ctx.accounts;
 
-    let signer_bump_seed = ctx.bumps.pool_signer;
+    let signer_bump_seed = *ctx.bumps.get("pool_signer").unwrap();
     accs.create_nft_with_metadata(name, symbol, uri, &[signer_bump_seed])?;
 
     Ok(())

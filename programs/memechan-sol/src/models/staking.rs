@@ -14,7 +14,7 @@ pub struct StakingPool {
     pub lp_vault: Pubkey,
     pub lp_mint: Pubkey,
     pub quote_vault: Pubkey,
-    pub raydium_amm: Pubkey,
+    pub amm_pool: Pubkey,
     pub vesting_config: VestingConfig,
     pub raydium_fees: RaydiumAmmFees,
     pub stakes_total: u64,

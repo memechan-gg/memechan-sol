@@ -105,7 +105,7 @@ pub fn handle(ctx: Context<NewPool>) -> Result<()> {
     let seeds = &[
         BoundPool::SIGNER_PDA_PREFIX,
         &accs.pool.key().to_bytes()[..],
-        &[ctx.bumps.pool_signer],
+        &[*ctx.bumps.get("pool_signer").unwrap()],
     ];
 
     let signer_seeds = &[&seeds[..]];

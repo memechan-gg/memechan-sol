@@ -80,7 +80,7 @@ pub fn handle(ctx: Context<SwapCoinX>, coin_in_amount: u64, coin_y_min_value: u6
     let seeds = &[
         BoundPool::SIGNER_PDA_PREFIX,
         &accs.pool.key().to_bytes()[..],
-        &[ctx.bumps.pool_signer],
+        &[*ctx.bumps.get("pool_signer").unwrap()],
     ];
 
     let signer_seeds = &[&seeds[..]];

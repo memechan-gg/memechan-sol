@@ -96,7 +96,7 @@ pub fn handle(ctx: Context<Unstake>, release_amount: u64) -> Result<()> {
     let staking_seeds = &[
         StakingPool::SIGNER_PDA_PREFIX,
         &accs.staking.key().to_bytes()[..],
-        &[ctx.bumps.staking_signer_pda],
+        &[*ctx.bumps.get("staking_signer_pda").unwrap()],
     ];
 
     let staking_signer_seeds = &[&staking_seeds[..]];

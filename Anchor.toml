@@ -28,12 +28,8 @@ startup_wait = 10000
 url = "https://api.devnet.solana.com"
 
 [[test.genesis]]
-address = "CPMDWBwJDtYax9qW7AyRuVC19Cc4L4Vcy4n2BHAbHkCW"
-program = "tests/programs/devnet/raydium-cpmm.so"
-
-[[test.genesis]]
-address = "adMCyoCgfkg7bQiJ9aBJ59H3BXLY3r5LNLfPpQfMzBe"
-program = "tests/programs/devnet/raydium.so"
+address = "Eo7WjKq67rjJQSZxS6z3YkapzY3eMj6Xy8X5EQVn5UaB"
+program = "tests/programs/devnet/meteora-dynamic-amm.so"
 
 [[test.genesis]]
 address = "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"  
