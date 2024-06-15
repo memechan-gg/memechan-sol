@@ -24,29 +24,42 @@ pub struct AddFees<'info> {
     /// CHECK: pda
     #[account(mut, seeds = [StakingPool::SIGNER_PDA_PREFIX, staking.key().as_ref()], bump)]
     pub staking_signer_pda: AccountInfo<'info>,
+    #[account(mut)]
     /// CHECK: meteora cpi account
     pub amm_pool: AccountInfo<'info>,
+    #[account(mut)]
     /// CHECK: meteora cpi account
     pub lp_mint: AccountInfo<'info>,
+    #[account(mut)]
     /// CHECK: meteora cpi account
     pub a_token_vault: AccountInfo<'info>,
+    #[account(mut)]
     /// CHECK: meteora cpi account
     pub a_vault: AccountInfo<'info>,
+    #[account(mut)]
     /// CHECK: meteora cpi account
     pub a_vault_lp: AccountInfo<'info>,
+    #[account(mut)]
     /// CHECK: meteora cpi account
     pub a_vault_lp_mint: AccountInfo<'info>,
+    #[account(mut)]
     /// CHECK: meteora cpi account
     pub b_token_vault: AccountInfo<'info>,
+    #[account(mut)]
     /// CHECK: meteora cpi account
     pub b_vault: AccountInfo<'info>,
+    #[account(mut)]
     /// CHECK: meteora cpi account
     pub b_vault_lp: AccountInfo<'info>,
+    #[account(mut)]
     /// CHECK: meteora cpi account
     pub b_vault_lp_mint: AccountInfo<'info>,
+    #[account(mut)]
     pub lock_escrow: Box<Account<'info, dynamic_amm::state::LockEscrow>>,
+    #[account(mut)]
     /// CHECK: meteora cpi account
     pub escrow_vault: AccountInfo<'info>,
+    #[account(mut)]
     /// CHECK: meteora cpi account
     pub source_tokens: AccountInfo<'info>,
 

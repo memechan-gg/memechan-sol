@@ -15,6 +15,7 @@ import {
   memechan,
   payer,
   provider,
+  sleep,
 } from "./helpers";
 import BN from "bn.js";
 import {
@@ -40,8 +41,13 @@ import {
   getCreateAssociatedTokenAccountInstructions,
   getCreateTokenAccountInstructions,
 } from "./sol-sdk/util/getCreateAccountInstruction";
-import { MEMECHAN_QUOTE_MINT } from "./sol-sdk/config/config";
+import {
+  MEMECHAN_QUOTE_MINT,
+  MEMECHAN_QUOTE_TOKEN,
+} from "./sol-sdk/config/config";
 import { associatedAddress } from "@coral-xyz/anchor/dist/cjs/utils/token";
+import { TokenInfo } from "@solana/spl-token-registry";
+import AmmImpl from "@mercurial-finance/dynamic-amm-sdk";
 
 export const RAYDIUM_PROGRAM_ID = new PublicKey(
   "HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8"
@@ -86,9 +92,32 @@ export class BoundPoolWrapper {
       user: payer,
     });
     console.log("goLive2 END");
+    console.log(staking.memeMint, staking.amm);
+    const tokenInfoA: TokenInfo = {
+      chainId: 0,
+      address: staking.memeMint.toBase58(),
+      name: "asdda",
+      decimals: MEMECHAN_MEME_TOKEN_DECIMALS,
+      symbol: "ads",
+    };
+    const tokenInfoB: TokenInfo = {
+      chainId: 0,
+      address: MEMECHAN_QUOTE_TOKEN.mint.toBase58(),
+      name: MEMECHAN_QUOTE_TOKEN.name,
+      decimals: MEMECHAN_QUOTE_TOKEN.decimals,
+      symbol: MEMECHAN_QUOTE_TOKEN.symbol,
+    };
+
+    await sleep(500);
+    const ammImpl = await AmmImpl.create(
+      provider.connection,
+      staking.amm,
+      tokenInfoA,
+      tokenInfoB
+    );
 
     return [
-      new AmmPool(staking.amm, staking.memeMint, QUOTE_MINT),
+      new AmmPool(staking.amm, staking.memeMint, QUOTE_MINT, ammImpl),
       new StakingWrapper(staking.id),
     ];
   }

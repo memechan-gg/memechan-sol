@@ -59,7 +59,7 @@ export class StakingPool {
       stakingPoolObjectData.lpVault,
       stakingPoolObjectData.lpMint,
       stakingPoolObjectData.quoteVault,
-      stakingPoolObjectData.raydiumAmm
+      stakingPoolObjectData.ammPool
     );
 
     return boundClientInstance;
