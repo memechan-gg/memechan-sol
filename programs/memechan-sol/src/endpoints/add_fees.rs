@@ -1,8 +1,7 @@
-use crate::models::staking::{lp_tokens_to_burn, StakingPool};
+use crate::models::staking::StakingPool;
 
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token, TokenAccount};
-use anchor_spl::token_2022::Token2022;
 
 use dynamic_amm::program::DynamicAmm as MeteoraAmm;
 use dynamic_vault::program::DynamicVault as MeteoraVault;
@@ -97,7 +96,7 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<
     let staking_seeds = &[
         StakingPool::SIGNER_PDA_PREFIX,
         &accs.staking.key().to_bytes()[..],
-        &[*ctx.bumps.get("staking_signer_pda").unwrap()],
+        &[ctx.bumps.staking_signer_pda],
     ];
 
     let staking_signer_seeds = &[&staking_seeds[..]];

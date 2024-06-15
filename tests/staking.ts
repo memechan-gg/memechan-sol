@@ -11,10 +11,8 @@ import { QUOTE_MINT, memechan, payer, provider } from "./helpers";
 import { AmmPool } from "./pool";
 import { Address, BN } from "@coral-xyz/anchor";
 import { MemeTicketWrapper } from "./ticket";
-import { raydiumProgram } from "./raydium/raydium";
 import { MEMO_PROGRAM_ID } from "@raydium-io/raydium-sdk";
 import { StakingPool } from "./sol-sdk/staking-pool/StakingPool";
-import { getAuthAddress } from "./raydium/utils";
 
 export interface UnstakeArgs {
   ticket: MemeTicketWrapper;
@@ -54,37 +52,9 @@ export class StakingWrapper {
   }
 
   public async add_fees(ammPool: AmmPool) {
-    const amm = await raydiumProgram.account.poolState.fetch(ammPool.id);
     const staking = await memechan.account.stakingPool.fetch(this.id);
 
-    const [auth] = await getAuthAddress(raydiumProgram.programId);
-
-    await memechan.methods
-      .addFees()
-      .accounts({
-        signer: payer.publicKey,
-        staking: this.id,
-        stakingLpWallet: staking.lpVault,
-        stakingSignerPda: StakingPool.findSignerPda(
-          this.id,
-          memechan.programId
-        ),
-        memeMint: ammPool.memeMint,
-        quoteMint: ammPool.quoteMint,
-        memeVault: staking.memeVault,
-        quoteVault: staking.quoteVault,
-        raydiumAmm: ammPool.id,
-        raydiumAmmAuthority: auth,
-        raydiumLpMint: amm.lpMint,
-        raydiumMemeVault: amm.token0Vault,
-        raydiumQuoteVault: amm.token1Vault,
-        raydiumProgram: raydiumProgram.programId,
-        tokenProgram: TOKEN_PROGRAM_ID,
-        tokenProgram22: TOKEN_2022_PROGRAM_ID,
-        memoProgram: MEMO_PROGRAM_ID,
-      })
-      .signers([payer])
-      .rpc();
+    await memechan.methods.addFees().accounts({}).signers([payer]).rpc();
   }
 
   public signer(): PublicKey {

@@ -170,7 +170,7 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, InitStakingPool<'info>>) ->
     let bp_seeds = &[
         BoundPool::SIGNER_PDA_PREFIX,
         &accs.pool.key().to_bytes()[..],
-        &[*ctx.bumps.get("bound_pool_signer_pda").unwrap()],
+        &[ctx.bumps.bound_pool_signer_pda],
     ];
 
     let bp_signer_seeds = &[&bp_seeds[..]];

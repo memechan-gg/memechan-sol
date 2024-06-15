@@ -78,7 +78,7 @@ pub fn handle(ctx: Context<WithdrawFees>) -> Result<()> {
     let staking_seeds = &[
         StakingPool::SIGNER_PDA_PREFIX,
         &accs.staking.key().to_bytes()[..],
-        &[*ctx.bumps.get("staking_signer_pda").unwrap()],
+        &[ctx.bumps.staking_signer_pda],
     ];
 
     let staking_signer_seeds = &[&staking_seeds[..]];

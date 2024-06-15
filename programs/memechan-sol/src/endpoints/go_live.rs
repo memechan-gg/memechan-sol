@@ -49,40 +49,56 @@ pub struct GoLive<'info> {
     /// Mint Account for WSOL
     pub quote_mint: Box<Account<'info, Mint>>,
     // Meteora Amm Program accounts
+    #[account(mut)]
     /// CHECK: meteora cpi account
     pub lp_mint: AccountInfo<'info>,
     /// CHECK: meteora cpi account
     pub fee_owner: AccountInfo<'info>,
+    #[account(mut)]
     /// CHECK: meteora cpi account
-    pub payer_pool_lp: Box<Account<'info, TokenAccount>>,
+    pub payer_pool_lp: AccountInfo<'info>,
+    #[account(mut)]
     /// CHECK: meteora cpi account
     pub amm_pool: AccountInfo<'info>,
+    #[account(mut)]
     /// CHECK: meteora cpi account
     pub mint_metadata: AccountInfo<'info>,
+    #[account(mut)]
     /// CHECK: meteora cpi account
     pub a_token_vault: Box<Account<'info, TokenAccount>>,
+    #[account(mut)]
     /// CHECK: meteora cpi account
     pub a_vault: AccountInfo<'info>,
+    #[account(mut)]
     /// CHECK: meteora cpi account
     pub a_vault_lp: AccountInfo<'info>,
+    #[account(mut)]
     /// CHECK: meteora cpi account
     pub a_vault_lp_mint: AccountInfo<'info>,
+    #[account(mut)]
     /// CHECK: meteora cpi account
     pub b_token_vault: Box<Account<'info, TokenAccount>>,
+    #[account(mut)]
     /// CHECK: meteora cpi account
     pub b_vault: AccountInfo<'info>,
+    #[account(mut)]
     /// CHECK: meteora cpi account
     pub b_vault_lp: AccountInfo<'info>,
+    #[account(mut)]
     /// CHECK: meteora cpi account
     pub b_vault_lp_mint: AccountInfo<'info>,
+    #[account(mut)]
     /// CHECK: meteora cpi account
     pub admin_token_a_fee: AccountInfo<'info>,
+    #[account(mut)]
     /// CHECK: meteora cpi account
     pub admin_token_b_fee: AccountInfo<'info>,
 
     // Lock
+    #[account(mut)]
     /// CHECK: meteora cpi account
     pub lock_escrow: AccountInfo<'info>,
+    #[account(mut)]
     /// CHECK: meteora cpi account
     pub escrow_vault: AccountInfo<'info>,
 
@@ -111,7 +127,6 @@ impl<'info> GoLive<'info> {
             payer: self.staking_pool_signer_pda.to_account_info(),
             rent: self.rent.to_account_info(),
             fee_owner: self.fee_owner.to_account_info(),
-            payer_pool_lp: self.payer_pool_lp.to_account_info(),
             pool: self.amm_pool.to_account_info(),
             mint_metadata: self.mint_metadata.to_account_info(),
             a_token_vault: self.a_token_vault.to_account_info(),
@@ -128,6 +143,7 @@ impl<'info> GoLive<'info> {
             admin_token_b_fee: self.admin_token_b_fee.to_account_info(),
             payer_token_a: self.staking_meme_vault.to_account_info(),
             payer_token_b: self.staking_quote_vault.to_account_info(),
+            payer_pool_lp: self.payer_pool_lp.to_account_info(),
             metadata_program: self.metadata_program.to_account_info(),
             associated_token_program: self.ata_program.to_account_info(),
             vault_program: self.vault_program.to_account_info(),
@@ -145,7 +161,7 @@ impl<'info> GoLive<'info> {
     }
 
     fn create_lock_escrow(&self, seeds: &[&[&[u8]]]) -> Result<()> {
-        let program = self.vault_program.to_account_info();
+        let program = self.amm_program.to_account_info();
         let cpi = dynamic_amm::cpi::accounts::CreateLockEscrow {
             lock_escrow: self.lock_escrow.to_account_info(),
             pool: self.amm_pool.to_account_info(),
@@ -158,8 +174,22 @@ impl<'info> GoLive<'info> {
         dynamic_amm::cpi::create_lock_escrow(cpi_ctx)
     }
 
+    fn create_escrow_vault(&self) -> Result<()> {
+        let program = self.ata_program.to_account_info();
+        let cpi = anchor_spl::associated_token::Create {
+            associated_token: self.escrow_vault.to_account_info(),
+            authority: self.lock_escrow.to_account_info(),
+            payer: self.signer.to_account_info(),
+            mint: self.lp_mint.to_account_info(),
+            token_program: self.token_program.to_account_info(),
+            system_program: self.system_program.to_account_info(),
+        };
+        let cpi_ctx = CpiContext::new(program, cpi);
+        anchor_spl::associated_token::create_idempotent(cpi_ctx)
+    }
+
     fn lock(&self, lp_amount: u64, seeds: &[&[&[u8]]]) -> Result<()> {
-        let program = self.vault_program.to_account_info();
+        let program = self.amm_program.to_account_info();
         let cpi = dynamic_amm::cpi::accounts::Lock {
             lock_escrow: self.lock_escrow.to_account_info(),
             pool: self.amm_pool.to_account_info(),
@@ -180,13 +210,13 @@ impl<'info> GoLive<'info> {
     }
 }
 
-pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, GoLive<'info>>) -> Result<()> {
+pub fn handle(ctx: Context<GoLive>) -> Result<()> {
     let accs = ctx.accounts;
 
     let staking_seeds = &[
         StakingPool::SIGNER_PDA_PREFIX,
         &accs.staking.key().to_bytes()[..],
-        &[*ctx.bumps.get("staking_pool_signer_pda").unwrap()],
+        &[ctx.bumps.staking_pool_signer_pda],
     ];
 
     let staking_signer_seeds = &[&staking_seeds[..]];
@@ -214,11 +244,20 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, GoLive<'info>>) -> Result<(
     // 4. Create lock
     accs.create_lock_escrow(staking_signer_seeds)?;
 
-    msg!("5");
-    // 5. Lock tokens
-    accs.payer_pool_lp.reload()?;
-    let lp_amount = accs.payer_pool_lp.amount;
+    msg!("5.1");
+    // 5.1 Create escrow ata
+    accs.create_escrow_vault()?;
 
+    msg!("5.2");
+    // 5.2 Lock tokens
+
+    let lp_amount = {
+        let account_data = accs.payer_pool_lp.try_borrow_data()?;
+        let mut account_data_slice: &[u8] = &account_data;
+        let token_acc = TokenAccount::try_deserialize(&mut account_data_slice)?;
+        token_acc.amount
+    };
+    msg!("5.3");
     accs.lock(lp_amount, staking_signer_seeds)?;
 
     msg!("6");

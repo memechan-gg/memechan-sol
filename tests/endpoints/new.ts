@@ -59,7 +59,9 @@ export function test() {
       });
 
       const tx = new Transaction().add(createLUTix, extendIxs);
-      const txDig = provider.connection.sendTransaction(tx, [adminSigner]);
+      const txDig = await provider.connection.sendTransaction(tx, [
+        adminSigner,
+      ]);
       console.log(
         LUTaddr,
         getLUTPDA({
@@ -75,6 +77,7 @@ export function test() {
       await airdrop(user.publicKey);
 
       const boundPool = await BoundPoolWrapper.new();
+      await sleep(100);
       console.log(
         await memechan.account.boundPool.fetch(boundPool.bpClient.id)
       );

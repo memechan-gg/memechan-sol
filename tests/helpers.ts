@@ -45,6 +45,7 @@ export const QUOTE_MINT = new PublicKey(
 );
 
 export const LUTSLOT: number = 2;
+export const LUT2SLOT: number = 20;
 
 export function getSendAndConfirmTransactionMethod({
   connection,

@@ -21,16 +21,14 @@ mainnet = []
 [dependencies]
 num-integer = "0.1.46"
 solana-program = "1.16.25"
-anchor-lang = { version = "0.28.0" }
-anchor-spl = { version = "0.28.0", features = ["metadata"] }
+anchor-lang = { version = "0.29.0" }
+anchor-spl = { version = "0.29.0", features = ["metadata"] }
 uint = "0.9.5"
 # serum_dex = { git = "https://github.com/openbook-dex/program.git", features = ["no-entrypoint"] }
 bytemuck = "*"
 spl-math = { version = "0.2.0", features = ["no-entrypoint"] }
-mpl-token-metadata = "1.11.0"
-dynamic-amm = { git = "https://github.com/mercurial-finance/mercurial-dynamic-amm-sdk.git", features = ["cpi"] }
-dynamic-vault = { git = "https://github.com/mercurial-finance/mercurial-dynamic-amm-sdk.git", features = ["cpi"] }
-
+dynamic-amm = { path = "../../../mercurial-dynamic-amm-sdk/programs/dynamic-amm", features = ["cpi"] }
+dynamic-vault = { path = "../../../mercurial-dynamic-amm-sdk/programs/dynamic-vault", features = ["cpi"] }
 
 [dev-dependencies]
 csv = "1.1"
