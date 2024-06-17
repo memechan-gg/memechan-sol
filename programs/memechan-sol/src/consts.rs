@@ -26,7 +26,6 @@ pub const DEFAULT_LINEAR: i64 = 1800; // 0.5 hours;
 #[cfg(feature = "mainnet")]
 pub const DEFAULT_LINEAR: i64 = 604_800; // 7 days;
 
-
 // Raydium seeds
 /// Suffix for amm authority seed
 pub const AUTHORITY_AMM: &'static [u8] = b"amm authority";
@@ -58,14 +57,6 @@ pub const OPENBOOK_PROGRAM_ID: Pubkey =
 #[cfg(feature = "mainnet")]
 pub const OPENBOOK_PROGRAM_ID: Pubkey =
     solana_program::pubkey!("srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX"); // Mainnet
-
-#[cfg(not(feature = "mainnet"))]
-pub const SLERF_MINT: Pubkey =
-    solana_program::pubkey!("HX2pp5za2aBkrA5X5iTioZXcrpWb2q9DiaeWPW3qKMaw"); // Devnet - can use any
-
-#[cfg(feature = "mainnet")]
-pub const SLERF_MINT: Pubkey =
-    solana_program::pubkey!("7BgBvyjrZX1YKz4oh9mjb8ZScatkkwb8DzFx7LoiVkM3"); // Mainnet
 
 #[cfg(not(feature = "mainnet"))]
 pub const ADMIN_KEY: Pubkey =

@@ -1,6 +1,6 @@
 use crate::consts::{
     DEFAULT_MAX_M, DEFAULT_MAX_M_LP, DEFAULT_PRICE_FACTOR, FEE_KEY, MAX_MEME_TOKENS,
-    MAX_TICKET_TOKENS, MEME_TOKEN_DECIMALS, SLERF_MINT,
+    MAX_TICKET_TOKENS, MEME_TOKEN_DECIMALS,
 };
 use crate::err;
 use crate::models::bound::{compute_alpha_abs, compute_beta, BoundPool, Config, Decimals};
@@ -43,14 +43,10 @@ pub struct NewPool<'info> {
             @ err::acc("Quote vault must not have delegate"),
     )]
     pub quote_vault: Account<'info, TokenAccount>,
-    #[account(
-        constraint = quote_mint.key() == SLERF_MINT
-            @ err::acc("Quote mint should be the SLERF mint")
-    )]
     pub quote_mint: Account<'info, Mint>,
     #[account(
         constraint = fee_quote_vault.mint == quote_mint.key()
-            @ err::acc("Fee quote vault must be of SLERF mint"),
+            @ err::acc("Fee quote vault must be of quote mint"),
         constraint = fee_quote_vault.owner == FEE_KEY
             @ err::acc("Fee quote vault authority must match admin"),
         constraint = fee_quote_vault.close_authority == COption::None
