@@ -14,7 +14,7 @@ use anchor_lang::solana_program::program_option::COption;
 use anchor_spl::token::{self, Mint, Token, TokenAccount};
 
 #[derive(Accounts)]
-pub struct NewPool<'info> {
+pub struct NewPoolMemeQuote<'info> {
     #[account(mut)]
     pub sender: Signer<'info>,
     #[account(
@@ -69,9 +69,9 @@ pub struct NewPool<'info> {
     )]
     pub meme_vault: Account<'info, TokenAccount>,
     #[account(
-        constraint = target_config.token_mint == quote_mint.key()
+        constraint = quote_pool.meme_reserve.mint == quote_mint.key()
     )]
-    pub target_config: Account<'info, TargetConfig>,
+    pub quote_pool: Account<'info, BoundPool>,
     /// CHECK: pool_pda
     #[account(seeds = [BoundPool::SIGNER_PDA_PREFIX, pool.key().as_ref()], bump)]
     pub pool_signer: AccountInfo<'info>,
@@ -79,7 +79,7 @@ pub struct NewPool<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-impl<'info> NewPool<'info> {
+impl<'info> NewPoolMemeQuote<'info> {
     fn mint_meme_tokens(&self) -> CpiContext<'_, '_, '_, 'info, token::MintTo<'info>> {
         let cpi_accounts = token::MintTo {
             mint: self.meme_mint.to_account_info(),
@@ -92,7 +92,7 @@ impl<'info> NewPool<'info> {
     }
 }
 
-pub fn handle(ctx: Context<NewPool>) -> Result<()> {
+pub fn handle(ctx: Context<NewPoolMemeQuote>, token_target_amount: u64) -> Result<()> {
     let accs = ctx.accounts;
 
     if accs.meme_mint.supply != 0 {
@@ -126,7 +126,7 @@ pub fn handle(ctx: Context<NewPool>) -> Result<()> {
     };
 
     let mint_decimals = 10_u64.checked_pow(accs.quote_mint.decimals as u32).unwrap();
-    let gamma_s = (accs.target_config.token_target_amount / mint_decimals) as u128;
+    let gamma_s = (token_target_amount / mint_decimals) as u128;
     let gamma_m = DEFAULT_MAX_M;
     let omega_m = DEFAULT_MAX_M_LP;
     let price_factor = DEFAULT_PRICE_FACTOR;

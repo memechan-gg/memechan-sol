@@ -52,6 +52,7 @@ pub enum AmmError {
     InvalidStatus,
     CantUnstakeBeforeCliff,
     NoFeesToAdd,
+    NonZeroMintSupply,
 }
 
 #[allow(dead_code)]

@@ -22,6 +22,13 @@ pub mod memechan_sol {
         new_pool::handle(ctx)
     }
 
+    pub fn new_pool_meme_quote(
+        ctx: Context<NewPoolMemeQuote>,
+        token_target_amount: u64,
+    ) -> Result<()> {
+        new_pool_meme_quote::handle(ctx, token_target_amount)
+    }
+
     pub fn create_metadata(
         ctx: Context<CreateMetadata>,
         name: String,
@@ -59,7 +66,7 @@ pub mod memechan_sol {
         ctx: Context<SwapCoinY>,
         coin_in_amount: u64,
         coin_x_min_value: u64,
-        ticket_number: u64
+        ticket_number: u64,
     ) -> Result<()> {
         swap_y::handle(ctx, coin_in_amount, coin_x_min_value, ticket_number)
     }
@@ -113,7 +120,10 @@ pub mod memechan_sol {
         withdraw_admin_fees::handle(ctx)
     }
 
-    pub fn increase_vesting(ctx: Context<IncreaseVestingTime>, vesting_ts_increase: u64) -> Result<()> {
+    pub fn increase_vesting(
+        ctx: Context<IncreaseVestingTime>,
+        vesting_ts_increase: u64,
+    ) -> Result<()> {
         increase_vesting_time::handle(ctx, vesting_ts_increase)
     }
 }
