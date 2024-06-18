@@ -3,9 +3,9 @@ use solana_program::pubkey::Pubkey;
 pub const MEME_TOKEN_DECIMALS: u64 = 1_000_000;
 pub const WSOL_DECIMALS: u64 = 1_000_000_000;
 
-pub const DEFAULT_PRICE_FACTOR: u64 = 2;
-pub const DEFAULT_MAX_M_LP: u128 = 500_000_000_000_000;
-pub const DEFAULT_MAX_M: u128 = 500_000_000_000_000;
+pub const DEFAULT_PRICE_FACTOR: u64 = 1;
+pub const DEFAULT_MAX_M_LP: u128 = 450_000_000_000_000;
+pub const DEFAULT_MAX_M: u128 = 550_000_000_000_000;
 pub const MAX_MEME_TOKENS: u128 = DEFAULT_MAX_M_LP + DEFAULT_MAX_M;
 
 pub const DECIMALS_S: u128 = 1_000_000_000;
