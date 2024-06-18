@@ -24,11 +24,7 @@ export const client = new MemechanClient({
 });
 
 export const FEE_VAULT = new PublicKey(
-  "75q3G81vDnyzfwK87GiPxAjAAYytYotqaTdTw3vqWMnp"
-);
-
-export const CPMM = new PublicKey(
-  "CPMDWBwJDtYax9qW7AyRuVC19Cc4L4Vcy4n2BHAbHkCW"
+  "HiUyuwe4Uezuqq4mhGqugdzVQT3mA3ZzBQsUW2x1H3Ri"
 );
 
 export const DUMMY_TOKEN_METADATA = {

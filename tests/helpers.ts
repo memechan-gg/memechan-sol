@@ -41,7 +41,7 @@ export const adminSigner = Keypair.fromSecretKey(
 );
 
 export const QUOTE_MINT = new PublicKey(
-  "HX2pp5za2aBkrA5X5iTioZXcrpWb2q9DiaeWPW3qKMaw"
+  "So11111111111111111111111111111111111111112"
 );
 
 export const LUTSLOT: number = 2;

@@ -12,7 +12,7 @@ import { client } from "./common";
 import { MEMECHAN_QUOTE_TOKEN } from "./sol-sdk/config/config";
 
 export class TargetConfigWrapper {
-  static async new(target_amt: number = 40_000_000_000_000) {
+  static async new(target_amt: number = 90_000_000_000) {
     const tcdata = await memechan.account.targetConfig.fetchNullable(
       TargetConfig.findTargetConfigPda(QUOTE_MINT, memechan.programId)
     );

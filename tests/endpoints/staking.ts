@@ -11,7 +11,7 @@ import {
   provider,
   sleep,
 } from "../helpers";
-import { Keypair } from "@solana/web3.js";
+import { Keypair, Transaction } from "@solana/web3.js";
 import {
   createWrappedNativeAccount,
   createAssociatedTokenAccount,
@@ -19,9 +19,11 @@ import {
   getOrCreateAssociatedTokenAccount,
   getAssociatedTokenAddress,
   getAssociatedTokenAddressSync,
+  NATIVE_MINT,
 } from "@solana/spl-token";
 import { associatedAddress } from "@coral-xyz/anchor/dist/cjs/utils/token";
 import BigNumber from "bignumber.js";
+import { wrapSOLInstruction } from "@mercurial-finance/vault-sdk/dist/cjs/src/vault/utils";
 
 export function test() {
   describe("staking", () => {
@@ -108,7 +110,23 @@ export function test() {
         QUOTE_MINT,
         payer.publicKey
       );
-      await mintQuote(addr.address);
+      console.log("-1");
+      if (QUOTE_MINT.equals(NATIVE_MINT)) {
+        console.log("0");
+        const tx = new Transaction();
+        tx.add(
+          ...wrapSOLInstruction(
+            payer.publicKey,
+            addr.address,
+            new BN(100_000_000_000)
+          )
+        );
+        await provider.connection.sendTransaction(tx, [payer], {
+          skipPreflight: true,
+        });
+      } else {
+        await mintQuote(addr.address);
+      }
 
       console.log("1");
       await sleep(1000);
@@ -119,21 +137,21 @@ export function test() {
         await pool.swap_y({
           user: users[0],
           memeTokensOut: new BN(1),
-          quoteTokensIn: new BN(6060 * 1e9),
+          quoteTokensIn: new BN(20 * 1e9),
         })
       );
       tickets.push(
         await pool.swap_y({
           user: users[1],
           memeTokensOut: new BN(1),
-          quoteTokensIn: new BN(8080 * 1e9),
+          quoteTokensIn: new BN(30 * 1e9),
         })
       );
       tickets.push(
         await pool.swap_y({
           user: users[2],
           memeTokensOut: new BN(1),
-          quoteTokensIn: new BN(28180 * 1e9),
+          quoteTokensIn: new BN(50 * 1e9),
         })
       );
       sleep(500);
