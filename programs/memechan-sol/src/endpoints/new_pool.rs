@@ -1,6 +1,6 @@
 use crate::consts::{
-    DEFAULT_MAX_M, DEFAULT_MAX_M_LP, DEFAULT_PRICE_FACTOR, FEE_KEY, MAX_MEME_TOKENS,
-    MEME_TOKEN_DECIMALS,
+    DEFAULT_MAX_M, DEFAULT_MAX_M_LP, DEFAULT_PRICE_FACTOR, DEFAULT_PRICE_FACTOR_DENOMINATOR,
+    FEE_KEY, MAX_MEME_TOKENS, MEME_TOKEN_DECIMALS,
 };
 use crate::err;
 use crate::models::bound::{compute_alpha_abs, compute_beta, BoundPool, Config, Decimals};
@@ -128,17 +128,32 @@ pub fn handle(ctx: Context<NewPool>) -> Result<()> {
     let gamma_s = (accs.target_config.token_target_amount / mint_decimals) as u128;
     let gamma_m = DEFAULT_MAX_M;
     let omega_m = DEFAULT_MAX_M_LP;
-    let price_factor = DEFAULT_PRICE_FACTOR;
+    let price_factor_num = DEFAULT_PRICE_FACTOR;
+    let price_factor_denom = DEFAULT_PRICE_FACTOR_DENOMINATOR;
 
-    let (alpha_abs, decimals) = compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor)?;
+    let (alpha_abs, decimals) = compute_alpha_abs(
+        gamma_s,
+        gamma_m,
+        omega_m,
+        price_factor_num,
+        price_factor_denom,
+    )?;
 
     pool.config = Config {
         alpha_abs,
-        beta: compute_beta(gamma_s, gamma_m, omega_m, price_factor, decimals)?,
+        beta: compute_beta(
+            gamma_s,
+            gamma_m,
+            omega_m,
+            price_factor_num,
+            price_factor_denom,
+            decimals,
+        )?,
         gamma_s: gamma_s as u64,
         gamma_m: gamma_m as u64,
         omega_m: omega_m as u64,
-        price_factor,
+        price_factor_num,
+        price_factor_denom,
         decimals: Decimals {
             alpha: decimals,
             beta: decimals,
