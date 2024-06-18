@@ -1,4 +1,4 @@
-use crate::consts::{MAX_TICKET_TOKENS, MEME_TOKEN_DECIMALS};
+use crate::consts::DEFAULT_MAX_M;
 use crate::models::staking::StakingPool;
 use crate::models::OpenBook;
 use crate::raydium;
@@ -216,7 +216,7 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, GoLive<'info>>, nonce: u8) 
 
     // 2. Split MEME balance amounts into 80/20
     let meme_supply = accs.pool_meme_vault.amount;
-    let meme_supply_80 = MAX_TICKET_TOKENS * MEME_TOKEN_DECIMALS;
+    let meme_supply_80 = DEFAULT_MAX_M as u64;
 
     let amm_meme_balance = meme_supply.checked_sub(meme_supply_80).unwrap();
 

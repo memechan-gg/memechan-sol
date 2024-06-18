@@ -1,6 +1,6 @@
 use crate::consts::{
     DEFAULT_MAX_M, DEFAULT_MAX_M_LP, DEFAULT_PRICE_FACTOR, FEE_KEY, MAX_MEME_TOKENS,
-    MAX_TICKET_TOKENS, MEME_TOKEN_DECIMALS,
+    MEME_TOKEN_DECIMALS,
 };
 use crate::err;
 use crate::models::bound::{compute_alpha_abs, compute_beta, BoundPool, Config, Decimals};
@@ -108,7 +108,7 @@ pub fn handle(ctx: Context<NewPool>) -> Result<()> {
 
     token::mint_to(
         accs.mint_meme_tokens().with_signer(signer_seeds),
-        MAX_MEME_TOKENS * MEME_TOKEN_DECIMALS,
+        MAX_MEME_TOKENS as u64,
     )
     .unwrap();
 
@@ -146,7 +146,7 @@ pub fn handle(ctx: Context<NewPool>) -> Result<()> {
         },
     };
 
-    pool.meme_reserve.tokens = MAX_TICKET_TOKENS * MEME_TOKEN_DECIMALS;
+    pool.meme_reserve.tokens = DEFAULT_MAX_M as u64;
     pool.meme_reserve.mint = accs.meme_mint.key();
     pool.meme_reserve.vault = accs.meme_vault.key();
     pool.locked = false;
