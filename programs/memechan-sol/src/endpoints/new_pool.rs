@@ -1,6 +1,6 @@
 use crate::consts::{
     DEFAULT_MAX_M, DEFAULT_MAX_M_LP, DEFAULT_PRICE_FACTOR, FEE_KEY, MAX_MEME_TOKENS,
-    MAX_TICKET_TOKENS, MEME_TOKEN_DECIMALS, SLERF_MINT,
+    MEME_TOKEN_DECIMALS,
 };
 use crate::err;
 use crate::models::bound::{compute_alpha_abs, compute_beta, BoundPool, Config, Decimals};
@@ -43,14 +43,10 @@ pub struct NewPool<'info> {
             @ err::acc("Quote vault must not have delegate"),
     )]
     pub quote_vault: Account<'info, TokenAccount>,
-    #[account(
-        constraint = quote_mint.key() == SLERF_MINT
-            @ err::acc("Quote mint should be the SLERF mint")
-    )]
     pub quote_mint: Account<'info, Mint>,
     #[account(
         constraint = fee_quote_vault.mint == quote_mint.key()
-            @ err::acc("Fee quote vault must be of SLERF mint"),
+            @ err::acc("Fee quote vault must be of quote mint"),
         constraint = fee_quote_vault.owner == FEE_KEY
             @ err::acc("Fee quote vault authority must match admin"),
         constraint = fee_quote_vault.close_authority == COption::None
@@ -112,7 +108,7 @@ pub fn handle(ctx: Context<NewPool>) -> Result<()> {
 
     token::mint_to(
         accs.mint_meme_tokens().with_signer(signer_seeds),
-        MAX_MEME_TOKENS * MEME_TOKEN_DECIMALS,
+        MAX_MEME_TOKENS as u64,
     )
     .unwrap();
 
@@ -150,7 +146,7 @@ pub fn handle(ctx: Context<NewPool>) -> Result<()> {
         },
     };
 
-    pool.meme_reserve.tokens = MAX_TICKET_TOKENS * MEME_TOKEN_DECIMALS;
+    pool.meme_reserve.tokens = DEFAULT_MAX_M as u64;
     pool.meme_reserve.mint = accs.meme_mint.key();
     pool.meme_reserve.vault = accs.meme_vault.key();
     pool.locked = false;

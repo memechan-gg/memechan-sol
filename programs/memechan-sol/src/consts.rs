@@ -2,12 +2,11 @@ use solana_program::pubkey::Pubkey;
 
 pub const MEME_TOKEN_DECIMALS: u64 = 1_000_000;
 pub const WSOL_DECIMALS: u64 = 1_000_000_000;
-pub const MAX_TICKET_TOKENS: u64 = 800_000_000;
-pub const MAX_MEME_TOKENS: u64 = 1_000_000_000;
 
-pub const DEFAULT_PRICE_FACTOR: u64 = 2;
-pub const DEFAULT_MAX_M_LP: u128 = 200_000_000_000_000;
-pub const DEFAULT_MAX_M: u128 = 800_000_000_000_000;
+pub const DEFAULT_PRICE_FACTOR: u64 = 1;
+pub const DEFAULT_MAX_M_LP: u128 = 450_000_000_000_000;
+pub const DEFAULT_MAX_M: u128 = 550_000_000_000_000;
+pub const MAX_MEME_TOKENS: u128 = DEFAULT_MAX_M_LP + DEFAULT_MAX_M;
 
 pub const DECIMALS_S: u128 = 1_000_000_000;
 
@@ -26,7 +25,6 @@ pub const DEFAULT_LINEAR: i64 = 1800; // 0.5 hours;
 #[cfg(feature = "mainnet")]
 pub const DEFAULT_LINEAR: i64 = 604_800; // 7 days;
 
-
 // Raydium seeds
 /// Suffix for amm authority seed
 pub const AUTHORITY_AMM: &'static [u8] = b"amm authority";
@@ -44,13 +42,6 @@ pub const PC_VAULT_ASSOCIATED_SEED: &'static [u8] = b"pc_vault_associated_seed";
 pub const LP_MINT_ASSOCIATED_SEED: &'static [u8] = b"lp_mint_associated_seed";
 /// Amm config seed
 pub const AMM_CONFIG_SEED: &'static [u8] = b"amm_config_account_seed";
-
-#[cfg(not(feature = "mainnet"))]
-pub const RAYDIUM_PROGRAM_ID: Pubkey =
-    solana_program::pubkey!("HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8"); // Devnet
-#[cfg(feature = "mainnet")]
-pub const RAYDIUM_PROGRAM_ID: Pubkey =
-    solana_program::pubkey!("675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8"); // Mainnet
 
 #[cfg(not(feature = "mainnet"))]
 pub const SLERF_MINT: Pubkey =

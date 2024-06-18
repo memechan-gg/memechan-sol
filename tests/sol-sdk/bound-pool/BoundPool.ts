@@ -426,7 +426,9 @@ export class BoundPoolClient {
     transactionV0.sign([payer, memeMintKeypair]);
     transaction.sign(payer, memeMintKeypair);
 
-    const luttxId = await client.connection.sendTransaction(transactionV0);
+    const luttxId = await client.connection.sendTransaction(transactionV0, {
+      skipPreflight: true,
+    });
     console.log(luttxId);
 
     console.debug(

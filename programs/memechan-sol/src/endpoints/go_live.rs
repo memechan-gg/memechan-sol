@@ -1,4 +1,3 @@
-use crate::consts::{MAX_TICKET_TOKENS, MEME_TOKEN_DECIMALS};
 use crate::models::staking::StakingPool;
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
@@ -224,11 +223,11 @@ pub fn handle(ctx: Context<GoLive>) -> Result<()> {
     // 1. Get Sol Supply
     let quote_supply = accs.staking_quote_vault.amount;
 
-    // 2. Split MEME balance amounts into 80/20
+    // 2. Split MEME balance amounts into predefined proportion
     let meme_supply = accs.staking_meme_vault.amount;
-    let meme_supply_80 = MAX_TICKET_TOKENS * MEME_TOKEN_DECIMALS;
+    let meme_supply_staking = accs.staking.stakes_total;
 
-    let amm_meme_balance = meme_supply.checked_sub(meme_supply_80).unwrap();
+    let amm_meme_balance = meme_supply.checked_sub(meme_supply_staking).unwrap();
 
     msg!("3");
     // 3. Initialize pool & Add liquidity to the pool
