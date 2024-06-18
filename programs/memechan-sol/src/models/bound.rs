@@ -173,13 +173,13 @@ pub fn compute_alpha_abs(
     gamma_s: u128,
     gamma_m: u128,
     omega_m: u128,
-    price_factor_mul: u64,
+    price_factor_num: u64,
     price_factor_denom: u64,
 ) -> Result<(u128, u128)> {
-    check_slope(gamma_m, omega_m, price_factor_mul, price_factor_denom)?;
+    check_slope(gamma_m, omega_m, price_factor_num, price_factor_denom)?;
 
     let left = omega_m
-        .checked_mul(price_factor_mul as u128)
+        .checked_mul(price_factor_num as u128)
         .checked_div(price_factor_denom as u128)
         .unwrap();
 
@@ -205,13 +205,13 @@ pub fn compute_alpha_abs_with_decimals(
     gamma_s: u128,
     gamma_m: u128,
     omega_m: u128,
-    price_factor: u64,
+    price_factor_num: u64,
     price_factor_denom: u64,
     decimals: u128,
 ) -> Result<u128> {
-    check_slope(gamma_m, omega_m, price_factor, price_factor_denom)?;
+    check_slope(gamma_m, omega_m, price_factor_num, price_factor_denom)?;
 
-    let left = omega_m * (price_factor as u128);
+    let left = omega_m * (price_factor_num as u128);
 
     let num = 2 * (gamma_m - left);
     let denom = gamma_s * gamma_s;
@@ -243,15 +243,15 @@ pub fn compute_beta(
     gamma_s: u128,
     gamma_m: u128,
     omega_m: u128,
-    price_factor: u64,
+    price_factor_num: u64,
     price_factor_denom: u64,
     beta_decimals: u128,
 ) -> Result<u128> {
-    check_intercept(gamma_m, omega_m, price_factor, price_factor_denom)?;
+    check_intercept(gamma_m, omega_m, price_factor_num, price_factor_denom)?;
 
     let left = 2 * gamma_m;
     let right = omega_m
-        .checked_mul(price_factor as u128)
+        .checked_mul(price_factor_num as u128)
         .checked_div(price_factor_denom as u128)
         .unwrap();
 
@@ -264,11 +264,11 @@ pub fn compute_beta(
 pub fn check_slope(
     gamma_m: u128,
     omega_m: u128,
-    price_factor_mul: u64,
+    price_factor_num: u64,
     price_factor_denom: u64,
 ) -> Result<()> {
     let pfo = omega_m
-        .checked_mul(price_factor_mul as u128)
+        .checked_mul(price_factor_num as u128)
         .checked_div(price_factor_denom as u128)
         .unwrap();
     if pfo >= gamma_m {
@@ -281,11 +281,11 @@ pub fn check_slope(
 pub fn check_intercept(
     gamma_m: u128,
     omega_m: u128,
-    price_factor: u64,
+    price_factor_num: u64,
     price_factor_denom: u64,
 ) -> Result<()> {
     let omp = omega_m
-        .checked_mul(price_factor as u128)
+        .checked_mul(price_factor_num as u128)
         .checked_div(price_factor_denom as u128)
         .unwrap();
     if 2 * gamma_m <= omp {

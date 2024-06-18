@@ -1,4 +1,4 @@
-use crate::consts::{FEE_KEY, MEME_TOKEN_DECIMALS};
+use crate::consts::FEE_KEY;
 use crate::err;
 use crate::err::AmmError;
 use crate::libraries::MulDiv;
