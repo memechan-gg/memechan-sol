@@ -21,6 +21,7 @@ import {
   getAssociatedTokenAddressSync,
 } from "@solana/spl-token";
 import { associatedAddress } from "@coral-xyz/anchor/dist/cjs/utils/token";
+import BigNumber from "bignumber.js";
 
 export function test() {
   describe("staking", () => {
@@ -175,7 +176,9 @@ export function test() {
       const fetchedTicket = await tickets[0].fetch();
       console.log(
         "ticket % ",
-        fetchedTicket.amount.toNumber() / (8 * 10 ** 14)
+        BigNumber(fetchedTicket.amount.toString())
+          .div(BigNumber(stakingInfo.stakesTotal.toString()))
+          .toString()
       );
     });
   });
