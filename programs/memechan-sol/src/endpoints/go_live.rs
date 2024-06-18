@@ -1,4 +1,3 @@
-use crate::consts::DEFAULT_MAX_M;
 use crate::models::staking::StakingPool;
 use crate::models::OpenBook;
 use crate::raydium;
@@ -214,11 +213,11 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, GoLive<'info>>, nonce: u8) 
     // 1. Get Sol Supply
     let quote_supply = accs.pool_quote_vault.amount;
 
-    // 2. Split MEME balance amounts into 80/20
+    // 2. Split MEME balance amounts into predefined proportion
     let meme_supply = accs.pool_meme_vault.amount;
-    let meme_supply_80 = DEFAULT_MAX_M as u64;
+    let meme_supply_staking = accs.staking.stakes_total;
 
-    let amm_meme_balance = meme_supply.checked_sub(meme_supply_80).unwrap();
+    let amm_meme_balance = meme_supply.checked_sub(meme_supply_staking).unwrap();
 
     msg!("3");
     // 3. Initialize pool & Add liquidity to the pool
