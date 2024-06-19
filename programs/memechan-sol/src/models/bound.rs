@@ -533,8 +533,9 @@ mod tests {
         let gamma_m = 300_000;
         let omega_m = 200_000;
         let price_factor = 1;
+        let price_factor_denom = 1;
 
-        let result = compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor);
+        let result = compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor, price_factor_denom);
         assert!(result.is_ok());
     }
 
@@ -546,8 +547,9 @@ mod tests {
         let gamma_m = 30_000;
         let omega_m = 20_000;
         let price_factor = 1;
+        let price_factor_denom = 1;
 
-        let result = compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor);
+        let result = compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor, price_factor_denom);
         assert!(result.is_err());
 
         // === Positive Slope ===
@@ -556,7 +558,7 @@ mod tests {
         let gamma_m = 300_000;
         let omega_m = 200_000;
         let price_factor = 20;
-        let result = compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor);
+        let result = compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor, price_factor_denom);
         assert!(result.is_err());
 
         let result = compute_beta(
@@ -564,6 +566,7 @@ mod tests {
             gamma_m,
             omega_m,
             price_factor,
+            price_factor_denom,
             DEFAULT_DECIMALS_BETA,
         );
         assert!(result.is_err());
@@ -599,6 +602,7 @@ mod tests {
         let gamma_m = 900000000000000;
         let omega_m = 200000000000000;
         let price_factor = 2;
+        let price_factor_denom = 1;
 
         let actual_alpha = gamma_s
             .iter()
@@ -608,6 +612,7 @@ mod tests {
                     gamma_m,
                     omega_m,
                     price_factor,
+                    price_factor_denom,
                     DEFAULT_DECIMALS_ALPHA,
                 )
             })
@@ -652,6 +657,7 @@ mod tests {
                     gamma_m,
                     omega_m,
                     price_factor,
+                    price_factor_denom,
                     DEFAULT_DECIMALS_BETA,
                 )
             })
@@ -719,6 +725,7 @@ mod tests {
         let gamma_m = 900000000000000;
         let omega_m = 200000000000000;
         let price_factor = 1;
+        let price_factor_denom = 1;
 
         let actual_alpha = gamma_s
             .iter()
@@ -728,6 +735,7 @@ mod tests {
                     gamma_m,
                     omega_m,
                     price_factor,
+                    price_factor_denom,
                     DEFAULT_DECIMALS_ALPHA,
                 )
             })
@@ -772,6 +780,7 @@ mod tests {
                     gamma_m,
                     omega_m,
                     price_factor,
+                    price_factor_denom,
                     DEFAULT_DECIMALS_BETA,
                 )
             })
@@ -817,16 +826,31 @@ mod tests {
         let gamma_s: u128 = 30_000;
         let gamma_m: u128 = 900_000_000_000_000;
         let omega_m: u128 = 200_000_000_000_000;
-        let price_factor = 2;
+        let price_factor_num = 2;
+        let price_factor_denom = 1;
 
-        let (alpha, alpha_decimals) = compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor)?;
-        let beta = compute_beta(gamma_s, gamma_m, omega_m, price_factor, alpha_decimals)?;
+        let (alpha, alpha_decimals) = compute_alpha_abs(
+            gamma_s,
+            gamma_m,
+            omega_m,
+            price_factor_num,
+            price_factor_denom,
+        )?;
+        let beta = compute_beta(
+            gamma_s,
+            gamma_m,
+            omega_m,
+            price_factor_num,
+            price_factor_denom,
+            alpha_decimals,
+        )?;
 
         let pool = BoundPool {
             config: Config {
                 alpha_abs: alpha,
                 beta,
-                price_factor,
+                price_factor_num,
+                price_factor_denom,
                 gamma_s: gamma_s as u64,
                 gamma_m: gamma_m as u64,
                 omega_m: omega_m as u64,
@@ -860,16 +884,31 @@ mod tests {
         let gamma_s: u128 = 10;
         let gamma_m: u128 = 900_000_000_000_000;
         let omega_m: u128 = 200_000_000_000_000;
-        let price_factor = 2;
+        let price_factor_num = 2;
+        let price_factor_denom = 1;
 
-        let (alpha, alpha_decimals) = compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor)?;
-        let beta = compute_beta(gamma_s, gamma_m, omega_m, price_factor, alpha_decimals)?;
+        let (alpha, alpha_decimals) = compute_alpha_abs(
+            gamma_s,
+            gamma_m,
+            omega_m,
+            price_factor_num,
+            price_factor_denom,
+        )?;
+        let beta = compute_beta(
+            gamma_s,
+            gamma_m,
+            omega_m,
+            price_factor_num,
+            price_factor_denom,
+            alpha_decimals,
+        )?;
 
         let pool = BoundPool {
             config: Config {
                 alpha_abs: alpha,
                 beta,
-                price_factor,
+                price_factor_num,
+                price_factor_denom,
                 gamma_s: gamma_s as u64,
                 gamma_m: gamma_m as u64,
                 omega_m: omega_m as u64,
@@ -903,16 +942,31 @@ mod tests {
         let gamma_s: u128 = 1_000;
         let gamma_m: u128 = 800_000_000_000_000;
         let omega_m: u128 = 200_000_000_000_000;
-        let price_factor = 2;
+        let price_factor_num = 2;
+        let price_factor_denom = 1;
 
-        let (alpha, alpha_decimals) = compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor)?;
-        let beta = compute_beta(gamma_s, gamma_m, omega_m, price_factor, alpha_decimals)?;
+        let (alpha, alpha_decimals) = compute_alpha_abs(
+            gamma_s,
+            gamma_m,
+            omega_m,
+            price_factor_num,
+            price_factor_denom,
+        )?;
+        let beta = compute_beta(
+            gamma_s,
+            gamma_m,
+            omega_m,
+            price_factor_num,
+            price_factor_denom,
+            alpha_decimals,
+        )?;
 
         let pool = BoundPool {
             config: Config {
                 alpha_abs: alpha,
                 beta,
-                price_factor,
+                price_factor_num,
+                price_factor_denom,
                 gamma_s: gamma_s as u64,
                 gamma_m: gamma_m as u64,
                 omega_m: omega_m as u64,
@@ -945,18 +999,33 @@ mod tests {
         let gamma_s: u128 = 1000;
         let gamma_m: u128 = 1643350384685548;
         let omega_m: u128 = 100000000;
-        let price_factor = 1;
+        let price_factor_num = 1;
+        let price_factor_denom = 1;
         let delta_m = 1643350384685596;
         let s_b = 1000000000000 as u64;
 
-        let (alpha, alpha_decimals) = compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor)?;
-        let beta = compute_beta(gamma_s, gamma_m, omega_m, price_factor, alpha_decimals)?;
+        let (alpha, alpha_decimals) = compute_alpha_abs(
+            gamma_s,
+            gamma_m,
+            omega_m,
+            price_factor_num,
+            price_factor_denom,
+        )?;
+        let beta = compute_beta(
+            gamma_s,
+            gamma_m,
+            omega_m,
+            price_factor_num,
+            price_factor_denom,
+            alpha_decimals,
+        )?;
 
         let pool = BoundPool {
             config: Config {
                 alpha_abs: alpha,
                 beta,
-                price_factor,
+                price_factor_num,
+                price_factor_denom,
                 gamma_s: gamma_s as u64,
                 gamma_m: gamma_m as u64,
                 omega_m: omega_m as u64,
@@ -981,18 +1050,33 @@ mod tests {
         let gamma_s: u128 = 1000000;
         let gamma_m: u128 = 51643300384685548;
         let omega_m: u128 = 100000000;
-        let price_factor = 1;
+        let price_factor_num = 1;
+        let price_factor_denom = 1;
         let delta_m = 103234957369087;
-        let s_b = 1000000000000 as u64;
+        let s_b = 1000000000000u64;
 
-        let (alpha, alpha_decimals) = compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor)?;
-        let beta = compute_beta(gamma_s, gamma_m, omega_m, price_factor, alpha_decimals)?;
+        let (alpha, alpha_decimals) = compute_alpha_abs(
+            gamma_s,
+            gamma_m,
+            omega_m,
+            price_factor_num,
+            price_factor_denom,
+        )?;
+        let beta = compute_beta(
+            gamma_s,
+            gamma_m,
+            omega_m,
+            price_factor_num,
+            price_factor_denom,
+            alpha_decimals,
+        )?;
 
         let pool = BoundPool {
             config: Config {
                 alpha_abs: alpha,
                 beta,
-                price_factor,
+                price_factor_num,
+                price_factor_denom,
                 gamma_s: gamma_s as u64,
                 gamma_m: gamma_m as u64,
                 omega_m: omega_m as u64,
@@ -1018,11 +1102,20 @@ mod tests {
         let gamma_m: u128 = 1643350384685548;
         let omega_m: u128 = 100000000;
         let price_factor = 1;
+        let price_factor_denom = 1;
         let delta_m = 1640068607501974;
-        let s_b = 1001000000000 as u64;
+        let s_b = 1001000000000u64;
 
-        let (alpha, alpha_decimals) = compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor)?;
-        let beta = compute_beta(gamma_s, gamma_m, omega_m, price_factor, alpha_decimals)?;
+        let (alpha, alpha_decimals) =
+            compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor, price_factor_denom)?;
+        let beta = compute_beta(
+            gamma_s,
+            gamma_m,
+            omega_m,
+            price_factor,
+            price_factor_denom,
+            alpha_decimals,
+        )?;
 
         let delta_s = delta_s_strategy(
             alpha,
@@ -1043,12 +1136,26 @@ mod tests {
         let gamma_s: u128 = 1055;
         let gamma_m: u128 = 1643350384685548;
         let omega_m: u128 = 100000000;
-        let price_factor = 1;
+        let price_factor_num = 1;
+        let price_factor_denom = 1;
         let delta_m = 1638884051572039;
-        let s_b = 1000000000000 as u64;
+        let s_b = 1000000000000u64;
 
-        let (alpha, alpha_decimals) = compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor)?;
-        let beta = compute_beta(gamma_s, gamma_m, omega_m, price_factor, alpha_decimals)?;
+        let (alpha, alpha_decimals) = compute_alpha_abs(
+            gamma_s,
+            gamma_m,
+            omega_m,
+            price_factor_num,
+            price_factor_denom,
+        )?;
+        let beta = compute_beta(
+            gamma_s,
+            gamma_m,
+            omega_m,
+            price_factor_num,
+            price_factor_denom,
+            alpha_decimals,
+        )?;
 
         let delta_s = delta_s_strategy(
             alpha,
@@ -1070,11 +1177,20 @@ mod tests {
         let gamma_m: u128 = 1693300384685548;
         let omega_m: u128 = 100000000;
         let price_factor = 1;
+        let price_factor_denom = 1;
         let delta_m = 105399683490709;
-        let s_b = 1000000000000 as u64;
+        let s_b = 1000000000000u64;
 
-        let (alpha, alpha_decimals) = compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor)?;
-        let beta = compute_beta(gamma_s, gamma_m, omega_m, price_factor, alpha_decimals)?;
+        let (alpha, alpha_decimals) =
+            compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor, price_factor_denom)?;
+        let beta = compute_beta(
+            gamma_s,
+            gamma_m,
+            omega_m,
+            price_factor,
+            price_factor_denom,
+            alpha_decimals,
+        )?;
 
         let delta_s1 = delta_s_strategy(
             alpha,
@@ -1096,11 +1212,20 @@ mod tests {
         let gamma_m: u128 = 501643300384685548;
         let omega_m: u128 = 100000000;
         let price_factor = 1;
+        let price_factor_denom = 1;
         let delta_m = 317216881990209;
         let s_b = 1000000000000 as u64;
 
-        let (alpha, alpha_decimals) = compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor)?;
-        let beta = compute_beta(gamma_s, gamma_m, omega_m, price_factor, alpha_decimals)?;
+        let (alpha, alpha_decimals) =
+            compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor, price_factor_denom)?;
+        let beta = compute_beta(
+            gamma_s,
+            gamma_m,
+            omega_m,
+            price_factor,
+            price_factor_denom,
+            alpha_decimals,
+        )?;
 
         let delta_s1 = delta_s_strategy(
             alpha,
@@ -1111,7 +1236,7 @@ mod tests {
             delta_m,
         );
 
-        assert!(delta_s1.unwrap() == 1000000000000);
+        assert_eq!(delta_s1.unwrap(), 1000000000000);
 
         Ok(())
     }
@@ -1122,11 +1247,20 @@ mod tests {
         let gamma_m: u128 = 621872196659868452;
         let omega_m: u128 = 1643300384685548;
         let price_factor = 1;
-        let delta_m = 392724664528292 as u128;
-        let s_b = 1000000000000 as u64;
+        let price_factor_denom = 1;
+        let delta_m = 392724664528292u128;
+        let s_b = 1000000000000u64;
 
-        let (alpha, alpha_decimals) = compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor)?;
-        let beta = compute_beta(gamma_s, gamma_m, omega_m, price_factor, alpha_decimals)?;
+        let (alpha, alpha_decimals) =
+            compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor, price_factor_denom)?;
+        let beta = compute_beta(
+            gamma_s,
+            gamma_m,
+            omega_m,
+            price_factor,
+            price_factor_denom,
+            alpha_decimals,
+        )?;
 
         let delta_s1 = delta_s_strategy(
             alpha,
@@ -1137,7 +1271,7 @@ mod tests {
             delta_m,
         );
 
-        assert!(delta_s1.unwrap() == 1000000000000);
+        assert_eq!(delta_s1.unwrap(), 1000000000000);
 
         Ok(())
     }
@@ -1218,28 +1352,30 @@ mod tests {
             omega_m in 100_000_000_u128..900_000_000_000_000_000_u128,
             price_factor in 1..4u128
         ) {
-            let price_factor = price_factor as u64;
+            let price_factor_num = price_factor as u64;
+            let price_factor_denom = 1;
 
-            if check_slope_(gamma_m, omega_m, price_factor) == false {
+            if check_slope_(gamma_m, omega_m, price_factor_num) == false {
                 return Ok(())
             }
 
-            if check_intercept_(gamma_m, omega_m, price_factor) == false {
+            if check_intercept_(gamma_m, omega_m, price_factor_num) == false {
                 return Ok(())
             }
 
-            if check_scale_and_gamma_s_rel(gamma_s, gamma_m, omega_m, price_factor) == false {
+            if check_scale_and_gamma_s_rel(gamma_s, gamma_m, omega_m, price_factor_num) == false {
                 return Ok(())
             }
 
-            let (alpha, alpha_decimals) = compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor)?;
-            let beta = compute_beta(gamma_s, gamma_m, omega_m, price_factor, alpha_decimals)?;
+            let (alpha, alpha_decimals) = compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor_num,price_factor_denom)?;
+            let beta = compute_beta(gamma_s, gamma_m, omega_m, price_factor_num, price_factor_denom,alpha_decimals)?;
 
             let pool = BoundPool {
                 config: Config {
                     alpha_abs: alpha,
                     beta,
-                    price_factor,
+                    price_factor_num,
+                    price_factor_denom,
                     gamma_s: gamma_s as u64,
                     gamma_m: gamma_m as u64,
                     omega_m: omega_m as u64,
@@ -1266,7 +1402,7 @@ mod tests {
                         gamma_s,
                         gamma_m,
                         omega_m,
-                        price_factor
+                        price_factor_num
                     );
 
                     panic!();
@@ -1286,7 +1422,7 @@ mod tests {
                         gamma_s,
                         gamma_m,
                         omega_m,
-                        price_factor
+                        price_factor_num
                     );
 
                     panic!();

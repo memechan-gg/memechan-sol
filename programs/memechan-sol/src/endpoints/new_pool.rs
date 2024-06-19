@@ -1,6 +1,6 @@
 use crate::consts::{
     DEFAULT_MAX_M, DEFAULT_MAX_M_LP, DEFAULT_PRICE_FACTOR, DEFAULT_PRICE_FACTOR_DENOMINATOR,
-    FEE_KEY, MAX_MEME_TOKENS, MEME_TOKEN_DECIMALS,
+    FEE_KEY, MAX_MEME_TOKENS,
 };
 use crate::err;
 use crate::models::bound::{compute_alpha_abs, compute_beta, BoundPool, Config, Decimals};

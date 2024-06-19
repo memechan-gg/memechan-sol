@@ -1,4 +1,4 @@
-use crate::consts::{FEE_KEY, MEME_TOKEN_DECIMALS};
+use crate::consts::FEE_KEY;
 use crate::err;
 use crate::err::AmmError;
 use crate::libraries::MulDiv;
@@ -248,12 +248,12 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, InitStakingPool<'info>>) ->
     staking.meme_vault = accs.staking_meme_vault.key();
     staking.meme_mint = accs.meme_mint.key();
     staking.quote_vault = accs.staking_quote_vault.key();
+    staking.quote_mint = accs.quote_mint.key();
     staking.stakes_total = accs.pool.config.gamma_m;
     staking.vesting_config = vesting::default_config();
     staking.fees_x_total = 0;
     staking.fees_y_total = 0;
-    staking.raydium_fees.last_cum_quote_fees = 0;
-    staking.raydium_fees.last_cum_meme_fees = 0;
+
     staking.pool = accs.pool.key();
 
     msg!("5");
