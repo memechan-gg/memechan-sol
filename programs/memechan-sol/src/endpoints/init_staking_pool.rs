@@ -86,9 +86,9 @@ pub struct InitStakingPool<'info> {
     #[account(
         mut,
         constraint = staking_meme_vault.owner == staking_pool_signer_pda.key()
-            @ err::acc("Staking meme vault authority must match staking pool pda"),
+            @ err::acc("Staking meme vault authority must match staking pool signer"),
         constraint = staking_meme_vault.mint == meme_mint.key()
-            @ err::acc("Staking meme vault must be of ticket mint"),
+            @ err::acc("Staking meme vault must be of meme mint"),
         constraint = staking_meme_vault.close_authority == COption::None
             @ err::acc("Staking meme vault must not have close authority"),
         constraint = staking_meme_vault.delegate == COption::None
@@ -98,7 +98,7 @@ pub struct InitStakingPool<'info> {
     #[account(
         mut,
         constraint = staking_quote_vault.owner == staking_pool_signer_pda.key()
-            @ err::acc("Staking quote vault authority must match staking pool pda"),
+            @ err::acc("Staking quote vault authority must match staking pool signer"),
         constraint = staking_quote_vault.mint == quote_mint.key()
             @ err::acc("Staking quote vault must be of ticket mint"),
         constraint = staking_quote_vault.close_authority == COption::None

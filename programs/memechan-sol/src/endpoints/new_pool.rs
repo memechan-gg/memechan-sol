@@ -27,16 +27,16 @@ pub struct NewPool<'info> {
     #[account(
         mut,
         constraint = meme_mint.mint_authority == COption::Some(pool_signer.key())
-            @ err::acc("meme mint authority must be the pool signer"),
+            @ err::acc("Meme mint authority must be the pool signer"),
         constraint = meme_mint.freeze_authority == COption::None
-            @ err::acc("meme mint mustn't have a freeze authority"),
+            @ err::acc("Meme mint mustn't have a freeze authority"),
     )]
     pub meme_mint: Account<'info, Mint>,
     #[account(
         constraint = quote_vault.mint == quote_mint.key()
-            @ err::acc("quote vault must be of ticket mint"),
+            @ err::acc("Quote vault must be of ticket mint"),
         constraint = quote_vault.owner == pool_signer.key()
-            @ err::acc("quote vault authority must match pool pda"),
+            @ err::acc("Quote vault authority must match the pool signer"),
         constraint = quote_vault.close_authority == COption::None
             @ err::acc("Quote vault must not have close authority"),
         constraint = quote_vault.delegate == COption::None
@@ -48,7 +48,7 @@ pub struct NewPool<'info> {
         constraint = fee_quote_vault.mint == quote_mint.key()
             @ err::acc("Fee quote vault must be of quote mint"),
         constraint = fee_quote_vault.owner == FEE_KEY
-            @ err::acc("Fee quote vault authority must match admin"),
+            @ err::acc("Fee quote vault authority must match fee key"),
         constraint = fee_quote_vault.close_authority == COption::None
             @ err::acc("Fee quote vault must not have close authority"),
         constraint = fee_quote_vault.delegate == COption::None
@@ -58,9 +58,9 @@ pub struct NewPool<'info> {
     #[account(
         mut,
         constraint = meme_vault.mint == meme_mint.key()
-            @ err::acc("admin ticket vault must be of ticket mint"),
+            @ err::acc("Meme vault must be of meme mint"),
         constraint = meme_vault.owner == pool_signer.key()
-            @ err::acc("Meme vault authority must match admin"),
+            @ err::acc("Meme vault authority must match the pool signer"),
         constraint = meme_vault.close_authority == COption::None
             @ err::acc("Meme vault must not have close authority"),
         constraint = meme_vault.delegate == COption::None
