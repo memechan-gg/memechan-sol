@@ -6,7 +6,6 @@ use crate::{
 use anchor_lang::prelude::*;
 use solana_program::pubkey::Pubkey;
 use spl_math::uint::U256;
-use std::cmp::max;
 use std::{cmp::min, mem};
 
 use super::{fees::Fees, Reserve, SwapAmount};
