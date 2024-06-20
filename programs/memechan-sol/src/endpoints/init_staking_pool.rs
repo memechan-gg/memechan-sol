@@ -1,4 +1,4 @@
-use crate::consts::FEE_KEY;
+use crate::consts::{FEE_KEY, MAX_TICKET_TOKENS, MEME_TOKEN_DECIMALS};
 use crate::err;
 use crate::err::AmmError;
 use crate::libraries::MulDiv;
@@ -264,7 +264,7 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, InitStakingPool<'info>>) ->
     staking.meme_vault = accs.staking_meme_vault.key();
     staking.meme_mint = accs.meme_mint.key();
     staking.quote_vault = accs.staking_quote_vault.key();
-    staking.stakes_total = accs.pool.config.gamma_m;
+    staking.stakes_total = MAX_TICKET_TOKENS * MEME_TOKEN_DECIMALS;
     staking.vesting_config = vesting::default_config();
     staking.fees_x_total = 0;
     staking.fees_y_total = 0;
