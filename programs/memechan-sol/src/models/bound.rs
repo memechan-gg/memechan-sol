@@ -6,6 +6,7 @@ use crate::{
 use anchor_lang::prelude::*;
 use solana_program::pubkey::Pubkey;
 use spl_math::uint::U256;
+use std::cmp::max;
 use std::{cmp::min, mem};
 
 use super::{fees::Fees, Reserve, SwapAmount};
@@ -37,7 +38,7 @@ pub struct Config {
     pub beta: u128,
     pub price_factor_num: u64,
     pub price_factor_denom: u64,
-    // In quote denomination
+    // In raw denomination
     pub gamma_s: u64,
     // In raw denomination
     pub gamma_m: u64, // DEFAULT_MAX_M * DECIMALS_M = 900_000_000_000_000
@@ -67,7 +68,7 @@ impl BoundPool {
 
         let p = &self.config;
 
-        let max_delta_s = (p.gamma_s * p.decimals.quote) - s_t0;
+        let max_delta_s = p.gamma_s - s_t0;
 
         let admin_fee_in = self.fees.get_fee_in_amount(delta_s).unwrap();
         let is_max = delta_s - admin_fee_in >= max_delta_s;
@@ -171,6 +172,7 @@ impl BoundPool {
 
 pub fn compute_alpha_abs(
     gamma_s: u128,
+    gamma_s_denom: u128,
     gamma_m: u128,
     omega_m: u128,
     price_factor_num: u64,
@@ -183,7 +185,7 @@ pub fn compute_alpha_abs(
         .checked_div(price_factor_denom as u128)
         .unwrap();
 
-    let num = 2 * (gamma_m - left);
+    let num = 2 * (gamma_m - left) * (gamma_s_denom * gamma_s_denom);
     let denom = gamma_s * gamma_s;
 
     if num <= denom {
@@ -241,6 +243,7 @@ pub fn compute_decimals(scale: u64) -> Result<u128> {
 
 pub fn compute_beta(
     gamma_s: u128,
+    gamma_s_denom: u128,
     gamma_m: u128,
     omega_m: u128,
     price_factor_num: u64,
@@ -255,7 +258,7 @@ pub fn compute_beta(
         .checked_div(price_factor_denom as u128)
         .unwrap();
 
-    let num = left - right;
+    let num = (left - right) * gamma_s_denom;
     let denom = gamma_s;
 
     Ok((num * beta_decimals) / denom)
@@ -298,8 +301,8 @@ pub fn check_intercept(
 fn compute_scale(num_: u128) -> u64 {
     let mut num = num_;
 
-    if num == 0 {
-        return 1;
+    return if num == 0 {
+        1
     } else {
         let mut scale = 1;
 
@@ -308,8 +311,8 @@ fn compute_scale(num_: u128) -> u64 {
             scale += 1;
         }
 
-        return scale;
-    }
+        scale
+    };
 }
 
 impl BoundPool {
