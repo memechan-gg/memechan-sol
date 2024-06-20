@@ -35,8 +35,7 @@ pub struct Decimals {
 pub struct Config {
     pub alpha_abs: u128, // |alpha|, because alpha is negative
     pub beta: u128,
-    pub price_factor_num: u64,
-    pub price_factor_denom: u64,
+    pub price_factor: u64,
     // In quote denomination
     pub gamma_s: u64,
     // In raw denomination
@@ -173,15 +172,11 @@ pub fn compute_alpha_abs(
     gamma_s: u128,
     gamma_m: u128,
     omega_m: u128,
-    price_factor_num: u64,
-    price_factor_denom: u64,
+    price_factor: u64,
 ) -> Result<(u128, u128)> {
-    check_slope(gamma_m, omega_m, price_factor_num, price_factor_denom)?;
+    check_slope(gamma_m, omega_m, price_factor)?;
 
-    let left = omega_m
-        .checked_mul(price_factor_num as u128)
-        .checked_div(price_factor_denom as u128)
-        .unwrap();
+    let left = omega_m * (price_factor as u128);
 
     let num = 2 * (gamma_m - left);
     let denom = gamma_s * gamma_s;
@@ -205,13 +200,12 @@ pub fn compute_alpha_abs_with_decimals(
     gamma_s: u128,
     gamma_m: u128,
     omega_m: u128,
-    price_factor_num: u64,
-    price_factor_denom: u64,
+    price_factor: u64,
     decimals: u128,
 ) -> Result<u128> {
-    check_slope(gamma_m, omega_m, price_factor_num, price_factor_denom)?;
+    check_slope(gamma_m, omega_m, price_factor)?;
 
-    let left = omega_m * (price_factor_num as u128);
+    let left = omega_m * (price_factor as u128);
 
     let num = 2 * (gamma_m - left);
     let denom = gamma_s * gamma_s;
@@ -243,17 +237,13 @@ pub fn compute_beta(
     gamma_s: u128,
     gamma_m: u128,
     omega_m: u128,
-    price_factor_num: u64,
-    price_factor_denom: u64,
+    price_factor: u64,
     beta_decimals: u128,
 ) -> Result<u128> {
-    check_intercept(gamma_m, omega_m, price_factor_num, price_factor_denom)?;
+    check_intercept(gamma_m, omega_m, price_factor)?;
 
     let left = 2 * gamma_m;
-    let right = omega_m
-        .checked_mul(price_factor_num as u128)
-        .checked_div(price_factor_denom as u128)
-        .unwrap();
+    let right = omega_m * (price_factor as u128);
 
     let num = left - right;
     let denom = gamma_s;
@@ -261,34 +251,16 @@ pub fn compute_beta(
     Ok((num * beta_decimals) / denom)
 }
 
-pub fn check_slope(
-    gamma_m: u128,
-    omega_m: u128,
-    price_factor_num: u64,
-    price_factor_denom: u64,
-) -> Result<()> {
-    let pfo = omega_m
-        .checked_mul(price_factor_num as u128)
-        .checked_div(price_factor_denom as u128)
-        .unwrap();
-    if pfo >= gamma_m {
+pub fn check_slope(gamma_m: u128, omega_m: u128, price_factor: u64) -> Result<()> {
+    if price_factor as u128 * omega_m >= gamma_m {
         return Err(error!(AmmError::BondingCurveMustBeNegativelySloped));
     }
 
     Ok(())
 }
 
-pub fn check_intercept(
-    gamma_m: u128,
-    omega_m: u128,
-    price_factor_num: u64,
-    price_factor_denom: u64,
-) -> Result<()> {
-    let omp = omega_m
-        .checked_mul(price_factor_num as u128)
-        .checked_div(price_factor_denom as u128)
-        .unwrap();
-    if 2 * gamma_m <= omp {
+pub fn check_intercept(gamma_m: u128, omega_m: u128, price_factor: u64) -> Result<()> {
+    if 2 * gamma_m <= omega_m * (price_factor as u128) {
         return Err(error!(AmmError::BondingCurveInterceptMustBePositive));
     }
 
