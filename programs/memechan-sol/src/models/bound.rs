@@ -6,6 +6,7 @@ use crate::{
 use anchor_lang::prelude::*;
 use solana_program::pubkey::Pubkey;
 use spl_math::uint::U256;
+use std::cmp::max;
 use std::{cmp::min, mem};
 
 use super::{fees::Fees, Reserve, SwapAmount};
@@ -67,7 +68,7 @@ pub struct Config {
     pub beta: u128,
     pub price_factor_num: u64,
     pub price_factor_denom: u64,
-    // In quote denomination
+    // In raw denomination
     pub gamma_s: u64,
     // In raw denomination
     pub gamma_m: u64, // DEFAULT_MAX_M * DECIMALS_M = 900_000_000_000_000
@@ -97,7 +98,7 @@ impl BoundPool {
 
         let p = &self.config;
 
-        let max_delta_s = (p.gamma_s * p.decimals.quote) - s_t0;
+        let max_delta_s = p.gamma_s - s_t0;
 
         let admin_fee_in = self.fees.get_fee_in_amount(delta_s).unwrap();
         let is_max = delta_s - admin_fee_in >= max_delta_s;
@@ -201,19 +202,20 @@ impl BoundPool {
 
 pub fn compute_alpha_abs(
     gamma_s: u128,
+    gamma_s_denom: u128,
     gamma_m: u128,
     omega_m: u128,
-    price_factor_mul: u64,
+    price_factor_num: u64,
     price_factor_denom: u64,
 ) -> Result<(u128, u128)> {
-    check_slope(gamma_m, omega_m, price_factor_mul, price_factor_denom)?;
+    check_slope(gamma_m, omega_m, price_factor_num, price_factor_denom)?;
 
     let left = omega_m
-        .checked_mul(price_factor_mul as u128)
+        .checked_mul(price_factor_num as u128)
         .checked_div(price_factor_denom as u128)
         .unwrap();
 
-    let num = 2 * (gamma_m - left);
+    let num = 2 * (gamma_m - left) * (gamma_s_denom * gamma_s_denom);
     let denom = gamma_s * gamma_s;
 
     if num <= denom {
@@ -229,29 +231,6 @@ pub fn compute_alpha_abs(
 
     // We compute |alpha|, hence the subtraction is switched
     Ok(((num * alpha_decimals) / denom, alpha_decimals))
-}
-
-pub fn compute_alpha_abs_with_decimals(
-    gamma_s: u128,
-    gamma_m: u128,
-    omega_m: u128,
-    price_factor: u64,
-    price_factor_denom: u64,
-    decimals: u128,
-) -> Result<u128> {
-    check_slope(gamma_m, omega_m, price_factor, price_factor_denom)?;
-
-    let left = omega_m * (price_factor as u128);
-
-    let num = 2 * (gamma_m - left);
-    let denom = gamma_s * gamma_s;
-
-    if num <= denom {
-        return Err(error!(AmmError::EGammaSAboveRelativeLimit));
-    }
-
-    // We compute |alpha|, hence the subtraction is switched
-    Ok((num * decimals) / denom)
 }
 
 pub fn compute_decimals(scale: u64) -> Result<u128> {
@@ -271,21 +250,22 @@ pub fn compute_decimals(scale: u64) -> Result<u128> {
 
 pub fn compute_beta(
     gamma_s: u128,
+    gamma_s_denom: u128,
     gamma_m: u128,
     omega_m: u128,
-    price_factor: u64,
+    price_factor_num: u64,
     price_factor_denom: u64,
     beta_decimals: u128,
 ) -> Result<u128> {
-    check_intercept(gamma_m, omega_m, price_factor, price_factor_denom)?;
+    check_intercept(gamma_m, omega_m, price_factor_num, price_factor_denom)?;
 
     let left = 2 * gamma_m;
     let right = omega_m
-        .checked_mul(price_factor as u128)
+        .checked_mul(price_factor_num as u128)
         .checked_div(price_factor_denom as u128)
         .unwrap();
 
-    let num = left - right;
+    let num = (left - right) * gamma_s_denom;
     let denom = gamma_s;
 
     Ok((num * beta_decimals) / denom)
@@ -294,11 +274,11 @@ pub fn compute_beta(
 pub fn check_slope(
     gamma_m: u128,
     omega_m: u128,
-    price_factor_mul: u64,
+    price_factor_num: u64,
     price_factor_denom: u64,
 ) -> Result<()> {
     let pfo = omega_m
-        .checked_mul(price_factor_mul as u128)
+        .checked_mul(price_factor_num as u128)
         .checked_div(price_factor_denom as u128)
         .unwrap();
     if pfo >= gamma_m {
@@ -311,11 +291,11 @@ pub fn check_slope(
 pub fn check_intercept(
     gamma_m: u128,
     omega_m: u128,
-    price_factor: u64,
+    price_factor_num: u64,
     price_factor_denom: u64,
 ) -> Result<()> {
     let omp = omega_m
-        .checked_mul(price_factor as u128)
+        .checked_mul(price_factor_num as u128)
         .checked_div(price_factor_denom as u128)
         .unwrap();
     if 2 * gamma_m <= omp {
@@ -328,8 +308,8 @@ pub fn check_intercept(
 fn compute_scale(num_: u128) -> u64 {
     let mut num = num_;
 
-    if num == 0 {
-        return 1;
+    return if num == 0 {
+        1
     } else {
         let mut scale = 1;
 
@@ -338,8 +318,8 @@ fn compute_scale(num_: u128) -> u64 {
             scale += 1;
         }
 
-        return scale;
-    }
+        scale
+    };
 }
 
 fn delta_s_strategy(
@@ -530,12 +510,20 @@ mod tests {
     fn test_compute_alpha_abs_valid() {
         // Test when left < gamma_m
         let gamma_s = 1;
+        let gamma_s_denom = 1;
         let gamma_m = 300_000;
         let omega_m = 200_000;
         let price_factor = 1;
         let price_factor_denom = 1;
 
-        let result = compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor, price_factor_denom);
+        let result = compute_alpha_abs(
+            gamma_s,
+            gamma_s_denom,
+            gamma_m,
+            omega_m,
+            price_factor,
+            price_factor_denom,
+        );
         assert!(result.is_ok());
     }
 
@@ -543,26 +531,42 @@ mod tests {
     fn test_compute_alpha_abs_invalid() {
         // === Scale Too Low ===
 
-        let gamma_s = 1;
+        let gamma_s = 100;
+        let gamma_s_denom = 100;
         let gamma_m = 30_000;
         let omega_m = 20_000;
         let price_factor = 1;
         let price_factor_denom = 1;
 
-        let result = compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor, price_factor_denom);
+        let result = compute_alpha_abs(
+            gamma_s,
+            gamma_s_denom,
+            gamma_m,
+            omega_m,
+            price_factor,
+            price_factor_denom,
+        );
         assert!(result.is_err());
 
         // === Positive Slope ===
 
-        let gamma_s = 1;
+        let gamma_s = 100;
         let gamma_m = 300_000;
         let omega_m = 200_000;
         let price_factor = 20;
-        let result = compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor, price_factor_denom);
+        let result = compute_alpha_abs(
+            gamma_s,
+            gamma_s_denom,
+            gamma_m,
+            omega_m,
+            price_factor,
+            price_factor_denom,
+        );
         assert!(result.is_err());
 
         let result = compute_beta(
             gamma_s,
+            gamma_s_denom,
             gamma_m,
             omega_m,
             price_factor,
@@ -575,77 +579,35 @@ mod tests {
     #[test]
     fn test_compute_alpha_abs_with_pf_2() -> Result<()> {
         let gamma_s = vec![
-            30000,  //
-            40000,  //
-            50000,  //
-            60000,  //
-            70000,  //
-            80000,  //
-            90000,  //
-            100000, //
-            110000, //
-            120000, //
-            130000, //
-            140000, //
-            150000, //
-            160000, //
-            170000, //
-            180000, //
-            190000, //
-            200000, //
-            210000, //
-            220000, //
-            230000, //
+            300000,  //
+            400000,  //
+            500000,  //
+            600000,  //
+            700000,  //
+            800000,  //
+            900000,  //
+            1000000, //
+            1100000, //
+            1200000, //
+            1300000, //
+            1400000, //
+            1500000, //
+            1600000, //
+            1700000, //
+            1800000, //
+            1900000, //
+            2000000, //
+            2100000, //
+            2200000, //
+            2300000, //
         ];
+        let gamma_s_denom = 10u128;
 
         // Test when left < gamma_m
         let gamma_m = 900000000000000;
         let omega_m = 200000000000000;
         let price_factor = 2;
         let price_factor_denom = 1;
-
-        let actual_alpha = gamma_s
-            .iter()
-            .map(|g_s| {
-                compute_alpha_abs_with_decimals(
-                    *g_s as u128,
-                    gamma_m,
-                    omega_m,
-                    price_factor,
-                    price_factor_denom,
-                    DEFAULT_DECIMALS_ALPHA,
-                )
-            })
-            .collect::<Result<Vec<u128>>>()?;
-
-        let expected_alpha: Vec<u128> = vec![
-            1111111111111,
-            625000000000,
-            400000000000,
-            277777777777,
-            204081632653,
-            156250000000,
-            123456790123,
-            100000000000,
-            82644628099,
-            69444444444,
-            59171597633,
-            51020408163,
-            44444444444,
-            39062500000,
-            34602076124,
-            30864197530,
-            27700831024,
-            25000000000,
-            22675736961,
-            20661157024,
-            18903591682,
-        ];
-
-        expected_alpha
-            .iter()
-            .zip(actual_alpha.clone())
-            .for_each(|(expected, actual)| assert_eq!(&actual, expected));
 
         // Test Beta
 
@@ -654,6 +616,7 @@ mod tests {
             .map(|g_s| {
                 compute_beta(
                     *g_s as u128,
+                    gamma_s_denom,
                     gamma_m,
                     omega_m,
                     price_factor,
@@ -698,77 +661,36 @@ mod tests {
     #[test]
     fn test_compute_alpha_abs_with_pf_1() -> Result<()> {
         let gamma_s = vec![
-            30000,  //
-            40000,  //
-            50000,  //
-            60000,  //
-            70000,  //
-            80000,  //
-            90000,  //
-            100000, //
-            110000, //
-            120000, //
-            130000, //
-            140000, //
-            150000, //
-            160000, //
-            170000, //
-            180000, //
-            190000, //
-            200000, //
-            210000, //
-            220000, //
-            230000, //
+            300000,  //
+            400000,  //
+            500000,  //
+            600000,  //
+            700000,  //
+            800000,  //
+            900000,  //
+            1000000, //
+            1100000, //
+            1200000, //
+            1300000, //
+            1400000, //
+            1500000, //
+            1600000, //
+            1700000, //
+            1800000, //
+            1900000, //
+            2000000, //
+            2100000, //
+            2200000, //
+            2300000, //
         ];
+
+        let gamma_s_denom = 10;
 
         // Test when left < gamma_m
         let gamma_m = 900000000000000;
         let omega_m = 200000000000000;
         let price_factor = 1;
         let price_factor_denom = 1;
-
-        let actual_alpha = gamma_s
-            .iter()
-            .map(|g_s| {
-                compute_alpha_abs_with_decimals(
-                    *g_s as u128,
-                    gamma_m,
-                    omega_m,
-                    price_factor,
-                    price_factor_denom,
-                    DEFAULT_DECIMALS_ALPHA,
-                )
-            })
-            .collect::<Result<Vec<u128>>>()?;
-
-        let expected_alpha: Vec<u128> = vec![
-            1555555555555,
-            875000000000,
-            560000000000,
-            388888888888,
-            285714285714,
-            218750000000,
-            172839506172,
-            140000000000,
-            115702479338,
-            97222222222,
-            82840236686,
-            71428571428,
-            62222222222,
-            54687500000,
-            48442906574,
-            43209876543,
-            38781163434,
-            35000000000,
-            31746031746,
-            28925619834,
-            26465028355,
-        ];
-
-        expected_alpha
-            .iter()
-            .zip(actual_alpha.clone())
-            .for_each(|(expected, actual)| assert_eq!(&actual, expected));
 
         // Test Beta
 
@@ -777,6 +699,7 @@ mod tests {
             .map(|g_s| {
                 compute_beta(
                     *g_s as u128,
+                    gamma_s_denom,
                     gamma_m,
                     omega_m,
                     price_factor,
@@ -823,7 +746,8 @@ mod tests {
         let filename = "../../data/delta_m.csv";
         let expected_delta_ms = read_csv_column(filename);
 
-        let gamma_s: u128 = 30_000;
+        let gamma_s: u128 = 300_000;
+        let gamma_s_denom = 10;
         let gamma_m: u128 = 900_000_000_000_000;
         let omega_m: u128 = 200_000_000_000_000;
         let price_factor_num = 2;
@@ -831,6 +755,7 @@ mod tests {
 
         let (alpha, alpha_decimals) = compute_alpha_abs(
             gamma_s,
+            gamma_s_denom,
             gamma_m,
             omega_m,
             price_factor_num,
@@ -838,6 +763,7 @@ mod tests {
         )?;
         let beta = compute_beta(
             gamma_s,
+            gamma_s_denom,
             gamma_m,
             omega_m,
             price_factor_num,
@@ -881,7 +807,8 @@ mod tests {
         let filename = "../../data/delta_m_2.csv";
         let expected_delta_ms = read_csv_column(filename);
 
-        let gamma_s: u128 = 10;
+        let gamma_s: u128 = 100;
+        let gamma_s_denom = 10;
         let gamma_m: u128 = 900_000_000_000_000;
         let omega_m: u128 = 200_000_000_000_000;
         let price_factor_num = 2;
@@ -889,6 +816,7 @@ mod tests {
 
         let (alpha, alpha_decimals) = compute_alpha_abs(
             gamma_s,
+            gamma_s_denom,
             gamma_m,
             omega_m,
             price_factor_num,
@@ -896,6 +824,7 @@ mod tests {
         )?;
         let beta = compute_beta(
             gamma_s,
+            gamma_s_denom,
             gamma_m,
             omega_m,
             price_factor_num,
@@ -939,7 +868,8 @@ mod tests {
         let filename = "../../data/delta_m_3.csv";
         let expected_delta_ms = read_csv_column(filename);
 
-        let gamma_s: u128 = 1_000;
+        let gamma_s: u128 = 10_000;
+        let gamma_s_denom = 10;
         let gamma_m: u128 = 800_000_000_000_000;
         let omega_m: u128 = 200_000_000_000_000;
         let price_factor_num = 2;
@@ -947,6 +877,7 @@ mod tests {
 
         let (alpha, alpha_decimals) = compute_alpha_abs(
             gamma_s,
+            gamma_s_denom,
             gamma_m,
             omega_m,
             price_factor_num,
@@ -954,6 +885,7 @@ mod tests {
         )?;
         let beta = compute_beta(
             gamma_s,
+            gamma_s_denom,
             gamma_m,
             omega_m,
             price_factor_num,
@@ -996,7 +928,8 @@ mod tests {
 
     #[test]
     fn test_delta_s() -> Result<()> {
-        let gamma_s: u128 = 1000;
+        let gamma_s: u128 = 10_000;
+        let gamma_s_denom = 10;
         let gamma_m: u128 = 1643350384685548;
         let omega_m: u128 = 100000000;
         let price_factor_num = 1;
@@ -1006,6 +939,7 @@ mod tests {
 
         let (alpha, alpha_decimals) = compute_alpha_abs(
             gamma_s,
+            gamma_s_denom,
             gamma_m,
             omega_m,
             price_factor_num,
@@ -1013,6 +947,7 @@ mod tests {
         )?;
         let beta = compute_beta(
             gamma_s,
+            gamma_s_denom,
             gamma_m,
             omega_m,
             price_factor_num,
@@ -1047,7 +982,8 @@ mod tests {
 
     #[test]
     fn test_delta_s_1() -> Result<()> {
-        let gamma_s: u128 = 1000000;
+        let gamma_s: u128 = 10_000_000;
+        let gamma_s_denom = 10;
         let gamma_m: u128 = 51643300384685548;
         let omega_m: u128 = 100000000;
         let price_factor_num = 1;
@@ -1057,6 +993,7 @@ mod tests {
 
         let (alpha, alpha_decimals) = compute_alpha_abs(
             gamma_s,
+            gamma_s_denom,
             gamma_m,
             omega_m,
             price_factor_num,
@@ -1064,6 +1001,7 @@ mod tests {
         )?;
         let beta = compute_beta(
             gamma_s,
+            gamma_s_denom,
             gamma_m,
             omega_m,
             price_factor_num,
@@ -1098,7 +1036,8 @@ mod tests {
 
     #[test]
     fn test_delta_s_2() -> Result<()> {
-        let gamma_s: u128 = 1001;
+        let gamma_s: u128 = 10010;
+        let gamma_s_denom = 10;
         let gamma_m: u128 = 1643350384685548;
         let omega_m: u128 = 100000000;
         let price_factor = 1;
@@ -1106,10 +1045,17 @@ mod tests {
         let delta_m = 1640068607501974;
         let s_b = 1001000000000u64;
 
-        let (alpha, alpha_decimals) =
-            compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor, price_factor_denom)?;
+        let (alpha, alpha_decimals) = compute_alpha_abs(
+            gamma_s,
+            gamma_s_denom,
+            gamma_m,
+            omega_m,
+            price_factor,
+            price_factor_denom,
+        )?;
         let beta = compute_beta(
             gamma_s,
+            gamma_s_denom,
             gamma_m,
             omega_m,
             price_factor,
@@ -1133,7 +1079,8 @@ mod tests {
 
     #[test]
     fn test_delta_s_3() -> Result<()> {
-        let gamma_s: u128 = 1055;
+        let gamma_s: u128 = 10550;
+        let gamma_s_denom = 10;
         let gamma_m: u128 = 1643350384685548;
         let omega_m: u128 = 100000000;
         let price_factor_num = 1;
@@ -1143,6 +1090,7 @@ mod tests {
 
         let (alpha, alpha_decimals) = compute_alpha_abs(
             gamma_s,
+            gamma_s_denom,
             gamma_m,
             omega_m,
             price_factor_num,
@@ -1150,6 +1098,7 @@ mod tests {
         )?;
         let beta = compute_beta(
             gamma_s,
+            gamma_s_denom,
             gamma_m,
             omega_m,
             price_factor_num,
@@ -1173,7 +1122,8 @@ mod tests {
 
     #[test]
     fn test_delta_s_4() -> Result<()> {
-        let gamma_s: u128 = 31623;
+        let gamma_s: u128 = 316230;
+        let gamma_s_denom = 10;
         let gamma_m: u128 = 1693300384685548;
         let omega_m: u128 = 100000000;
         let price_factor = 1;
@@ -1181,10 +1131,17 @@ mod tests {
         let delta_m = 105399683490709;
         let s_b = 1000000000000u64;
 
-        let (alpha, alpha_decimals) =
-            compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor, price_factor_denom)?;
+        let (alpha, alpha_decimals) = compute_alpha_abs(
+            gamma_s,
+            gamma_s_denom,
+            gamma_m,
+            omega_m,
+            price_factor,
+            price_factor_denom,
+        )?;
         let beta = compute_beta(
             gamma_s,
+            gamma_s_denom,
             gamma_m,
             omega_m,
             price_factor,
@@ -1208,7 +1165,8 @@ mod tests {
 
     #[test]
     fn test_delta_s_5() -> Result<()> {
-        let gamma_s: u128 = 3162278;
+        let gamma_s: u128 = 31622780;
+        let gamma_s_denom = 10;
         let gamma_m: u128 = 501643300384685548;
         let omega_m: u128 = 100000000;
         let price_factor = 1;
@@ -1216,10 +1174,17 @@ mod tests {
         let delta_m = 317216881990209;
         let s_b = 1000000000000 as u64;
 
-        let (alpha, alpha_decimals) =
-            compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor, price_factor_denom)?;
+        let (alpha, alpha_decimals) = compute_alpha_abs(
+            gamma_s,
+            gamma_s_denom,
+            gamma_m,
+            omega_m,
+            price_factor,
+            price_factor_denom,
+        )?;
         let beta = compute_beta(
             gamma_s,
+            gamma_s_denom,
             gamma_m,
             omega_m,
             price_factor,
@@ -1243,7 +1208,8 @@ mod tests {
 
     #[test]
     fn test_delta_s_6() -> Result<()> {
-        let gamma_s: u128 = 3162279;
+        let gamma_s: u128 = 31622790;
+        let gamma_s_denom = 10;
         let gamma_m: u128 = 621872196659868452;
         let omega_m: u128 = 1643300384685548;
         let price_factor = 1;
@@ -1251,10 +1217,17 @@ mod tests {
         let delta_m = 392724664528292u128;
         let s_b = 1000000000000u64;
 
-        let (alpha, alpha_decimals) =
-            compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor, price_factor_denom)?;
+        let (alpha, alpha_decimals) = compute_alpha_abs(
+            gamma_s,
+            gamma_s_denom,
+            gamma_m,
+            omega_m,
+            price_factor,
+            price_factor_denom,
+        )?;
         let beta = compute_beta(
             gamma_s,
+            gamma_s_denom,
             gamma_m,
             omega_m,
             price_factor,
@@ -1347,13 +1320,14 @@ mod tests {
     proptest! {
         #[test]
         fn compute_delta_m_and_s_with_fuzzy_params(
-            gamma_s in 1_000..10_000_000_u128,
+            gamma_s in 10_000..100_000_000_u128,
             gamma_m in 100_000_000_u128..900_000_000_000_000_000_u128,
             omega_m in 100_000_000_u128..900_000_000_000_000_000_u128,
             price_factor in 1..4u128
         ) {
             let price_factor_num = price_factor as u64;
             let price_factor_denom = 1;
+            let gamma_s_denom = 10;
 
             if check_slope_(gamma_m, omega_m, price_factor_num) == false {
                 return Ok(())
@@ -1367,8 +1341,8 @@ mod tests {
                 return Ok(())
             }
 
-            let (alpha, alpha_decimals) = compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor_num,price_factor_denom)?;
-            let beta = compute_beta(gamma_s, gamma_m, omega_m, price_factor_num, price_factor_denom,alpha_decimals)?;
+            let (alpha, alpha_decimals) = compute_alpha_abs(gamma_s, gamma_s_denom, gamma_m, omega_m, price_factor_num,price_factor_denom)?;
+            let beta = compute_beta(gamma_s, gamma_s_denom, gamma_m, omega_m, price_factor_num, price_factor_denom,alpha_decimals)?;
 
             let pool = BoundPool {
                 config: Config {

@@ -29,7 +29,7 @@ import { MPL_TOKEN_METADATA_PROGRAM_ID } from "@metaplex-foundation/mpl-token-me
 export function test() {
   describe("create_bound_pool", () => {
     it("creates target config", async () => {
-      await TargetConfigWrapper.new();
+      await TargetConfigWrapper.new(100_000_000);
     });
 
     it("create LUT", async () => {

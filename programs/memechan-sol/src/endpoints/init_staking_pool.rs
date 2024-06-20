@@ -202,7 +202,7 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, InitStakingPool<'info>>) ->
         quote_decimals
     );
 
-    if quote_supply != target_token_amt * quote_decimals {
+    if quote_supply != target_token_amt {
         return Err(error!(AmmError::InvariantViolation));
     }
 

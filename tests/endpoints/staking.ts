@@ -137,21 +137,21 @@ export function test() {
         await pool.swap_y({
           user: users[0],
           memeTokensOut: new BN(1),
-          quoteTokensIn: new BN(20 * 1e9),
+          quoteTokensIn: new BN(0.015 * 1e9),
         })
       );
       tickets.push(
         await pool.swap_y({
           user: users[1],
           memeTokensOut: new BN(1),
-          quoteTokensIn: new BN(30 * 1e9),
+          quoteTokensIn: new BN(0.03 * 1e9),
         })
       );
       tickets.push(
         await pool.swap_y({
           user: users[2],
           memeTokensOut: new BN(1),
-          quoteTokensIn: new BN(50 * 1e9),
+          quoteTokensIn: new BN(0.1 * 1e9),
         })
       );
       sleep(500);

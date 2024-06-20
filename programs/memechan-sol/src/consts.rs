@@ -3,7 +3,7 @@ use solana_program::pubkey::Pubkey;
 pub const MEME_TOKEN_DECIMALS: u64 = 1_000_000;
 pub const WSOL_DECIMALS: u64 = 1_000_000_000;
 
-pub const DEFAULT_PRICE_FACTOR: u64 = 80;
+pub const DEFAULT_PRICE_FACTOR_NUMERATOR: u64 = 80;
 pub const DEFAULT_PRICE_FACTOR_DENOMINATOR: u64 = 100;
 
 pub const DEFAULT_MAX_M_LP: u128 = 500_000_000_000_000;
