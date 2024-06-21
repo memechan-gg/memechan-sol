@@ -29,7 +29,7 @@ import {
 import { SEEDS } from "@mercurial-finance/dynamic-amm-sdk/dist/cjs/src/amm/constants";
 import VaultImpl, { getVaultPdas } from "@mercurial-finance/vault-sdk";
 import { TokenInfo } from "@solana/spl-token-registry";
-import { MEMECHAN_MEME_TOKEN_DECIMALS } from "./bound_pool";
+import { MEMECHAN_MEME_TOKEN_DECIMALS, getSortedKeys } from "./bound_pool";
 import { MEMECHAN_QUOTE_TOKEN } from "./sol-sdk/config/config";
 
 export interface UnstakeArgs {
@@ -72,20 +72,22 @@ export class StakingWrapper {
   public async add_fees(ammPool: AmmPool) {
     const staking = await memechan.account.stakingPool.fetch(this.id);
 
-    const tokenInfoA: TokenInfo = {
+    const stokenInfoA: TokenInfo = {
       chainId: 0,
       address: staking.memeMint.toBase58(),
       name: "",
       decimals: MEMECHAN_MEME_TOKEN_DECIMALS,
       symbol: "",
     };
-    const tokenInfoB: TokenInfo = {
+    const stokenInfoB: TokenInfo = {
       chainId: 0,
       address: MEMECHAN_QUOTE_TOKEN.mint.toBase58(),
       name: MEMECHAN_QUOTE_TOKEN.name,
       decimals: MEMECHAN_QUOTE_TOKEN.decimals,
       symbol: MEMECHAN_QUOTE_TOKEN.symbol,
     };
+
+    const [tokenInfoA, tokenInfoB] = getSortedKeys(stokenInfoA, stokenInfoB);
 
     const tradeFeeBps = new BN(100);
 
@@ -135,13 +137,18 @@ export class StakingWrapper {
 
     console.log("2");
 
-    const poolPubkey = derivePoolAddress(
-      provider.connection,
-      tokenInfoA,
-      tokenInfoB,
-      false,
-      tradeFeeBps
+    const config = new PublicKey(
+      "FiENCCbPi3rFh5pW2AJ59HC53yM32eLaCjMKxRqanKFJ"
     );
+    const [poolPubkey] = PublicKey.findProgramAddressSync(
+      [
+        new PublicKey(tokenInfoA.address).toBuffer(),
+        new PublicKey(tokenInfoB.address).toBuffer(),
+        config.toBuffer(),
+      ],
+      ammProgram.programId
+    );
+
     console.log("3");
     const [[aVaultLp], [bVaultLp]] = [
       PublicKey.findProgramAddressSync(
@@ -150,17 +157,6 @@ export class StakingWrapper {
       ),
       PublicKey.findProgramAddressSync(
         [bVault.toBuffer(), poolPubkey.toBuffer()],
-        ammProgram.programId
-      ),
-    ];
-
-    const [[adminTokenAFee], [adminTokenBFee]] = [
-      PublicKey.findProgramAddressSync(
-        [Buffer.from(SEEDS.FEE), tokenAMint.toBuffer(), poolPubkey.toBuffer()],
-        ammProgram.programId
-      ),
-      PublicKey.findProgramAddressSync(
-        [Buffer.from(SEEDS.FEE), tokenBMint.toBuffer(), poolPubkey.toBuffer()],
         ammProgram.programId
       ),
     ];

@@ -76,7 +76,7 @@ pub struct AddFees<'info> {
 impl<'info> AddFees<'info> {
     pub fn collect_fees(&self, amount: u64, signer_seeds: &[&[&[u8]]]) -> Result<()> {
         let program = self.amm_program.to_account_info();
-        let cpi = dynamic_amm::cpi::accounts::ClaimFee {
+        let mut cpi = dynamic_amm::cpi::accounts::ClaimFee {
             owner: self.staking_signer_pda.to_account_info(),
             lp_mint: self.lp_mint.to_account_info(),
             pool: self.amm_pool.to_account_info(),
@@ -93,10 +93,14 @@ impl<'info> AddFees<'info> {
             source_tokens: self.source_tokens.to_account_info(),
             user_a_token: self.meme_vault.to_account_info(),
             user_b_token: self.quote_vault.to_account_info(),
-
             vault_program: self.vault_program.to_account_info(),
             token_program: self.token_program.to_account_info(),
         };
+
+        if self.meme_mint.key() > self.quote_mint.key() {
+            cpi.user_a_token = self.quote_vault.to_account_info();
+            cpi.user_b_token = self.meme_vault.to_account_info();
+        }
 
         let cpi_ctx = CpiContext::new_with_signer(program, cpi, signer_seeds);
         dynamic_amm::cpi::claim_fee(cpi_ctx, amount)
@@ -119,7 +123,11 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<
     let meme_vault_initial_amt = accs.meme_vault.amount;
     let quote_vault_initial_amt = accs.quote_vault.amount;
 
-    accs.collect_fees(lp_tokens_total, staking_signer_seeds)?;
+    let cpi_res = accs.collect_fees(lp_tokens_total, staking_signer_seeds);
+
+    if cpi_res.is_err() {
+        return Ok(());
+    }
 
     accs.meme_vault.reload().unwrap();
     accs.quote_vault.reload().unwrap();

@@ -13,17 +13,15 @@ import {
 } from "../helpers";
 import { Keypair, Transaction } from "@solana/web3.js";
 import {
-  createWrappedNativeAccount,
-  createAssociatedTokenAccount,
+  createWrappedNativeAccoun,
   createAccount,
   getOrCreateAssociatedTokenAccount,
-  getAssociatedTokenAddress,
-  getAssociatedTokenAddressSync,
   NATIVE_MINT,
 } from "@solana/spl-token";
 import { associatedAddress } from "@coral-xyz/anchor/dist/cjs/utils/token";
 import BigNumber from "bignumber.js";
 import { wrapSOLInstruction } from "@mercurial-finance/vault-sdk/dist/cjs/src/vault/utils";
+import { createWrappedNativeAccount } from "@solana/spl-token";
 
 export function test() {
   describe("staking", () => {

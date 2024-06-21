@@ -21,7 +21,9 @@ export class AmmPool {
 
     console.log(
       "swap tx",
-      await sendAndConfirmTransaction(provider.connection, swapTx, [user])
+      await sendAndConfirmTransaction(provider.connection, swapTx, [user], {
+        skipPreflight: true,
+      })
     );
   }
 

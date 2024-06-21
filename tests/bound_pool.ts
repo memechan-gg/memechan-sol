@@ -41,10 +41,7 @@ import {
   getCreateAssociatedTokenAccountInstructions,
   getCreateTokenAccountInstructions,
 } from "./sol-sdk/util/getCreateAccountInstruction";
-import {
-  MEMECHAN_QUOTE_MINT,
-  MEMECHAN_QUOTE_TOKEN,
-} from "./sol-sdk/config/config";
+import { MEMECHAN_QUOTE_TOKEN } from "./sol-sdk/config/config";
 import { associatedAddress } from "@coral-xyz/anchor/dist/cjs/utils/token";
 import { TokenInfo } from "@solana/spl-token-registry";
 import AmmImpl from "@mercurial-finance/dynamic-amm-sdk";
@@ -83,19 +80,9 @@ export class BoundPoolWrapper {
       pool: this.bpClient.id,
     });
 
-    const staking = await this.bpClient.goLive2({
-      boundPoolInfo: this.bpClient.poolInfo,
-      feeDestinationWalletAddress: FEE_DESTINATION_ID,
-      memeVault: res.stakingMemeVault,
-      quoteVault: res.stakingQuoteVault,
-      payer,
-      user: payer,
-    });
-    console.log("goLive2 END");
-    console.log(staking.memeMint, staking.amm);
     const tokenInfoA: TokenInfo = {
       chainId: 0,
-      address: staking.memeMint.toBase58(),
+      address: this.bpClient.memeTokenMint.toBase58(),
       name: "asdda",
       decimals: MEMECHAN_MEME_TOKEN_DECIMALS,
       symbol: "ads",
@@ -108,12 +95,27 @@ export class BoundPoolWrapper {
       symbol: MEMECHAN_QUOTE_TOKEN.symbol,
     };
 
+    const [sortedInfoA, sortedInfoB] = getSortedKeys(tokenInfoA, tokenInfoB);
+
+    const staking = await this.bpClient.goLive2({
+      boundPoolInfo: this.bpClient.poolInfo,
+      feeDestinationWalletAddress: FEE_DESTINATION_ID,
+      memeVault: res.stakingMemeVault,
+      quoteVault: res.stakingQuoteVault,
+      payer,
+      user: payer,
+      tokenInfoA,
+      tokenInfoB,
+    });
+    console.log("goLive2 END");
+    console.log(staking.memeMint, staking.amm);
+
     await sleep(500);
     const ammImpl = await AmmImpl.create(
       provider.connection,
       staking.amm,
-      tokenInfoA,
-      tokenInfoB
+      sortedInfoA,
+      sortedInfoB
     );
 
     return [
@@ -426,4 +428,14 @@ export class BoundPoolWrapper {
       memechanProgramId
     )[0];
   }
+}
+export function getSortedKeys(tokenInfoA: TokenInfo, tokenInfoB: TokenInfo) {
+  if (
+    new PublicKey(tokenInfoA.address)
+      .toBuffer()
+      .compare(new PublicKey(tokenInfoB.address).toBuffer()) === 1
+  ) {
+    return [tokenInfoB, tokenInfoA];
+  }
+  return [tokenInfoA, tokenInfoB];
 }

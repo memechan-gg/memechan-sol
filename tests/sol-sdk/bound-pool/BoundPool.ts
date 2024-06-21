@@ -97,7 +97,7 @@ import {
   sleep,
 } from "../../helpers";
 import { MemechanSol } from "../../../target/types/memechan_sol";
-import { BoundPoolType } from "../../bound_pool";
+import { BoundPoolType, getSortedKeys } from "../../bound_pool";
 import { CPMM, FEE_VAULT } from "../../common";
 import { ASSOCIATED_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
 import AmmImpl, {
@@ -112,7 +112,9 @@ import {
   deriveMintMetadata,
   generateCurveType,
   getAssociatedTokenAccount,
+  getFirstKey,
   getOrCreateATAInstruction,
+  getSecondKey,
   wrapSOLInstruction,
 } from "@mercurial-finance/dynamic-amm-sdk/dist/cjs/src/amm/utils";
 import VaultImpl, { getVaultPdas } from "@mercurial-finance/vault-sdk";
@@ -1061,11 +1063,32 @@ export class BoundPoolClient {
     const {
       boundPoolInfo,
       user,
-      feeDestinationWalletAddress,
       memeVault,
       quoteVault,
       transaction = new Transaction(),
     } = args;
+
+    const { vaultProgram, ammProgram } = createProgram(provider.connection);
+
+    const [tokenInfoA, tokenInfoB] = getSortedKeys(
+      args.tokenInfoA,
+      args.tokenInfoB
+    );
+
+    console.log(tokenInfoA.address, tokenInfoB.address);
+
+    const config = new PublicKey(
+      "FiENCCbPi3rFh5pW2AJ59HC53yM32eLaCjMKxRqanKFJ"
+    );
+    const [poolPubkey] = PublicKey.findProgramAddressSync(
+      [
+        new PublicKey(tokenInfoA.address).toBuffer(),
+        new PublicKey(tokenInfoB.address).toBuffer(),
+        config.toBuffer(),
+      ],
+      ammProgram.programId
+    );
+
     const stakingId = BoundPoolClient.findStakingPda(
       boundPoolInfo.memeReserve.mint,
       this.client.memechanProgram.programId
@@ -1105,25 +1128,6 @@ export class BoundPoolClient {
     });
 
     transaction.add(addPriorityFee);
-
-    const tokenInfoA: TokenInfo = {
-      chainId: 0,
-      address: boundPoolInfo.memeReserve.mint.toBase58(),
-      name: "",
-      decimals: MEMECHAN_MEME_TOKEN_DECIMALS,
-      symbol: "",
-    };
-    const tokenInfoB: TokenInfo = {
-      chainId: 0,
-      address: MEMECHAN_QUOTE_TOKEN.mint.toBase58(),
-      name: MEMECHAN_QUOTE_TOKEN.name,
-      decimals: MEMECHAN_QUOTE_TOKEN.decimals,
-      symbol: MEMECHAN_QUOTE_TOKEN.symbol,
-    };
-
-    const tradeFeeBps = new BN(100);
-
-    const { vaultProgram, ammProgram } = createProgram(provider.connection);
 
     const tokenAMint = new PublicKey(tokenInfoA.address);
     const tokenBMint = new PublicKey(tokenInfoB.address);
@@ -1176,13 +1180,6 @@ export class BoundPoolClient {
       )
     );
 
-    const poolPubkey = derivePoolAddress(
-      provider.connection,
-      tokenInfoA,
-      tokenInfoB,
-      false,
-      tradeFeeBps
-    );
     console.log("3");
     const [[aVaultLp], [bVaultLp]] = [
       PublicKey.findProgramAddressSync(
@@ -1195,7 +1192,7 @@ export class BoundPoolClient {
       ),
     ];
 
-    const [[adminTokenAFee], [adminTokenBFee]] = [
+    const [[protocolTokenAFee], [protocolTokenBFee]] = [
       PublicKey.findProgramAddressSync(
         [Buffer.from(SEEDS.FEE), tokenAMint.toBuffer(), poolPubkey.toBuffer()],
         ammProgram.programId
@@ -1232,9 +1229,10 @@ export class BoundPoolClient {
     const goLiveInstruction = await this.client.memechanProgram.methods
       .goLive()
       .accounts({
-        adminTokenAFee,
-        adminTokenBFee,
+        protocolTokenAFee,
+        protocolTokenBFee,
         ammPool: poolPubkey,
+        config,
         aTokenVault,
         aVault,
         aVaultLp,
@@ -1246,18 +1244,15 @@ export class BoundPoolClient {
         lpMint,
         mintMetadata,
         escrowVault: escrowAta,
-        feeOwner: FEE_OWNER,
         lockEscrow: lockEscrowPK,
         payerPoolLp: payerPoolLp,
         quoteMint: QUOTE_MINT,
         memeMint: boundPoolInfo.memeReserve.mint,
-
         staking: stakingId,
         stakingMemeVault: memeVault,
         stakingPoolSignerPda: stakingSigner,
         stakingQuoteVault: quoteVault,
         signer: user.publicKey,
-
         rent: SYSVAR_RENT_PUBKEY,
         ataProgram: ATA_PROGRAM_ID,
         tokenProgram: TOKEN_PROGRAM_ID,

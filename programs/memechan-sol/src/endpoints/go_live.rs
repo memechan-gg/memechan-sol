@@ -6,6 +6,7 @@ use anchor_spl::token::{Mint, Token, TokenAccount};
 use dynamic_amm::program::DynamicAmm as MeteoraAmm;
 use dynamic_amm::state::CurveType;
 use dynamic_vault::program::DynamicVault as MeteoraVault;
+use std::mem::swap;
 
 #[derive(Accounts)]
 pub struct GoLive<'info> {
@@ -51,8 +52,6 @@ pub struct GoLive<'info> {
     #[account(mut)]
     /// CHECK: meteora cpi account
     pub lp_mint: AccountInfo<'info>,
-    /// CHECK: meteora cpi account
-    pub fee_owner: AccountInfo<'info>,
     #[account(mut)]
     /// CHECK: meteora cpi account
     pub payer_pool_lp: AccountInfo<'info>,
@@ -88,10 +87,13 @@ pub struct GoLive<'info> {
     pub b_vault_lp_mint: AccountInfo<'info>,
     #[account(mut)]
     /// CHECK: meteora cpi account
-    pub admin_token_a_fee: AccountInfo<'info>,
+    pub protocol_token_a_fee: AccountInfo<'info>,
     #[account(mut)]
     /// CHECK: meteora cpi account
-    pub admin_token_b_fee: AccountInfo<'info>,
+    pub protocol_token_b_fee: AccountInfo<'info>,
+    #[account(mut)]
+    /// CHECK: meteora cpi account
+    pub config: AccountInfo<'info>,
 
     // Lock
     #[account(mut)]
@@ -116,46 +118,55 @@ impl<'info> GoLive<'info> {
     fn create_pool(
         &self,
         seeds: &[&[&[u8]]],
-        trade_fee_bps: u64,
         token_a_amount: u64,
         token_b_amount: u64,
     ) -> Result<()> {
         let program = self.amm_program.to_account_info();
-        let cpi = dynamic_amm::cpi::accounts::InitializePermissionlessPoolWithFeeTier {
-            lp_mint: self.lp_mint.to_account_info(),
-            payer: self.staking_pool_signer_pda.to_account_info(),
-            rent: self.rent.to_account_info(),
-            fee_owner: self.fee_owner.to_account_info(),
-            pool: self.amm_pool.to_account_info(),
-            mint_metadata: self.mint_metadata.to_account_info(),
-            a_token_vault: self.a_token_vault.to_account_info(),
-            a_vault: self.a_vault.to_account_info(),
-            a_vault_lp: self.a_vault_lp.to_account_info(),
-            a_vault_lp_mint: self.a_vault_lp_mint.to_account_info(),
-            token_a_mint: self.meme_mint.to_account_info(),
-            token_b_mint: self.quote_mint.to_account_info(),
-            b_token_vault: self.b_token_vault.to_account_info(),
-            b_vault: self.b_vault.to_account_info(),
-            b_vault_lp: self.b_vault_lp.to_account_info(),
-            b_vault_lp_mint: self.b_vault_lp_mint.to_account_info(),
-            admin_token_a_fee: self.admin_token_a_fee.to_account_info(),
-            admin_token_b_fee: self.admin_token_b_fee.to_account_info(),
-            payer_token_a: self.staking_meme_vault.to_account_info(),
-            payer_token_b: self.staking_quote_vault.to_account_info(),
-            payer_pool_lp: self.payer_pool_lp.to_account_info(),
-            metadata_program: self.metadata_program.to_account_info(),
-            associated_token_program: self.ata_program.to_account_info(),
-            vault_program: self.vault_program.to_account_info(),
-            token_program: self.token_program.to_account_info(),
-            system_program: self.system_program.to_account_info(),
-        };
+        let mut cpi =
+            dynamic_amm::cpi::accounts::InitializePermissionlessConstantProductPoolWithConfig {
+                lp_mint: self.lp_mint.to_account_info(),
+                payer: self.staking_pool_signer_pda.to_account_info(),
+                rent: self.rent.to_account_info(),
+                pool: self.amm_pool.to_account_info(),
+                mint_metadata: self.mint_metadata.to_account_info(),
+                a_token_vault: self.a_token_vault.to_account_info(),
+                a_vault: self.a_vault.to_account_info(),
+                a_vault_lp: self.a_vault_lp.to_account_info(),
+                a_vault_lp_mint: self.a_vault_lp_mint.to_account_info(),
+                token_a_mint: self.meme_mint.to_account_info(),
+                token_b_mint: self.quote_mint.to_account_info(),
+                b_token_vault: self.b_token_vault.to_account_info(),
+                b_vault: self.b_vault.to_account_info(),
+                b_vault_lp: self.b_vault_lp.to_account_info(),
+                b_vault_lp_mint: self.b_vault_lp_mint.to_account_info(),
+                protocol_token_a_fee: self.protocol_token_a_fee.to_account_info(),
+                protocol_token_b_fee: self.protocol_token_b_fee.to_account_info(),
+                config: self.config.to_account_info(),
+                payer_token_a: self.staking_meme_vault.to_account_info(),
+                payer_token_b: self.staking_quote_vault.to_account_info(),
+                payer_pool_lp: self.payer_pool_lp.to_account_info(),
+                metadata_program: self.metadata_program.to_account_info(),
+                associated_token_program: self.ata_program.to_account_info(),
+                vault_program: self.vault_program.to_account_info(),
+                token_program: self.token_program.to_account_info(),
+                system_program: self.system_program.to_account_info(),
+            };
+
+        let (mut sorted_amt_a, mut sorted_amt_b) = (token_a_amount, token_b_amount);
+        if self.meme_mint.key() > self.quote_mint.key() {
+            cpi.token_a_mint = self.quote_mint.to_account_info();
+            cpi.payer_token_a = self.staking_quote_vault.to_account_info();
+            cpi.token_b_mint = self.meme_mint.to_account_info();
+            cpi.payer_token_b = self.staking_meme_vault.to_account_info();
+            sorted_amt_a = token_b_amount;
+            sorted_amt_b = token_a_amount;
+        }
+
         let cpi_ctx = CpiContext::new_with_signer(program, cpi, seeds);
-        dynamic_amm::cpi::initialize_permissionless_pool_with_fee_tier(
+        dynamic_amm::cpi::initialize_permissionless_constant_product_pool_with_config(
             cpi_ctx,
-            CurveType::ConstantProduct,
-            trade_fee_bps,
-            token_a_amount,
-            token_b_amount,
+            sorted_amt_a,
+            sorted_amt_b,
         )
     }
 
@@ -231,13 +242,7 @@ pub fn handle(ctx: Context<GoLive>) -> Result<()> {
 
     msg!("3");
     // 3. Initialize pool & Add liquidity to the pool
-    let trade_fee_bps = 100u64;
-    accs.create_pool(
-        staking_signer_seeds,
-        trade_fee_bps,
-        amm_meme_balance,
-        quote_supply,
-    )?;
+    accs.create_pool(staking_signer_seeds, amm_meme_balance, quote_supply)?;
 
     msg!("4");
     // 4. Create lock
