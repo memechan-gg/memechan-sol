@@ -8,7 +8,7 @@ use dynamic_amm::state::CurveType;
 use dynamic_vault::program::DynamicVault as MeteoraVault;
 
 #[derive(Accounts)]
-pub struct GoLive<'info> {
+pub struct InitMemeAmmPool<'info> {
     /// Signer
     #[account(mut)]
     pub signer: Signer<'info>,
@@ -112,7 +112,7 @@ pub struct GoLive<'info> {
     pub system_program: Program<'info, System>,
 }
 
-impl<'info> GoLive<'info> {
+impl<'info> InitMemeAmmPool<'info> {
     fn create_pool(
         &self,
         seeds: &[&[&[u8]]],
@@ -209,7 +209,7 @@ impl<'info> GoLive<'info> {
     }
 }
 
-pub fn handle(ctx: Context<GoLive>) -> Result<()> {
+pub fn handle(ctx: Context<InitMemeAmmPool>) -> Result<()> {
     let accs = ctx.accounts;
 
     let staking_seeds = &[

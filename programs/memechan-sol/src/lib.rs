@@ -71,6 +71,14 @@ pub mod memechan_sol {
         init_staking_pool::handle(ctx)
     }
 
+    pub fn init_meme_amm_pool(ctx: Context<InitMemeAmmPool>) -> Result<()> {
+        init_meme_amm_pool::handle(ctx)
+    }
+
+    pub fn init_chan_amm_pool(ctx: Context<InitChanAmmPool>) -> Result<()> {
+        init_chan_amm_pool::handle(ctx)
+    }
+
     pub fn new_target_config(ctx: Context<NewTargetConfig>, target_amount: u64) -> Result<()> {
         new_target_config::handle(ctx, target_amount)
     }
@@ -82,8 +90,12 @@ pub mod memechan_sol {
         change_target_config::handle(ctx, target_amount)
     }
 
-    pub fn go_live(ctx: Context<GoLive>) -> Result<()> {
-        go_live::handle(ctx)
+    pub fn change_chan_price(
+        ctx: Context<ChangeChanPrice>,
+        new_price_num: u64,
+        new_price_denom: u64,
+    ) -> Result<()> {
+        change_chan_price::handle(ctx, new_price_num, new_price_denom)
     }
 
     pub fn add_fees<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<()> {

@@ -52,6 +52,8 @@ pub enum AmmError {
     InvalidStatus,
     CantUnstakeBeforeCliff,
     NoFeesToAdd,
+    #[msg("Staking should be fully initialized before it can be interacted with")]
+    StakingIsNotActive,
 }
 
 #[allow(dead_code)]

@@ -12,11 +12,15 @@ pub struct StakingPool {
     pub lp_mint: Pubkey,
     pub quote_vault: Pubkey,
     pub quote_mint: Pubkey,
+    pub chan_vault: Pubkey,
     pub amm_pool: Pubkey,
+    pub chan_amm_pool: Pubkey,
     pub vesting_config: VestingConfig,
     pub stakes_total: u64,
     pub fees_x_total: u64,
     pub fees_y_total: u64,
+    pub fees_z_total: u64,
+    pub is_active: bool,
 }
 
 impl StakingPool {
@@ -32,12 +36,15 @@ impl StakingPool {
         let lp_mint = 32;
         let quote_vault = 32;
         let quote_mint = 32;
-        let raydium_amm = 32;
+        let amm_pool = 32;
+        let chan_amm_pool = 32;
         let vesting_config = mem::size_of::<VestingConfig>();
         let stakes_total = 8;
         let fees_x_total = 8;
         let fees_y_total = 8;
-        let padding = 64;
+        let fees_z_total = 8;
+        let is_active = 1;
+        let padding = 128;
 
         discriminant
             + pool
@@ -47,11 +54,14 @@ impl StakingPool {
             + lp_mint
             + quote_vault
             + quote_mint
-            + raydium_amm
+            + amm_pool
+            + chan_amm_pool
             + vesting_config
             + stakes_total
             + fees_x_total
             + fees_y_total
-            + padding
+            + fees_z_total
+            + is_active
+        // + padding
     }
 }

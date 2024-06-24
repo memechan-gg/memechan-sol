@@ -36,6 +36,16 @@ pub const ADMIN_KEY: Pubkey =
     solana_program::pubkey!("KZbAoMgCcb2gDEn2Ucea86ux84y25y3ybbWQGQpd9D6");
 
 #[cfg(not(feature = "mainnet"))]
+pub const SWAP_AUTH_KEY: Pubkey =
+    solana_program::pubkey!("8SvkUtJZCyJwSQGkiszwcRcPv7c8pPSr8GVEppGNN7DV");
+#[cfg(feature = "mainnet")]
+pub const SWAP_AUTH_KEY: Pubkey =
+    solana_program::pubkey!("KZbAoMgCcb2gDEn2Ucea86ux84y25y3ybbWQGQpd9D6");
+
+#[cfg(not(feature = "mainnet"))]
 pub const FEE_KEY: Pubkey = solana_program::pubkey!("feeLPZEfzJFwDR11cdMWE3nSa4nr7sPPM4u6tmDTw3Y");
 #[cfg(feature = "mainnet")]
 pub const FEE_KEY: Pubkey = solana_program::pubkey!("feeLPZEfzJFwDR11cdMWE3nSa4nr7sPPM4u6tmDTw3Y");
+
+pub const CHAN_MINT: Pubkey =
+    solana_program::pubkey!("HX2pp5za2aBkrA5X5iTioZXcrpWb2q9DiaeWPW3qKMaw");

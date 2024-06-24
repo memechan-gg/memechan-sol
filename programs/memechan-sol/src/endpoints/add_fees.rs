@@ -3,6 +3,7 @@ use crate::models::staking::StakingPool;
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token, TokenAccount};
 
+use crate::err::AmmError;
 use dynamic_amm::program::DynamicAmm as MeteoraAmm;
 use dynamic_vault::program::DynamicVault as MeteoraVault;
 
@@ -11,8 +12,8 @@ pub struct AddFees<'info> {
     #[account(
         mut,
         has_one = meme_vault,
-        has_one = quote_vault,
-        has_one = amm_pool
+        has_one = amm_pool,
+        constraint = staking.quote_vault == quote_vault.key() || staking.chan_vault == quote_vault.key(),
     )]
     pub staking: Account<'info, StakingPool>,
     #[account(mut)]
@@ -105,6 +106,10 @@ impl<'info> AddFees<'info> {
 
 pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<()> {
     let accs = ctx.accounts;
+
+    if !accs.staking.is_active {
+        return Err(error!(AmmError::StakingIsNotActive));
+    }
 
     let staking_seeds = &[
         StakingPool::SIGNER_PDA_PREFIX,

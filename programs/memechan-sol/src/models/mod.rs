@@ -1,4 +1,5 @@
 pub mod bound;
+pub mod chan_swap;
 pub mod fee_distribution;
 pub mod fees;
 pub mod staked_lp;
