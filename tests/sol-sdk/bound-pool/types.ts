@@ -5,6 +5,7 @@ import { MemechanClient } from "../MemechanClient";
 import { MemeTicket } from "../memeticket/MemeTicket";
 import { TokenMetadata } from "../token/types";
 import { BoundPoolType } from "../../bound_pool";
+import { TokenInfo } from "@solana/spl-token-registry";
 
 export interface SwapYArgs {
   payer: Signer;
@@ -63,9 +64,19 @@ export interface GoLiveArgs {
   memeVault: PublicKey;
   feeDestinationWalletAddress: PublicKey;
   quoteVault: PublicKey;
+  tokenInfoA: TokenInfo;
+  tokenInfoB: TokenInfo;
 }
 
+export type InitChanAmmPool = GoLiveArgs & {
+  chanSwap: PublicKey;
+};
+
 export type GetGoLiveTransactionArgs = GoLiveArgs & {
+  transaction?: Transaction;
+};
+
+export type GetInitChanPoolTransactionArgs = InitChanAmmPool & {
   transaction?: Transaction;
 };
 
@@ -103,6 +114,7 @@ export type GetCreateNewBondingPoolAndTokenTransactionArgs = Omit<
 };
 
 export interface InitStakingPoolResult {
+  staking: PublicKey;
   stakingMemeVault: PublicKey;
   stakingQuoteVault: PublicKey;
 }

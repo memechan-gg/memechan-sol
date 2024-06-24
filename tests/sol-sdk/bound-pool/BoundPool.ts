@@ -45,10 +45,12 @@ import {
   GetBuyMemeTransactionOutput,
   GetCreateNewBondingPoolAndTokenTransactionArgs,
   GetGoLiveTransactionArgs,
+  GetInitChanPoolTransactionArgs,
   GetInitStakingPoolTransactionArgs,
   GetOutputAmountForBuyMeme,
   GetSellMemeTransactionArgs,
   GoLiveArgs,
+  InitChanAmmPool,
   InitStakingPoolArgs,
   InitStakingPoolResult,
   SwapXArgs,
@@ -57,6 +59,7 @@ import {
 
 import { findProgramAddress } from "../common/helpers";
 import {
+  CHAN_TOKEN_INFO,
   DEFAULT_MAX_M,
   DEFAULT_MAX_M_LP,
   MEMECHAN_MEME_TOKEN_DECIMALS,
@@ -122,6 +125,7 @@ import {
 } from "@mercurial-finance/dynamic-amm-sdk/dist/cjs/src/amm/constants";
 import { ATA_PROGRAM_ID } from "../raydium/config";
 import { LockEscrowAccount } from "@mercurial-finance/dynamic-amm-sdk/dist/cjs/src/amm/types";
+import { ChanSwapWrapper } from "../../chan_swap";
 
 export class BoundPoolClient {
   private constructor(
@@ -931,6 +935,7 @@ export class BoundPoolClient {
     input: GetInitStakingPoolTransactionArgs
   ): Promise<{
     transaction: Transaction;
+    staking: PublicKey;
     stakingQuoteVault: PublicKey;
     stakingMemeVault: PublicKey;
   }> {
@@ -965,42 +970,53 @@ export class BoundPoolClient {
       transaction: tx,
     });
 
-    const methodArgs = {
-      pool,
-      signer: user,
-      boundPoolSignerPda: this.findSignerPda(),
-      memeTicket: adminTicketId,
-      poolMemeVault: boundPoolInfo.memeReserve.vault,
-      poolQuoteVault: boundPoolInfo.quoteReserve.vault,
-      stakingMemeVault,
-      stakingQuoteVault: stakingQuoteVault,
-      quoteMint: this.quoteTokenMint,
-      staking: stakingId,
-      stakingPoolSignerPda: stakingSigner,
-      feeVaultQuote: boundPoolInfo.feeVaultQuote,
-      systemProgram: SystemProgram.programId,
-      tokenProgram: TOKEN_PROGRAM_ID,
-      clock: SYSVAR_CLOCK_PUBKEY,
-      rent: SYSVAR_RENT_PUBKEY,
-      memeMint: boundPoolInfo.memeReserve.mint,
-      ataProgram: ATA_PROGRAM_ID,
-      user,
-    };
+    const stakingChanVault = await ensureAssociatedTokenAccountWithIX({
+      connection: this.client.connection,
+      payer: payer.publicKey,
+      mint: new PublicKey(CHAN_TOKEN_INFO.address),
+      owner: stakingSigner,
+      transaction: tx,
+    });
 
-    const initStakingPoolInstruction = await this.client.memechanProgram.methods
+    const initStakingPoolInstruction = await memechan.methods
       .initStakingPool()
-      .accounts(methodArgs)
+      .accounts({
+        pool,
+        signer: user,
+        boundPoolSignerPda: this.findSignerPda(),
+        memeTicket: adminTicketId,
+        poolMemeVault: boundPoolInfo.memeReserve.vault,
+        poolQuoteVault: boundPoolInfo.quoteReserve.vault,
+        stakingMemeVault,
+        stakingQuoteVault: stakingQuoteVault,
+        stakingChanVault: stakingChanVault,
+        quoteMint: this.quoteTokenMint,
+        staking: stakingId,
+        stakingPoolSignerPda: stakingSigner,
+        feeVaultQuote: boundPoolInfo.feeVaultQuote,
+        systemProgram: SystemProgram.programId,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        clock: SYSVAR_CLOCK_PUBKEY,
+        rent: SYSVAR_RENT_PUBKEY,
+        memeMint: boundPoolInfo.memeReserve.mint,
+        ataProgram: ATA_PROGRAM_ID,
+      })
       .instruction();
 
     tx.add(initStakingPoolInstruction);
 
-    return { transaction: tx, stakingMemeVault, stakingQuoteVault };
+    return {
+      transaction: tx,
+      staking: stakingId,
+      stakingMemeVault,
+      stakingQuoteVault,
+    };
   }
 
   public async initStakingPool(
     input: InitStakingPoolArgs
   ): Promise<InitStakingPoolResult> {
-    const { transaction, stakingMemeVault, stakingQuoteVault } =
+    const { transaction, staking, stakingMemeVault, stakingQuoteVault } =
       await this.getInitStakingPoolTransaction({
         ...input,
         user: input.user.publicKey,
@@ -1018,7 +1034,7 @@ export class BoundPoolClient {
       functionName: "initStakingPool",
     });
 
-    return { stakingMemeVault, stakingQuoteVault };
+    return { staking, stakingMemeVault, stakingQuoteVault };
   }
 
   public async getSellMemeTransaction(
@@ -1054,7 +1070,9 @@ export class BoundPoolClient {
     return tx;
   }
 
-  public async getGoLiveTransaction(args: GetGoLiveTransactionArgs): Promise<{
+  public async getInitQuoteAmmPoolTransaction(
+    args: GetGoLiveTransactionArgs
+  ): Promise<{
     goLiveTransaction: VersionedTransaction;
     stakingId: PublicKey;
   }> {
@@ -1065,6 +1083,8 @@ export class BoundPoolClient {
       memeVault,
       quoteVault,
       transaction = new Transaction(),
+      tokenInfoA,
+      tokenInfoB,
     } = args;
     const stakingId = BoundPoolClient.findStakingPda(
       boundPoolInfo.memeReserve.mint,
@@ -1074,16 +1094,6 @@ export class BoundPoolClient {
       stakingId,
       this.client.memechanProgram.programId
     );
-    const baseTokenInfo = new Token(
-      TOKEN_PROGRAM_ID,
-      new PublicKey(boundPoolInfo.memeReserve.mint),
-      MEMECHAN_MEME_TOKEN_DECIMALS
-    );
-    //const quoteTokenInfo = MEMECHAN_QUOTE_TOKEN;
-
-    // TODO: Put all the transactions into one (now they exceed trx size limit)
-    // const createMarketInstructions = getCreateMarketInstructions(transactions);
-    // createMarketTransaction.add(...createMarketInstructions);
 
     transaction.add(
       SystemProgram.transfer({
@@ -1105,21 +1115,6 @@ export class BoundPoolClient {
     });
 
     transaction.add(addPriorityFee);
-
-    const tokenInfoA: TokenInfo = {
-      chainId: 0,
-      address: boundPoolInfo.memeReserve.mint.toBase58(),
-      name: "",
-      decimals: MEMECHAN_MEME_TOKEN_DECIMALS,
-      symbol: "",
-    };
-    const tokenInfoB: TokenInfo = {
-      chainId: 0,
-      address: MEMECHAN_QUOTE_TOKEN.mint.toBase58(),
-      name: MEMECHAN_QUOTE_TOKEN.name,
-      decimals: MEMECHAN_QUOTE_TOKEN.decimals,
-      symbol: MEMECHAN_QUOTE_TOKEN.symbol,
-    };
 
     const tradeFeeBps = new BN(100);
 
@@ -1230,7 +1225,7 @@ export class BoundPoolClient {
 
     console.log("7");
     const goLiveInstruction = await this.client.memechanProgram.methods
-      .goLive()
+      .initMemeAmmPool()
       .accounts({
         adminTokenAFee,
         adminTokenBFee,
@@ -1249,7 +1244,7 @@ export class BoundPoolClient {
         feeOwner: FEE_OWNER,
         lockEscrow: lockEscrowPK,
         payerPoolLp: payerPoolLp,
-        quoteMint: QUOTE_MINT,
+        quoteMint: tokenBMint,
         memeMint: boundPoolInfo.memeReserve.mint,
 
         staking: stakingId,
@@ -1333,12 +1328,324 @@ export class BoundPoolClient {
     };
   }
 
-  public async goLive2(args: GoLiveArgs): Promise<StakingPool> {
+  public async getInitChanAmmPoolTransaction(
+    args: GetInitChanPoolTransactionArgs
+  ): Promise<{
+    goLiveTransaction: VersionedTransaction;
+    stakingId: PublicKey;
+  }> {
+    const {
+      boundPoolInfo,
+      user,
+      feeDestinationWalletAddress,
+      memeVault,
+      transaction = new Transaction(),
+      tokenInfoA,
+      tokenInfoB,
+      chanSwap,
+    } = args;
+    const stakingId = BoundPoolClient.findStakingPda(
+      boundPoolInfo.memeReserve.mint,
+      this.client.memechanProgram.programId
+    );
+    const stakingSigner = StakingPool.findSignerPda(
+      stakingId,
+      this.client.memechanProgram.programId
+    );
+
+    transaction.add(
+      SystemProgram.transfer({
+        fromPubkey: user.publicKey,
+        toPubkey: stakingSigner,
+        lamports: 2_000_000_000,
+      })
+    );
+    console.log("staking signer ", stakingSigner);
+
+    const modifyComputeUnits = ComputeBudgetProgram.setComputeUnitLimit({
+      units: 500000,
+    });
+
+    transaction.add(modifyComputeUnits);
+
+    const addPriorityFee = ComputeBudgetProgram.setComputeUnitPrice({
+      microLamports: 5000000,
+    });
+
+    transaction.add(addPriorityFee);
+
+    const tradeFeeBps = new BN(100);
+
+    const { vaultProgram, ammProgram } = createProgram(provider.connection);
+
+    const tokenAMint = new PublicKey(tokenInfoA.address);
+    const tokenBMint = new PublicKey(tokenInfoB.address);
+    const [
+      { vaultPda: aVault, tokenVaultPda: aTokenVault, lpMintPda: aLpMintPda },
+      { vaultPda: bVault, tokenVaultPda: bTokenVault, lpMintPda: bLpMintPda },
+    ] = [
+      getVaultPdas(tokenAMint, vaultProgram.programId),
+      getVaultPdas(tokenBMint, vaultProgram.programId),
+    ];
+    const [aVaultAccount, bVaultAccount] = await Promise.all([
+      vaultProgram.account.vault.fetchNullable(aVault),
+      vaultProgram.account.vault.fetchNullable(bVault),
+    ]);
+
+    console.log("1");
+    let aVaultLpMint = aLpMintPda;
+    let bVaultLpMint = bLpMintPda;
+    let preInstructions: Array<solana.TransactionInstruction> = [];
+
+    if (!aVaultAccount) {
+      const createVaultAIx =
+        await VaultImpl.createPermissionlessVaultInstruction(
+          provider.connection,
+          user.publicKey,
+          tokenInfoA
+        );
+      createVaultAIx && preInstructions.push(createVaultAIx);
+    } else {
+      aVaultLpMint = aVaultAccount.lpMint; // Old vault doesn't have lp mint pda
+    }
+    if (!bVaultAccount) {
+      const createVaultBIx =
+        await VaultImpl.createPermissionlessVaultInstruction(
+          provider.connection,
+          user.publicKey,
+          tokenInfoB
+        );
+      createVaultBIx && preInstructions.push(createVaultBIx);
+    } else {
+      bVaultLpMint = bVaultAccount.lpMint; // Old vault doesn't have lp mint pda
+    }
+
+    console.log("2", preInstructions[0].programId.toBase58());
+    console.log(
+      await sendAndConfirmTransaction(
+        provider.connection,
+        new Transaction().add(...preInstructions),
+        [user]
+      )
+    );
+
+    const poolPubkey = derivePoolAddress(
+      provider.connection,
+      tokenInfoA,
+      tokenInfoB,
+      false,
+      tradeFeeBps
+    );
+    console.log("3");
+    const [[aVaultLp], [bVaultLp]] = [
+      PublicKey.findProgramAddressSync(
+        [aVault.toBuffer(), poolPubkey.toBuffer()],
+        ammProgram.programId
+      ),
+      PublicKey.findProgramAddressSync(
+        [bVault.toBuffer(), poolPubkey.toBuffer()],
+        ammProgram.programId
+      ),
+    ];
+
+    const [[adminTokenAFee], [adminTokenBFee]] = [
+      PublicKey.findProgramAddressSync(
+        [Buffer.from(SEEDS.FEE), tokenAMint.toBuffer(), poolPubkey.toBuffer()],
+        ammProgram.programId
+      ),
+      PublicKey.findProgramAddressSync(
+        [Buffer.from(SEEDS.FEE), tokenBMint.toBuffer(), poolPubkey.toBuffer()],
+        ammProgram.programId
+      ),
+    ];
+
+    console.log("4");
+    const [lpMint] = PublicKey.findProgramAddressSync(
+      [Buffer.from(SEEDS.LP_MINT), poolPubkey.toBuffer()],
+      ammProgram.programId
+    );
+
+    const [mintMetadata, _mintMetadataBump] = deriveMintMetadata(lpMint);
+
+    const [lockEscrowPK] = deriveLockEscrowPda(
+      poolPubkey,
+      stakingSigner,
+      ammProgram.programId
+    );
+
+    console.log("5");
+    preInstructions = [];
+
+    const payerPoolLp = await getAssociatedTokenAccount(lpMint, stakingSigner);
+
+    const escrowAta = await getAssociatedTokenAccount(lpMint, lockEscrowPK);
+    console.log(escrowAta);
+
+    const fetchedChanSwap =
+      await this.client.memechanProgram.account.chanSwap.fetch(chanSwap);
+
+    const staking = await this.client.memechanProgram.account.stakingPool.fetch(
+      stakingId
+    );
+
+    console.log("7");
+    const goLiveInstruction = await this.client.memechanProgram.methods
+      .initChanAmmPool()
+      .accounts({
+        adminTokenAFee,
+        adminTokenBFee,
+        ammPool: poolPubkey,
+        aTokenVault,
+        aVault,
+        aVaultLp,
+        aVaultLpMint,
+        bTokenVault,
+        bVault,
+        bVaultLp,
+        bVaultLpMint,
+        lpMint,
+        mintMetadata,
+        escrowVault: escrowAta,
+        feeOwner: FEE_OWNER,
+        lockEscrow: lockEscrowPK,
+        payerPoolLp: payerPoolLp,
+        chanMint: tokenBMint,
+        memeMint: boundPoolInfo.memeReserve.mint,
+
+        staking: stakingId,
+        stakingMemeVault: memeVault,
+        stakingPoolSignerPda: stakingSigner,
+        stakingChanVault: staking.chanVault,
+
+        chanSwap,
+        chanSwapSignerPda: ChanSwapWrapper.chanSwapSigner(),
+        chanSwapVault: fetchedChanSwap.chanVault,
+
+        signer: user.publicKey,
+
+        rent: SYSVAR_RENT_PUBKEY,
+        ataProgram: ATA_PROGRAM_ID,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        systemProgram: SystemProgram.programId,
+        metadataProgram: METADATA_PROGRAM_ID,
+        ammProgram: ammProgram.programId,
+        vaultProgram: vaultProgram.programId,
+      })
+      .instruction();
+
+    transaction.add(goLiveInstruction);
+
+    const [createLUTix, LUTaddr] =
+      solana.AddressLookupTableProgram.createLookupTable({
+        authority: admin,
+        payer: admin,
+        recentSlot: LUT2SLOT,
+      });
+    const extendIxs = solana.AddressLookupTableProgram.extendLookupTable({
+      payer: admin,
+      lookupTable: LUTaddr,
+      authority: admin,
+      addresses: [
+        admin,
+        SystemProgram.programId,
+        TOKEN_PROGRAM_ID,
+        ASSOCIATED_PROGRAM_ID,
+        memechan.programId,
+        TargetConfig.findTargetConfigPda(QUOTE_MINT, memechan.programId),
+        poolPubkey,
+        user.publicKey,
+        FEE_OWNER,
+        SYSVAR_RENT_PUBKEY,
+        QUOTE_MINT,
+      ],
+    });
+
+    const tx = new Transaction().add(createLUTix, extendIxs);
+    const txDig = await sendAndConfirmTransaction(provider.connection, tx, [
+      adminSigner,
+    ]);
+
+    await sleep(1000);
+
+    const lutAddr = getLUTPDA({
+      authority: admin,
+      recentSlot: LUT2SLOT,
+    });
+
+    console.log(lutAddr);
+
+    console.log("trying LUT");
+    const lookupTableAccount = (
+      await provider.connection.getAddressLookupTable(lutAddr)
+    ).value;
+
+    const blockhash = await provider.connection.getLatestBlockhash();
+
+    const txMessage = new TransactionMessage({
+      instructions: transaction.instructions,
+      payerKey: user.publicKey,
+      recentBlockhash: blockhash.blockhash,
+    }).compileToV0Message([lookupTableAccount]);
+
+    const transactionV0 = new VersionedTransaction(txMessage);
+
+    console.log("44");
+    transactionV0.sign([user]);
+
+    return {
+      goLiveTransaction: transactionV0,
+      stakingId,
+    };
+  }
+
+  public async initQuoteAmmPool(args: GoLiveArgs): Promise<StakingPool> {
     console.log("goLive2 Begin");
     // Get needed transactions
-    const { goLiveTransaction, stakingId } = await this.getGoLiveTransaction(
-      args
+    const { goLiveTransaction, stakingId } =
+      await this.getInitQuoteAmmPoolTransaction(args);
+
+    console.log("goLive2 1");
+    // Send transaction to go live
+    const goLiveSignature = await provider.connection.sendTransaction(
+      goLiveTransaction,
+      { skipPreflight: true }
     );
+
+    console.log("go live signature:", goLiveSignature);
+
+    // Check go live succeeded
+    const {
+      blockhash: blockhash1,
+      lastValidBlockHeight: lastValidBlockHeight1,
+    } = await this.client.connection.getLatestBlockhash("confirmed");
+    const goLiveTxResult = await this.client.connection.confirmTransaction(
+      {
+        signature: goLiveSignature,
+        blockhash: blockhash1,
+        lastValidBlockHeight: lastValidBlockHeight1,
+      },
+      "confirmed"
+    );
+
+    if (goLiveTxResult.value.err) {
+      console.error("goLiveTxResult:", goLiveTxResult);
+      throw new Error("goLiveTxResult failed");
+    }
+
+    const stakingPoolInstance = await StakingPool.fromStakingPoolId({
+      client: this.client,
+      poolAccountAddressId: stakingId,
+    });
+
+    return stakingPoolInstance;
+  }
+
+  public async initChanAmmPool(args: InitChanAmmPool) {
+    console.log("goLive2 Begin");
+    // Get needed transactions
+
+    const { goLiveTransaction, stakingId } =
+      await this.getInitChanAmmPoolTransaction(args);
 
     console.log("goLive2 1");
     // Send transaction to go live

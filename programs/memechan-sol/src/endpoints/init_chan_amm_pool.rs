@@ -17,7 +17,7 @@ pub struct InitChanAmmPool<'info> {
     /// Staking Pool Account
     #[account(
         mut,
-        constraint = staking.amm_pool.key() == system_program.key(),
+        constraint = staking.amm_pool.key() != system_program.key(),
         constraint = staking.chan_amm_pool.key() == system_program.key(),
         constraint = staking.is_active == false,
         seeds = [StakingPool::POOL_PREFIX, meme_mint.key().as_ref()],
@@ -54,7 +54,7 @@ pub struct InitChanAmmPool<'info> {
     // Chanswap
     pub chan_swap: Box<Account<'info, ChanSwap>>,
     /// CHECK: chan swap pda signer
-    #[account(mut, seeds = [ChanSwap::SIGNER_PDA_PREFIX, chan_swap.key().as_ref()], bump)]
+    #[account(mut, seeds = [ChanSwap::SIGNER_PDA_PREFIX], bump)]
     pub chan_swap_signer_pda: AccountInfo<'info>,
     pub chan_swap_vault: Box<Account<'info, TokenAccount>>,
     // Meteora Amm Program accounts

@@ -1,6 +1,7 @@
 import { TOKEN_PROGRAM_ID, Token } from "@raydium-io/raydium-sdk";
 import { PublicKey } from "@solana/web3.js";
 import { QUOTE_MINT, memechan } from "../../helpers";
+import { TokenInfo } from "@solana/spl-token-registry";
 
 /**
  * The base URL for the backend API for fetching off-chain data.
@@ -32,6 +33,22 @@ export const MEMECHAN_QUOTE_TOKEN: Token = new Token(
   "SLERF",
   "SLERF"
 );
+
+export const MEMECHAN_QUOTE_TOKEN_INFO: TokenInfo = {
+  chainId: 0,
+  address: MEMECHAN_QUOTE_TOKEN.mint.toBase58(),
+  name: MEMECHAN_QUOTE_TOKEN.name,
+  decimals: MEMECHAN_QUOTE_TOKEN.decimals,
+  symbol: MEMECHAN_QUOTE_TOKEN.symbol,
+};
+export const CHAN_TOKEN_INFO: TokenInfo = {
+  chainId: 0,
+  address: "HX2pp5za2aBkrA5X5iTioZXcrpWb2q9DiaeWPW3qKMaw",
+  name: "memechan",
+  decimals: 9,
+  symbol: "CHAN",
+};
+
 export const MEMECHAN_MEME_TOKEN_DECIMALS = 6;
 
 // Contract constants

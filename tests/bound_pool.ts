@@ -42,12 +42,14 @@ import {
   getCreateTokenAccountInstructions,
 } from "./sol-sdk/util/getCreateAccountInstruction";
 import {
-  MEMECHAN_QUOTE_MINT,
+  CHAN_TOKEN_INFO,
   MEMECHAN_QUOTE_TOKEN,
+  MEMECHAN_QUOTE_TOKEN_INFO,
 } from "./sol-sdk/config/config";
 import { associatedAddress } from "@coral-xyz/anchor/dist/cjs/utils/token";
 import { TokenInfo } from "@solana/spl-token-registry";
 import AmmImpl from "@mercurial-finance/dynamic-amm-sdk";
+import { ChanSwapWrapper } from "./chan_swap";
 
 export const RAYDIUM_PROGRAM_ID = new PublicKey(
   "HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8"
@@ -83,30 +85,48 @@ export class BoundPoolWrapper {
       pool: this.bpClient.id,
     });
 
-    const staking = await this.bpClient.goLive2({
+    const stakingFetched = await memechan.account.stakingPool.fetch(
+      res.staking
+    );
+
+    const tokenInfoA: TokenInfo = {
+      chainId: 0,
+      address: stakingFetched.memeMint.toBase58(),
+      name: "asdda",
+      decimals: MEMECHAN_MEME_TOKEN_DECIMALS,
+      symbol: "ads",
+    };
+    const tokenInfoB = MEMECHAN_QUOTE_TOKEN_INFO;
+    const tokenInfoC = CHAN_TOKEN_INFO;
+
+    const staking = await this.bpClient.initQuoteAmmPool({
       boundPoolInfo: this.bpClient.poolInfo,
       feeDestinationWalletAddress: FEE_DESTINATION_ID,
       memeVault: res.stakingMemeVault,
       quoteVault: res.stakingQuoteVault,
       payer,
       user: payer,
+      tokenInfoA,
+      tokenInfoB,
     });
     console.log("goLive2 END");
     console.log(staking.memeMint, staking.amm);
-    const tokenInfoA: TokenInfo = {
-      chainId: 0,
-      address: staking.memeMint.toBase58(),
-      name: "asdda",
-      decimals: MEMECHAN_MEME_TOKEN_DECIMALS,
-      symbol: "ads",
-    };
-    const tokenInfoB: TokenInfo = {
-      chainId: 0,
-      address: MEMECHAN_QUOTE_TOKEN.mint.toBase58(),
-      name: MEMECHAN_QUOTE_TOKEN.name,
-      decimals: MEMECHAN_QUOTE_TOKEN.decimals,
-      symbol: MEMECHAN_QUOTE_TOKEN.symbol,
-    };
+
+    const chanSwap = ChanSwapWrapper.chanSwapId();
+
+    await this.bpClient.initChanAmmPool({
+      boundPoolInfo: this.bpClient.poolInfo,
+      feeDestinationWalletAddress: FEE_DESTINATION_ID,
+      memeVault: res.stakingMemeVault,
+      quoteVault: res.stakingQuoteVault,
+      payer,
+      user: payer,
+      tokenInfoA,
+      tokenInfoB: tokenInfoC,
+      chanSwap,
+    });
+    console.log("goLive2 END");
+    console.log(staking.memeMint, staking.amm);
 
     await sleep(500);
     const ammImpl = await AmmImpl.create(

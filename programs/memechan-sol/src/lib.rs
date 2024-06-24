@@ -90,6 +90,14 @@ pub mod memechan_sol {
         change_target_config::handle(ctx, target_amount)
     }
 
+    pub fn new_chan_swap(
+        ctx: Context<NewChanSwap>,
+        new_price_num: u64,
+        new_price_denom: u64,
+    ) -> Result<()> {
+        new_chan_swap::handle(ctx, new_price_num, new_price_denom)
+    }
+
     pub fn change_chan_price(
         ctx: Context<ChangeChanPrice>,
         new_price_num: u64,

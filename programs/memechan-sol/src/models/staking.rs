@@ -36,6 +36,7 @@ impl StakingPool {
         let lp_mint = 32;
         let quote_vault = 32;
         let quote_mint = 32;
+        let chan_vault = 32;
         let amm_pool = 32;
         let chan_amm_pool = 32;
         let vesting_config = mem::size_of::<VestingConfig>();
@@ -43,7 +44,7 @@ impl StakingPool {
         let fees_x_total = 8;
         let fees_y_total = 8;
         let fees_z_total = 8;
-        let is_active = 1;
+        let is_active = 8;
         let padding = 128;
 
         discriminant
@@ -54,6 +55,7 @@ impl StakingPool {
             + lp_mint
             + quote_vault
             + quote_mint
+            + chan_vault
             + amm_pool
             + chan_amm_pool
             + vesting_config

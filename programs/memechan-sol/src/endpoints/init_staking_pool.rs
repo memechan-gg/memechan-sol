@@ -1,3 +1,4 @@
+use crate::consts::CHAN_MINT;
 use crate::consts::FEE_KEY;
 use crate::err;
 use crate::err::AmmError;
@@ -106,8 +107,21 @@ pub struct InitStakingPool<'info> {
         constraint = staking_quote_vault.delegate == COption::None
             @ err::acc("Staking quote vault must not have delegate"),
     )]
-    /// Bonding Pool WSOL vault
+    /// Bonding Pool Quote vault
     pub staking_quote_vault: Box<Account<'info, TokenAccount>>,
+    #[account(
+        mut,
+        constraint = staking_chan_vault.owner == staking_pool_signer_pda.key()
+        @ err::acc("Staking chan vault authority must match staking pool signer"),
+        constraint = staking_chan_vault.mint == CHAN_MINT
+        @ err::acc("Staking chan vault must be of chan mint"),
+        constraint = staking_chan_vault.close_authority == COption::None
+        @ err::acc("Staking chan vault must not have close authority"),
+        constraint = staking_chan_vault.delegate == COption::None
+        @ err::acc("Staking chan vault must not have delegate"),
+    )]
+    /// Bonding Pool CHAN vault
+    pub staking_chan_vault: Box<Account<'info, TokenAccount>>,
     //
     /// Meme Ticket Account of Admin
     #[account(
@@ -249,10 +263,13 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, InitStakingPool<'info>>) ->
     staking.meme_mint = accs.meme_mint.key();
     staking.quote_vault = accs.staking_quote_vault.key();
     staking.quote_mint = accs.quote_mint.key();
+    staking.chan_vault = accs.staking_chan_vault.key();
     staking.stakes_total = accs.pool.config.gamma_m;
     staking.vesting_config = vesting::default_config();
     staking.fees_x_total = 0;
     staking.fees_y_total = 0;
+    staking.fees_z_total = 0;
+    staking.is_active = false;
 
     staking.pool = accs.pool.key();
 
