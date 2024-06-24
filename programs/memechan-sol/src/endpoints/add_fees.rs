@@ -3,6 +3,7 @@ use crate::models::staking::StakingPool;
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token, TokenAccount};
 
+use crate::consts::CHAN_MINT;
 use crate::err::{self, AmmError};
 use dynamic_amm::program::DynamicAmm as MeteoraAmm;
 use dynamic_vault::program::DynamicVault as MeteoraVault;
@@ -153,7 +154,11 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<
     let state = &mut accs.staking;
 
     state.fees_x_total += fees_x;
-    state.fees_y_total += fees_y;
+    if accs.quote_mint.key() == CHAN_MINT {
+        state.fees_z_total += fees_y;
+    } else {
+        state.fees_y_total += fees_y;
+    }
 
     Ok(())
 }

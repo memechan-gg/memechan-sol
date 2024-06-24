@@ -11,6 +11,7 @@ pub struct WithdrawFees<'info> {
     #[account(
         has_one = meme_vault,
         has_one = quote_vault,
+        has_one = chan_vault
     )]
     pub staking: Box<Account<'info, StakingPool>>,
     #[account(
@@ -29,10 +30,17 @@ pub struct WithdrawFees<'info> {
         constraint = user_quote.owner == signer.key()
     )]
     pub user_quote: Box<Account<'info, TokenAccount>>,
+    #[account(
+        mut,
+        constraint = user_chan.owner == signer.key()
+    )]
+    pub user_chan: Box<Account<'info, TokenAccount>>,
     #[account(mut)]
     pub meme_vault: Box<Account<'info, TokenAccount>>,
     #[account(mut)]
     pub quote_vault: Box<Account<'info, TokenAccount>>,
+    #[account(mut)]
+    pub chan_vault: Box<Account<'info, TokenAccount>>,
     /// CHECK: pda signer
     #[account(seeds = [StakingPool::SIGNER_PDA_PREFIX, staking.key().as_ref()], bump)]
     pub staking_signer_pda: AccountInfo<'info>,
@@ -41,6 +49,16 @@ pub struct WithdrawFees<'info> {
 }
 
 impl<'info> WithdrawFees<'info> {
+    fn send_chan_fees_to_user(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+        let cpi_accounts = Transfer {
+            from: self.chan_vault.to_account_info(),
+            to: self.user_chan.to_account_info(),
+            authority: self.staking_signer_pda.to_account_info(),
+        };
+
+        let cpi_program = self.token_program.to_account_info();
+        CpiContext::new(cpi_program, cpi_accounts)
+    }
     fn send_quote_fees_to_user(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
             from: self.quote_vault.to_account_info(),
@@ -71,7 +89,10 @@ pub fn handle(ctx: Context<WithdrawFees>) -> Result<()> {
 
     let withdrawal = calc_withdraw(staking, lp_ticket).unwrap();
 
-    if withdrawal.max_withdrawal_meme == 0 && withdrawal.max_withdrawal_quote == 0 {
+    if withdrawal.max_withdrawal_meme == 0
+        && withdrawal.max_withdrawal_quote == 0
+        && withdrawal.max_withdrawal_chan == 0
+    {
         return Err(error!(AmmError::NoTokensToWithdraw));
     }
 
@@ -105,6 +126,14 @@ pub fn handle(ctx: Context<WithdrawFees>) -> Result<()> {
             accs.send_quote_fees_to_user()
                 .with_signer(staking_signer_seeds),
             withdrawal.max_withdrawal_quote,
+        )?;
+    }
+
+    if withdrawal.max_withdrawal_chan > 0 {
+        token::transfer(
+            accs.send_chan_fees_to_user()
+                .with_signer(staking_signer_seeds),
+            withdrawal.max_withdrawal_chan,
         )?;
     }
 
