@@ -1,10 +1,12 @@
 use crate::models::staking::StakingPool;
 
 use anchor_lang::prelude::*;
-use anchor_spl::token::{Mint, Token, TokenAccount};
+use anchor_spl::token;
+use anchor_spl::token::{Mint, Token, TokenAccount, Transfer};
 
-use crate::consts::CHAN_MINT;
+use crate::consts::{CHAN_MINT, FEE_KEY};
 use crate::err::{self, AmmError};
+use crate::models::fees::{get_fee_amount, COMMS_FEE};
 use dynamic_amm::program::DynamicAmm as MeteoraAmm;
 use dynamic_vault::program::DynamicVault as MeteoraVault;
 
@@ -25,6 +27,10 @@ pub struct AddFees<'info> {
     #[account(mut)]
     pub quote_vault: Box<Account<'info, TokenAccount>>,
     pub quote_mint: Box<Account<'info, Mint>>,
+    #[account(mut, token::authority = FEE_KEY)]
+    pub meme_fee_vault: Box<Account<'info, TokenAccount>>,
+    #[account(mut, token::authority = FEE_KEY)]
+    pub quote_fee_vault: Box<Account<'info, TokenAccount>>,
     /// CHECK: pda
     #[account(mut, seeds = [StakingPool::SIGNER_PDA_PREFIX, staking.key().as_ref()], bump)]
     pub staking_signer_pda: AccountInfo<'info>,
@@ -105,6 +111,28 @@ impl<'info> AddFees<'info> {
         let cpi_ctx = CpiContext::new_with_signer(program, cpi, signer_seeds);
         dynamic_amm::cpi::claim_fee(cpi_ctx, amount)
     }
+
+    fn send_meme_comms(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+        let cpi_accounts = Transfer {
+            from: self.meme_vault.to_account_info(),
+            to: self.meme_fee_vault.to_account_info(),
+            authority: self.staking_signer_pda.to_account_info(),
+        };
+
+        let cpi_program = self.token_program.to_account_info();
+        CpiContext::new(cpi_program, cpi_accounts)
+    }
+
+    fn send_quote_comms(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+        let cpi_accounts = Transfer {
+            from: self.quote_vault.to_account_info(),
+            to: self.quote_fee_vault.to_account_info(),
+            authority: self.staking_signer_pda.to_account_info(),
+        };
+
+        let cpi_program = self.token_program.to_account_info();
+        CpiContext::new(cpi_program, cpi_accounts)
+    }
 }
 
 pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<()> {
@@ -140,24 +168,40 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<
         quote_vault_initial_amt
     );
 
+    // Calculate fees received and commissions
     let fees_x = accs
         .meme_vault
         .amount
         .checked_sub(meme_vault_initial_amt)
         .unwrap();
+    let fees_x_comms = get_fee_amount(fees_x, COMMS_FEE).unwrap();
+
     let fees_y = accs
         .quote_vault
         .amount
         .checked_sub(quote_vault_initial_amt)
         .unwrap();
+    let fees_y_comms = get_fee_amount(fees_y, COMMS_FEE).unwrap();
 
+    // Send commissions
+    token::transfer(
+        accs.send_meme_comms().with_signer(staking_signer_seeds),
+        fees_x_comms,
+    )?;
+    token::transfer(
+        accs.send_quote_comms().with_signer(staking_signer_seeds),
+        fees_y_comms,
+    )?;
+
+    // Mutate the staking
     let state = &mut accs.staking;
 
-    state.fees_x_total += fees_x;
+    state.fees_x_total += fees_x - fees_x_comms;
+
     if accs.quote_mint.key() == CHAN_MINT {
-        state.fees_z_total += fees_y;
+        state.fees_z_total += fees_y - fees_y_comms;
     } else {
-        state.fees_y_total += fees_y;
+        state.fees_y_total += fees_y - fees_y_comms;
     }
 
     Ok(())

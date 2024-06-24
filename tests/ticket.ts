@@ -1,5 +1,5 @@
 import { PublicKey, Keypair } from "@solana/web3.js";
-import { memechan } from "./helpers";
+import { memechan } from "./sol-sdk/config/config";
 
 export interface BoundMerge {
   pool: PublicKey;

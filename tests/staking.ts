@@ -15,7 +15,7 @@ import {
 } from "@solana/web3.js";
 import { QUOTE_MINT, payer, provider } from "./helpers";
 import { AmmPool } from "./pool";
-import { Address, BN } from "@coral-xyz/anchor";
+import { Address, BN, IdlAccounts } from "@coral-xyz/anchor";
 import { MemeTicketWrapper } from "./ticket";
 import { MEMO_PROGRAM_ID } from "@raydium-io/raydium-sdk";
 import { StakingPool } from "./sol-sdk/staking-pool/StakingPool";
@@ -30,7 +30,15 @@ import { SEEDS } from "@mercurial-finance/dynamic-amm-sdk/dist/cjs/src/amm/const
 import VaultImpl, { getVaultPdas } from "@mercurial-finance/vault-sdk";
 import { TokenInfo } from "@solana/spl-token-registry";
 import { MEMECHAN_MEME_TOKEN_DECIMALS } from "./bound_pool";
-import { MEMECHAN_QUOTE_TOKEN, memechan } from "./sol-sdk/config/config";
+import {
+  CHAN_TOKEN_INFO,
+  MEMECHAN_QUOTE_TOKEN,
+  memechan,
+} from "./sol-sdk/config/config";
+import { FEE_VAULT_OWNER } from "./common";
+import { MemechanSol } from "../target/types/memechan_sol";
+
+export type Staking = IdlAccounts<MemechanSol>["stakingPool"];
 
 export interface UnstakeArgs {
   ticket: MemeTicketWrapper;
@@ -69,24 +77,35 @@ export class StakingWrapper {
     )[0];
   }
 
-  public async add_fees(ammPool: AmmPool) {
+  public async add_fees(quoteAmmPool: AmmPool, chanAmmPool: AmmPool) {
     const staking = await memechan.account.stakingPool.fetch(this.id);
 
-    const tokenInfoA: TokenInfo = {
+    const memeInfo: TokenInfo = {
       chainId: 0,
       address: staking.memeMint.toBase58(),
       name: "",
       decimals: MEMECHAN_MEME_TOKEN_DECIMALS,
       symbol: "",
     };
-    const tokenInfoB: TokenInfo = {
+    const quoteInfo: TokenInfo = {
       chainId: 0,
       address: MEMECHAN_QUOTE_TOKEN.mint.toBase58(),
       name: MEMECHAN_QUOTE_TOKEN.name,
       decimals: MEMECHAN_QUOTE_TOKEN.decimals,
       symbol: MEMECHAN_QUOTE_TOKEN.symbol,
     };
+    const chanInfo = CHAN_TOKEN_INFO;
 
+    await this.add_fees_one_pool(quoteAmmPool, staking, memeInfo, quoteInfo);
+    await this.add_fees_one_pool(chanAmmPool, staking, memeInfo, chanInfo);
+  }
+
+  public async add_fees_one_pool(
+    ammPool: AmmPool,
+    staking: Staking,
+    tokenInfoA: TokenInfo,
+    tokenInfoB: TokenInfo
+  ) {
     const tradeFeeBps = new BN(100);
 
     const { vaultProgram, ammProgram } = createProgram(provider.connection);
@@ -189,13 +208,35 @@ export class StakingWrapper {
     const escrowAta = await getAssociatedTokenAccount(lpMint, lockEscrowPK);
     console.log(escrowAta);
 
-    console.log("7");
+    const memeFeeVault = (
+      await getOrCreateAssociatedTokenAccount(
+        provider.connection,
+        payer,
+        tokenAMint,
+        FEE_VAULT_OWNER
+      )
+    ).address;
+    const quoteFeeVault = (
+      await getOrCreateAssociatedTokenAccount(
+        provider.connection,
+        payer,
+        tokenBMint,
+        FEE_VAULT_OWNER
+      )
+    ).address;
 
-    const pool = ammPool.ammImpl.poolState;
+    const quoteVault =
+      tokenInfoB.address === CHAN_TOKEN_INFO.address
+        ? staking.chanVault
+        : staking.quoteVault;
+
+    console.log("7");
 
     await memechan.methods
       .addFees()
       .accounts({
+        memeFeeVault,
+        quoteFeeVault,
         ammPool: ammPool.id,
         aTokenVault,
         aVault,
@@ -210,8 +251,8 @@ export class StakingWrapper {
         lpMint,
         memeMint: staking.memeMint,
         memeVault: staking.memeVault,
-        quoteMint: QUOTE_MINT,
-        quoteVault: staking.quoteVault,
+        quoteMint: tokenBMint,
+        quoteVault,
         signer: payer.publicKey,
         sourceTokens: payerPoolLp,
         staking: this.id,
@@ -297,6 +338,12 @@ export class StakingWrapper {
       QUOTE_MINT,
       user.publicKey
     );
+    const chanAcc = await getOrCreateAssociatedTokenAccount(
+      provider.connection,
+      user,
+      new PublicKey(CHAN_TOKEN_INFO.address),
+      user.publicKey
+    );
 
     await memechan.methods
       .withdrawFees()
@@ -305,9 +352,11 @@ export class StakingWrapper {
         stakingSignerPda: this.signer(),
         memeVault: stakingInfo.memeVault,
         quoteVault: stakingInfo.quoteVault,
+        chanVault: stakingInfo.chanVault,
         staking: this.id,
         userMeme: memeAcc,
         userQuote: quoteAcc.address,
+        userChan: chanAcc.address,
         signer: user.publicKey,
         tokenProgram: TOKEN_PROGRAM_ID,
       })

@@ -5,6 +5,7 @@ import { BN } from "@coral-xyz/anchor";
 import {
   QUOTE_MINT,
   airdrop,
+  mintChan,
   mintQuote,
   payer,
   provider,
@@ -23,6 +24,8 @@ import {
 import { associatedAddress } from "@coral-xyz/anchor/dist/cjs/utils/token";
 import BigNumber from "bignumber.js";
 import { wrapSOLInstruction } from "@mercurial-finance/vault-sdk/dist/cjs/src/vault/utils";
+import { CHAN_TOKEN_INFO } from "../sol-sdk/config/config";
+import { PublicKey } from "@saberhq/solana-contrib";
 
 export function test() {
   describe("staking", () => {
@@ -171,7 +174,7 @@ export function test() {
       );
 
       await sleep(1000);
-      console.log("0");
+      console.log("preparing accounts for swaps");
 
       const inputTokenAccount = await getOrCreateAssociatedTokenAccount(
         provider.connection,
@@ -180,16 +183,32 @@ export function test() {
         payer.publicKey
       );
 
-      console.log("1");
+      const chanTokenAccount = await getOrCreateAssociatedTokenAccount(
+        provider.connection,
+        payer,
+        new PublicKey(CHAN_TOKEN_INFO.address),
+        payer.publicKey
+      );
+
+      await mintChan(chanTokenAccount.address);
+
+      console.log("first swap");
       await amm.swap(payer, 20e9, 1);
+
+      console.log("second swap");
+      await amm2.swap(payer, 5e9, 1);
+
       console.log("add_fees");
-      await staking.add_fees(amm);
+      await staking.add_fees(amm, amm2);
+
       console.log("withdraw_fees");
       await staking.withdraw_fees({
         ticket: tickets[0],
         user: users[0],
       });
-      console.log("fetching ticket");
+
+      await sleep(500);
+      console.log(`fetching ticket ${tickets[0].id}`);
       const fetchedTicket = await tickets[0].fetch();
       console.log(
         "ticket % ",

@@ -3,6 +3,7 @@ use anchor_lang::prelude::*;
 
 pub const FEE: u64 = 5_000_000; // 0.5%
 pub const LAUNCH_FEE: u64 = 50_000_000; // 5%
+pub const COMMS_FEE: u64 = 50_000_000;
 pub const PRECISION: u64 = 1_000_000_000;
 
 #[derive(AnchorDeserialize, AnchorSerialize, Copy, Clone, Debug, Eq, PartialEq, Default)]
@@ -21,6 +22,6 @@ impl Fees {
     }
 }
 
-fn get_fee_amount(x: u64, percent: u64) -> Result<u64> {
+pub fn get_fee_amount(x: u64, percent: u64) -> Result<u64> {
     Ok(x.mul_div_ceil(percent, PRECISION).unwrap())
 }
