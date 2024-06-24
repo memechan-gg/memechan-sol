@@ -23,7 +23,7 @@ pub struct NewChanSwap<'info> {
     pub chan_swap: Account<'info, ChanSwap>,
     ///CHECK: chan_swap signer pda
     #[account(
-        seeds = [ChanSwap::SIGNER_PDA_PREFIX],
+        seeds = [ChanSwap::SIGNER_PDA_PREFIX.as_bytes()],
         bump
     )]
     pub chan_swap_signer_pda: AccountInfo<'info>,

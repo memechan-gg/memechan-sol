@@ -6,8 +6,8 @@ import {
 } from "@coral-xyz/anchor";
 import { Connection, ConnectionConfig, PublicKey } from "@solana/web3.js";
 import { MemechanSol } from "../../target/types/memechan_sol";
-import { MEMECHAN_PROGRAM_ID } from "./config/config";
-import { memechan, provider } from "../helpers";
+import { MEMECHAN_PROGRAM_ID, memechan } from "./config/config";
+import { provider } from "../helpers";
 
 export interface MemechanClientConfigArgs {
   wallet: Wallet;

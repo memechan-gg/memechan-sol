@@ -8,14 +8,14 @@ use dynamic_amm::state::CurveType;
 use dynamic_vault::program::DynamicVault as MeteoraVault;
 
 #[derive(Accounts)]
-pub struct InitMemeAmmPool<'info> {
+pub struct InitQuoteAmmPool<'info> {
     /// Signer
     #[account(mut)]
     pub signer: Signer<'info>,
     /// Staking Pool Account
     #[account(
         mut,
-        constraint = staking.amm_pool.key() == system_program.key(),
+        constraint = staking.quote_amm_pool.key() == system_program.key(),
         seeds = [StakingPool::POOL_PREFIX, meme_mint.key().as_ref()],
         bump
     )]
@@ -112,7 +112,7 @@ pub struct InitMemeAmmPool<'info> {
     pub system_program: Program<'info, System>,
 }
 
-impl<'info> InitMemeAmmPool<'info> {
+impl<'info> InitQuoteAmmPool<'info> {
     fn create_pool(
         &self,
         seeds: &[&[&[u8]]],
@@ -209,7 +209,7 @@ impl<'info> InitMemeAmmPool<'info> {
     }
 }
 
-pub fn handle(ctx: Context<InitMemeAmmPool>) -> Result<()> {
+pub fn handle(ctx: Context<InitQuoteAmmPool>) -> Result<()> {
     let accs = ctx.accounts;
 
     let staking_seeds = &[
@@ -221,13 +221,13 @@ pub fn handle(ctx: Context<InitMemeAmmPool>) -> Result<()> {
     let staking_signer_seeds = &[&staking_seeds[..]];
 
     // 1. Get Sol Supply
-    let quote_supply = accs.staking_quote_vault.amount;
+    let quote_supply = get_meme_pool_part(accs.staking_quote_vault.amount);
 
     // 2. Split MEME balance amounts into predefined proportion
     let meme_supply = accs.staking_meme_vault.amount;
     let meme_supply_staking = accs.staking.stakes_total;
 
-    let amm_meme_balance = meme_supply.checked_sub(meme_supply_staking).unwrap();
+    let amm_meme_balance = get_meme_pool_part(meme_supply - meme_supply_staking);
 
     msg!("3");
     // 3. Initialize pool & Add liquidity to the pool
@@ -262,9 +262,11 @@ pub fn handle(ctx: Context<InitMemeAmmPool>) -> Result<()> {
     msg!("6");
     // 6. Setup staking
     // Add LP vault and mint to staking pool
-    accs.staking.lp_mint = accs.lp_mint.key();
-    accs.staking.lp_vault = accs.payer_pool_lp.key();
-    accs.staking.amm_pool = accs.amm_pool.key();
+    accs.staking.quote_amm_pool = accs.amm_pool.key();
 
     Ok(())
+}
+
+fn get_meme_pool_part(amount: u64) -> u64 {
+    return ((amount as u128 * 3) / 4) as u64;
 }

@@ -5,7 +5,6 @@ import { BN } from "@coral-xyz/anchor";
 import {
   QUOTE_MINT,
   airdrop,
-  memechan,
   mintQuote,
   payer,
   provider,
@@ -59,7 +58,7 @@ export function test() {
         })
       );
 
-      const [amm, staking] = await pool.go_live();
+      const [amm, amm2, staking] = await pool.go_live();
 
       const stakingInfo = await staking.fetch();
 
@@ -156,7 +155,7 @@ export function test() {
       );
       sleep(500);
       console.log("-2");
-      const [amm, staking] = await pool.go_live();
+      const [amm, amm2, staking] = await pool.go_live();
       sleep(1000);
 
       const stakingInfo = await staking.fetch();
@@ -183,14 +182,14 @@ export function test() {
 
       console.log("1");
       await amm.swap(payer, 20e9, 1);
-      console.log("2");
-
+      console.log("add_fees");
       await staking.add_fees(amm);
-
+      console.log("withdraw_fees");
       await staking.withdraw_fees({
         ticket: tickets[0],
         user: users[0],
       });
+      console.log("fetching ticket");
       const fetchedTicket = await tickets[0].fetch();
       console.log(
         "ticket % ",

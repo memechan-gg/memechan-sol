@@ -2,7 +2,7 @@ import { Connection, Keypair, PublicKey, SystemProgram } from "@solana/web3.js";
 import { MemechanClient } from "../MemechanClient";
 import { CreateTargetConfigArgs } from "./types";
 import BN from "bn.js";
-import { memechan } from "../../helpers";
+import { memechan } from "../config/config";
 
 export class TargetConfig {
   public constructor(

@@ -63,9 +63,9 @@ import {
   DEFAULT_MAX_M,
   DEFAULT_MAX_M_LP,
   MEMECHAN_MEME_TOKEN_DECIMALS,
-  MEMECHAN_QUOTE_MINT,
   MEMECHAN_QUOTE_TOKEN,
   MEMECHAN_QUOTE_TOKEN_DECIMALS,
+  memechan,
 } from "../config/config";
 import { formatAmmKeysById } from "../raydium/formatAmmKeysById";
 
@@ -95,13 +95,12 @@ import {
   admin,
   adminSigner,
   getLUTPDA,
-  memechan,
   provider,
   sleep,
 } from "../../helpers";
 import { MemechanSol } from "../../../target/types/memechan_sol";
 import { BoundPoolType } from "../../bound_pool";
-import { CPMM, FEE_VAULT } from "../../common";
+import { FEE_VAULT, FEE_VAULT_OWNER } from "../../common";
 import { ASSOCIATED_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
 import AmmImpl, {
   LockEscrow,
@@ -134,7 +133,7 @@ export class BoundPoolClient {
     public memeVault: PublicKey,
     public quoteVault: PublicKey,
     public memeTokenMint: PublicKey,
-    public quoteTokenMint: PublicKey = MEMECHAN_QUOTE_MINT,
+    public quoteTokenMint: PublicKey,
     public memeToken: Token,
     public poolInfo: BoundPoolType
   ) {
@@ -302,7 +301,14 @@ export class BoundPoolClient {
     console.log(payer, poolSigner, memeMintKeypair.publicKey);
     transaction.add(...createMemeMintWithPriorityInstructions);
 
-    let adminQuoteVault: PublicKey = FEE_VAULT;
+    let adminQuoteVault: PublicKey = (
+      await getOrCreateAssociatedTokenAccount(
+        client.connection,
+        payer,
+        QUOTE_MINT,
+        FEE_VAULT_OWNER
+      )
+    ).address;
 
     console.log(adminQuoteVault);
 
@@ -1516,7 +1522,12 @@ export class BoundPoolClient {
         stakingMemeVault: memeVault,
         stakingPoolSignerPda: stakingSigner,
         stakingChanVault: staking.chanVault,
+        stakingQuoteVault: staking.quoteVault,
 
+        feeQuoteVault: await getAssociatedTokenAccount(
+          QUOTE_MINT,
+          FEE_VAULT_OWNER
+        ),
         chanSwap,
         chanSwapSignerPda: ChanSwapWrapper.chanSwapSigner(),
         chanSwapVault: fetchedChanSwap.chanVault,
@@ -1557,6 +1568,9 @@ export class BoundPoolClient {
         FEE_OWNER,
         SYSVAR_RENT_PUBKEY,
         QUOTE_MINT,
+        new PublicKey(CHAN_TOKEN_INFO.address),
+        ChanSwapWrapper.chanSwapId(),
+        ChanSwapWrapper.chanSwapSigner(),
       ],
     });
 
@@ -1599,7 +1613,7 @@ export class BoundPoolClient {
   }
 
   public async initQuoteAmmPool(args: GoLiveArgs): Promise<StakingPool> {
-    console.log("goLive2 Begin");
+    console.log("initQuoteAmmPool Begin");
     // Get needed transactions
     const { goLiveTransaction, stakingId } =
       await this.getInitQuoteAmmPoolTransaction(args);
@@ -1641,7 +1655,7 @@ export class BoundPoolClient {
   }
 
   public async initChanAmmPool(args: InitChanAmmPool) {
-    console.log("goLive2 Begin");
+    console.log("initChanAmmPool Begin");
     // Get needed transactions
 
     const { goLiveTransaction, stakingId } =

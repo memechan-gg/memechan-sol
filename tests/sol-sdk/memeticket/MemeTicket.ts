@@ -20,7 +20,7 @@ import {
 import { getOptimizedTransactions } from "./utils";
 import { IdlAccount } from "@coral-xyz/anchor/dist/cjs/idl";
 import { MemechanSol } from "../../../target/types/memechan_sol";
-import { memechan } from "../../helpers";
+import { memechan } from "../config/config";
 
 export type MemeTicketFields = IdlAccounts<MemechanSol>["memeTicket"];
 

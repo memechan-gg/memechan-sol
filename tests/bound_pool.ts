@@ -12,7 +12,6 @@ import {
   airdrop,
   findProgramAddress,
   getLUTPDA,
-  memechan,
   payer,
   provider,
   sleep,
@@ -45,6 +44,7 @@ import {
   CHAN_TOKEN_INFO,
   MEMECHAN_QUOTE_TOKEN,
   MEMECHAN_QUOTE_TOKEN_INFO,
+  memechan,
 } from "./sol-sdk/config/config";
 import { associatedAddress } from "@coral-xyz/anchor/dist/cjs/utils/token";
 import { TokenInfo } from "@solana/spl-token-registry";
@@ -76,7 +76,8 @@ export class BoundPoolWrapper {
   public async fetch(): Promise<BoundPoolType> {
     return memechan.account.boundPool.fetch(this.bpClient.id);
   }
-  public async go_live(): Promise<[AmmPool, StakingWrapper]> {
+
+  public async go_live(): Promise<[AmmPool, AmmPool, StakingWrapper]> {
     console.log("go_live");
     const res = await this.bpClient.initStakingPool({
       boundPoolInfo: this.bpClient.poolInfo,
@@ -99,7 +100,7 @@ export class BoundPoolWrapper {
     const tokenInfoB = MEMECHAN_QUOTE_TOKEN_INFO;
     const tokenInfoC = CHAN_TOKEN_INFO;
 
-    const staking = await this.bpClient.initQuoteAmmPool({
+    const stakingPool = await this.bpClient.initQuoteAmmPool({
       boundPoolInfo: this.bpClient.poolInfo,
       feeDestinationWalletAddress: FEE_DESTINATION_ID,
       memeVault: res.stakingMemeVault,
@@ -109,8 +110,7 @@ export class BoundPoolWrapper {
       tokenInfoA,
       tokenInfoB,
     });
-    console.log("goLive2 END");
-    console.log(staking.memeMint, staking.amm);
+    console.log("initQuoteAmmPool END");
 
     const chanSwap = ChanSwapWrapper.chanSwapId();
 
@@ -125,22 +125,44 @@ export class BoundPoolWrapper {
       tokenInfoB: tokenInfoC,
       chanSwap,
     });
-    console.log("goLive2 END");
-    console.log(staking.memeMint, staking.amm);
+    console.log("initChanAmmPool END");
+    const staking = await memechan.account.stakingPool.fetch(res.staking);
+    console.log(staking.memeMint, staking.quoteAmmPool);
 
     await sleep(500);
-    const ammImpl = await AmmImpl.create(
+    const ammImplQuote = await AmmImpl.create(
       provider.connection,
-      staking.amm,
+      staking.quoteAmmPool,
       tokenInfoA,
       tokenInfoB
     );
+    console.log("aiq");
+    const ammImplChan = await AmmImpl.create(
+      provider.connection,
+      staking.chanAmmPool,
+      tokenInfoA,
+      tokenInfoC
+    );
+    console.log("aic");
 
     return [
-      new AmmPool(staking.amm, staking.memeMint, QUOTE_MINT, ammImpl),
-      new StakingWrapper(staking.id),
+      new AmmPool(
+        staking.quoteAmmPool,
+        staking.memeMint,
+        QUOTE_MINT,
+        ammImplQuote
+      ),
+      new AmmPool(
+        staking.chanAmmPool,
+        staking.memeMint,
+        new PublicKey(CHAN_TOKEN_INFO.address),
+        ammImplChan
+      ),
+
+      new StakingWrapper(res.staking),
     ];
   }
+
   public async swap_y(args: SwapYArgs): Promise<MemeTicketWrapper> {
     const user = args.user ?? payer;
     const memeTokensOut = args.memeTokensOut;
@@ -177,6 +199,7 @@ export class BoundPoolWrapper {
 
     return new MemeTicketWrapper(ticket.id);
   }
+
   private constructor(public bpClient: BoundPoolClient) {
     //
   }

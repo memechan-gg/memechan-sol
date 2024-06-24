@@ -11,7 +11,7 @@ pub struct ChanSwap {
 
 impl ChanSwap {
     pub const CHAN_SWAP_PREFIX: &'static [u8; 9] = b"chan_swap";
-    pub const SIGNER_PDA_PREFIX: &'static [u8; 16] = b"chan_swap_signer";
+    pub const SIGNER_PDA_PREFIX: &'static str = "chan_swap_signer";
 
     pub fn space() -> usize {
         let discriminant = 8;

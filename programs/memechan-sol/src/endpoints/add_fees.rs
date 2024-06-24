@@ -3,7 +3,7 @@ use crate::models::staking::StakingPool;
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token, TokenAccount};
 
-use crate::err::AmmError;
+use crate::err::{self, AmmError};
 use dynamic_amm::program::DynamicAmm as MeteoraAmm;
 use dynamic_vault::program::DynamicVault as MeteoraVault;
 
@@ -12,8 +12,10 @@ pub struct AddFees<'info> {
     #[account(
         mut,
         has_one = meme_vault,
-        has_one = amm_pool,
-        constraint = staking.quote_vault == quote_vault.key() || staking.chan_vault == quote_vault.key(),
+        constraint = staking.quote_amm_pool == amm_pool.key() || staking.chan_amm_pool == amm_pool.key()
+            @ err::acc("amm pool key must be one of the staking's amm pools"),
+        constraint = staking.quote_vault == quote_vault.key() || staking.chan_vault == quote_vault.key()
+            @ err::acc("quote vault key must be one of the staking's vaults"),
     )]
     pub staking: Account<'info, StakingPool>,
     #[account(mut)]

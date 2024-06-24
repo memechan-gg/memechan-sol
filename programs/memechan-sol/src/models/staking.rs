@@ -8,12 +8,10 @@ pub struct StakingPool {
     pub pool: Pubkey,
     pub meme_vault: Pubkey,
     pub meme_mint: Pubkey,
-    pub lp_vault: Pubkey,
-    pub lp_mint: Pubkey,
     pub quote_vault: Pubkey,
     pub quote_mint: Pubkey,
     pub chan_vault: Pubkey,
-    pub amm_pool: Pubkey,
+    pub quote_amm_pool: Pubkey,
     pub chan_amm_pool: Pubkey,
     pub vesting_config: VestingConfig,
     pub stakes_total: u64,
@@ -32,8 +30,6 @@ impl StakingPool {
         let pool = 32;
         let meme_vault = 32;
         let meme_mint = 32;
-        let lp_vault = 32;
-        let lp_mint = 32;
         let quote_vault = 32;
         let quote_mint = 32;
         let chan_vault = 32;
@@ -51,8 +47,6 @@ impl StakingPool {
             + pool
             + meme_vault
             + meme_mint
-            + lp_vault
-            + lp_mint
             + quote_vault
             + quote_mint
             + chan_vault
@@ -64,6 +58,6 @@ impl StakingPool {
             + fees_y_total
             + fees_z_total
             + is_active
-        // + padding
+            + padding
     }
 }

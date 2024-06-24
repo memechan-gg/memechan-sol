@@ -13,7 +13,7 @@ import {
   sendAndConfirmTransaction,
   TransactionInstruction,
 } from "@solana/web3.js";
-import { QUOTE_MINT, memechan, payer, provider } from "./helpers";
+import { QUOTE_MINT, payer, provider } from "./helpers";
 import { AmmPool } from "./pool";
 import { Address, BN } from "@coral-xyz/anchor";
 import { MemeTicketWrapper } from "./ticket";
@@ -30,7 +30,7 @@ import { SEEDS } from "@mercurial-finance/dynamic-amm-sdk/dist/cjs/src/amm/const
 import VaultImpl, { getVaultPdas } from "@mercurial-finance/vault-sdk";
 import { TokenInfo } from "@solana/spl-token-registry";
 import { MEMECHAN_MEME_TOKEN_DECIMALS } from "./bound_pool";
-import { MEMECHAN_QUOTE_TOKEN } from "./sol-sdk/config/config";
+import { MEMECHAN_QUOTE_TOKEN, memechan } from "./sol-sdk/config/config";
 
 export interface UnstakeArgs {
   ticket: MemeTicketWrapper;

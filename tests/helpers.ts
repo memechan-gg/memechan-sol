@@ -22,14 +22,13 @@ import { mintTo } from "@solana/spl-token";
 import { config } from "dotenv";
 
 import * as bigintBuffer from "bigint-buffer";
+import { CHAN_TOKEN_INFO } from "./sol-sdk/config/config";
 
 export const conf = config();
 
 export const provider = AnchorProvider.local();
 setProvider(provider);
 export const payer = (provider.wallet as NodeWallet).payer;
-
-export const memechan = workspace.MemechanSol as Program<MemechanSol>;
 
 export const admin = new PublicKey(
   "8SvkUtJZCyJwSQGkiszwcRcPv7c8pPSr8GVEppGNN7DV"
@@ -111,6 +110,20 @@ export async function mintQuote(
     provider.connection,
     adminSigner,
     QUOTE_MINT,
+    to,
+    adminSigner,
+    amount
+  );
+}
+
+export async function mintChan(
+  to: PublicKey,
+  amount: number = 1_000_000_000_000_000
+) {
+  await mintTo(
+    provider.connection,
+    adminSigner,
+    new PublicKey(CHAN_TOKEN_INFO.address),
     to,
     adminSigner,
     amount

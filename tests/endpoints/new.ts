@@ -6,7 +6,6 @@ import {
   adminSigner,
   airdrop,
   getLUTPDA,
-  memechan,
   provider,
   sleep,
 } from "../helpers";
@@ -26,6 +25,7 @@ import { before, beforeEach } from "mocha";
 import { ASSOCIATED_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
 import { MPL_TOKEN_METADATA_PROGRAM_ID } from "@metaplex-foundation/mpl-token-metadata";
 import { ChanSwapWrapper } from "../chan_swap";
+import { memechan } from "../sol-sdk/config/config";
 
 export function test() {
   describe("create_bound_pool", () => {

@@ -1,10 +1,11 @@
-use crate::consts::CHAN_MINT;
+use crate::consts::{CHAN_MINT, FEE_KEY};
 use crate::models::chan_swap::ChanSwap;
 use crate::models::staking::StakingPool;
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::metadata::Metadata;
-use anchor_spl::token::{Mint, Token, TokenAccount};
+use anchor_spl::token;
+use anchor_spl::token::{Mint, Token, TokenAccount, Transfer};
 use dynamic_amm::program::DynamicAmm as MeteoraAmm;
 use dynamic_amm::state::CurveType;
 use dynamic_vault::program::DynamicVault as MeteoraVault;
@@ -17,7 +18,7 @@ pub struct InitChanAmmPool<'info> {
     /// Staking Pool Account
     #[account(
         mut,
-        constraint = staking.amm_pool.key() != system_program.key(),
+        constraint = staking.quote_amm_pool.key() != system_program.key(),
         constraint = staking.chan_amm_pool.key() == system_program.key(),
         constraint = staking.is_active == false,
         seeds = [StakingPool::POOL_PREFIX, meme_mint.key().as_ref()],
@@ -28,7 +29,12 @@ pub struct InitChanAmmPool<'info> {
     /// CHECK: live phase pda signer
     #[account(mut, seeds = [StakingPool::SIGNER_PDA_PREFIX, staking.key().as_ref()], bump)]
     pub staking_pool_signer_pda: AccountInfo<'info>,
-    //
+    #[account(
+        mut,
+        constraint = staking.quote_vault == staking_quote_vault.key()
+    )]
+    /// Staking Pool Chan vault
+    pub staking_quote_vault: Box<Account<'info, TokenAccount>>,
     /// Staking Pool Meme vault
     #[account(
         mut,
@@ -54,9 +60,12 @@ pub struct InitChanAmmPool<'info> {
     // Chanswap
     pub chan_swap: Box<Account<'info, ChanSwap>>,
     /// CHECK: chan swap pda signer
-    #[account(mut, seeds = [ChanSwap::SIGNER_PDA_PREFIX], bump)]
+    #[account(mut, seeds = [ChanSwap::SIGNER_PDA_PREFIX.as_bytes()], bump)]
     pub chan_swap_signer_pda: AccountInfo<'info>,
+    #[account(mut)]
     pub chan_swap_vault: Box<Account<'info, TokenAccount>>,
+    #[account(mut, token::authority = FEE_KEY)]
+    pub fee_quote_vault: Box<Account<'info, TokenAccount>>,
     // Meteora Amm Program accounts
     #[account(mut)]
     /// CHECK: meteora cpi account
@@ -123,6 +132,44 @@ pub struct InitChanAmmPool<'info> {
 }
 
 impl<'info> InitChanAmmPool<'info> {
+    fn swap_tokens(
+        &self,
+        staking_signer_seeds: &[&[&[u8]]],
+        swap_signer_seeds: &[&[&[u8]]],
+        sol_amount: u64,
+        chan_amount: u64,
+    ) -> Result<()> {
+        let cpi_accounts = Transfer {
+            from: self.staking_quote_vault.to_account_info(),
+            to: self.fee_quote_vault.to_account_info(),
+            authority: self.staking_pool_signer_pda.to_account_info(),
+        };
+
+        token::transfer(
+            CpiContext::new_with_signer(
+                self.token_program.to_account_info(),
+                cpi_accounts,
+                staking_signer_seeds,
+            ),
+            sol_amount,
+        )?;
+
+        let cpi_accounts = Transfer {
+            from: self.chan_swap_vault.to_account_info(),
+            to: self.staking_chan_vault.to_account_info(),
+            authority: self.chan_swap_signer_pda.to_account_info(),
+        };
+
+        token::transfer(
+            CpiContext::new_with_signer(
+                self.token_program.to_account_info(),
+                cpi_accounts,
+                swap_signer_seeds,
+            ),
+            chan_amount,
+        )
+    }
+
     fn create_pool(
         &self,
         seeds: &[&[&[u8]]],
@@ -230,14 +277,22 @@ pub fn handle(ctx: Context<InitChanAmmPool>) -> Result<()> {
 
     let staking_signer_seeds = &[&staking_seeds[..]];
 
-    // 1. Get Sol Supply
-    let quote_supply = accs.staking_chan_vault.amount;
+    let swap_signer_seeds: &[&[&[u8]]] = &[&[
+        ChanSwap::SIGNER_PDA_PREFIX.as_bytes(),
+        &[ctx.bumps.chan_swap_signer_pda],
+    ]];
 
-    // 2. Split MEME balance amounts into predefined proportion
+    // 1. Swap SOL to CHAN
+    let quote_amt = accs.staking_quote_vault.amount;
+    let chan_amt =
+        (quote_amt * accs.chan_swap.chan_sol_price_num) / accs.chan_swap.chan_sol_price_denom;
+    accs.swap_tokens(staking_signer_seeds, swap_signer_seeds, quote_amt, chan_amt)?;
+
+    // 2. Get supply values for the new pool
+    accs.staking_chan_vault.reload()?;
+
     let meme_supply = accs.staking_meme_vault.amount;
-    let meme_supply_staking = accs.staking.stakes_total;
-
-    let amm_meme_balance = meme_supply.checked_sub(meme_supply_staking).unwrap();
+    let chan_supply = accs.staking_chan_vault.amount;
 
     msg!("3");
     // 3. Initialize pool & Add liquidity to the pool
@@ -245,8 +300,8 @@ pub fn handle(ctx: Context<InitChanAmmPool>) -> Result<()> {
     accs.create_pool(
         staking_signer_seeds,
         trade_fee_bps,
-        amm_meme_balance,
-        quote_supply,
+        meme_supply,
+        chan_supply,
     )?;
 
     msg!("4");
@@ -272,9 +327,8 @@ pub fn handle(ctx: Context<InitChanAmmPool>) -> Result<()> {
     msg!("6");
     // 6. Setup staking
     // Add LP vault and mint to staking pool
-    accs.staking.lp_mint = accs.lp_mint.key();
-    accs.staking.lp_vault = accs.payer_pool_lp.key();
-    accs.staking.amm_pool = accs.amm_pool.key();
+    accs.staking.chan_amm_pool = accs.amm_pool.key();
+    accs.staking.is_active = true;
 
     Ok(())
 }

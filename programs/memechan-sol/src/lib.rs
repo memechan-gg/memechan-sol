@@ -71,8 +71,8 @@ pub mod memechan_sol {
         init_staking_pool::handle(ctx)
     }
 
-    pub fn init_meme_amm_pool(ctx: Context<InitMemeAmmPool>) -> Result<()> {
-        init_meme_amm_pool::handle(ctx)
+    pub fn init_meme_amm_pool(ctx: Context<InitQuoteAmmPool>) -> Result<()> {
+        init_quote_amm_pool::handle(ctx)
     }
 
     pub fn init_chan_amm_pool(ctx: Context<InitChanAmmPool>) -> Result<()> {

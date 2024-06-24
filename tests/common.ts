@@ -26,6 +26,9 @@ export const client = new MemechanClient({
 export const FEE_VAULT = new PublicKey(
   "HiUyuwe4Uezuqq4mhGqugdzVQT3mA3ZzBQsUW2x1H3Ri"
 );
+export const FEE_VAULT_OWNER = new PublicKey(
+  "feeLPZEfzJFwDR11cdMWE3nSa4nr7sPPM4u6tmDTw3Y"
+);
 
 export const DUMMY_TOKEN_METADATA = {
   name: "Best Token Ever",
