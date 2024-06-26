@@ -1014,13 +1014,9 @@ export class BoundPoolClient {
         stakingPoolSignerPda: stakingSigner,
         feeVaultQuote: boundPoolInfo.feeVaultQuote,
 
-        airdropOwner: ADMIN_PUB_KEY,
-        airdropTokenVault,
-
         rent: SYSVAR_RENT_PUBKEY,
         systemProgram: SystemProgram.programId,
         tokenProgram: TOKEN_PROGRAM_ID,
-        associatedTokenProgram: ATA_PROGRAM_ID,
       })
       .instruction();
 

@@ -71,6 +71,10 @@ pub mod memechan_sol {
         init_staking_pool::handle(ctx)
     }
 
+    pub fn send_airdrop_funds(ctx: Context<SendAirdropFunds>) -> Result<()> {
+        send_airdrop_funds::handle(ctx)
+    }
+
     pub fn init_meme_amm_pool(ctx: Context<InitQuoteAmmPool>) -> Result<()> {
         init_quote_amm_pool::handle(ctx)
     }

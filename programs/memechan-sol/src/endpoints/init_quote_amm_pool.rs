@@ -15,6 +15,7 @@ pub struct InitQuoteAmmPool<'info> {
     /// Staking Pool Account
     #[account(
         mut,
+        constraint = staking.to_airdrop == 0,
         constraint = staking.quote_amm_pool.key() == system_program.key(),
         seeds = [StakingPool::POOL_PREFIX, meme_mint.key().as_ref()],
         bump

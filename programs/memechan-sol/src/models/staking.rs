@@ -18,6 +18,7 @@ pub struct StakingPool {
     pub fees_x_total: u64,
     pub fees_y_total: u64,
     pub fees_z_total: u64,
+    pub to_airdrop: u64,
     pub is_active: bool,
 }
 
