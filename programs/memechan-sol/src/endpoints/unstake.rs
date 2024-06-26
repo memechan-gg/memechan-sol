@@ -91,10 +91,6 @@ pub fn handle(ctx: Context<Unstake>, release_amount: u64) -> Result<()> {
     let vesting_config = accs.staking.vesting_config;
     let current_ts = Clock::get()?.unix_timestamp;
 
-    if vesting_config.cliff_ts > current_ts {
-        return Err(error!(AmmError::CantUnstakeBeforeCliff));
-    }
-
     let amount_available_to_release = vesting_data.to_release(&vesting_config, current_ts);
 
     if release_amount > amount_available_to_release || release_amount == 0 {

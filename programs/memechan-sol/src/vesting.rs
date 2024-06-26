@@ -1,5 +1,7 @@
-use crate::consts::{DEFAULT_CLIFF, DEFAULT_LINEAR};
-use crate::libraries::big_num::U128;
+use crate::consts::{
+    DEFAULT_CLIFF, DEFAULT_LINEAR, INSTANT_TOKEN_PERCENTAGE_DENOM, INSTANT_TOKEN_PERCENTAGE_NUM,
+};
+use crate::libraries::MulDiv;
 use anchor_lang::prelude::*;
 
 #[derive(AnchorDeserialize, AnchorSerialize, Copy, Clone, Debug, Eq, PartialEq, Default)]
@@ -28,19 +30,22 @@ pub fn default_config() -> VestingConfig {
 impl VestingData {
     pub fn total_vested(&self, config: &VestingConfig, current_ts: i64) -> u64 {
         if current_ts <= config.cliff_ts {
-            return 0;
+            return self
+                .notional
+                .mul_div_floor(INSTANT_TOKEN_PERCENTAGE_NUM, INSTANT_TOKEN_PERCENTAGE_DENOM)
+                .unwrap();
         }
 
         if current_ts >= config.end_ts {
             return self.notional;
         }
 
-        let available_vested = U128::from(self.notional)
-            .checked_mul(U128::from(current_ts - config.cliff_ts))
-            .unwrap()
-            .checked_div(U128::from(config.duration()))
+        let passed = (current_ts as u64)
+            .checked_sub(config.cliff_ts as u64)
             .unwrap();
-        available_vested.as_u64()
+        let total = config.duration() as u64;
+
+        self.notional.mul_div_floor(passed, total).unwrap()
     }
 
     pub fn to_release(&self, config: &VestingConfig, current_ts: i64) -> u64 {

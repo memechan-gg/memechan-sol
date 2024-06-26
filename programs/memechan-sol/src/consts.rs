@@ -30,6 +30,9 @@ pub const DEFAULT_LINEAR: i64 = 1800; // 0.5 hours;
 #[cfg(feature = "mainnet")]
 pub const DEFAULT_LINEAR: i64 = 3600; // 7 days;
 
+pub const INSTANT_TOKEN_PERCENTAGE_NUM: u64 = 10;
+pub const INSTANT_TOKEN_PERCENTAGE_DENOM: u64 = 100;
+
 #[cfg(not(feature = "mainnet"))]
 pub const ADMIN_KEY: Pubkey =
     solana_program::pubkey!("8SvkUtJZCyJwSQGkiszwcRcPv7c8pPSr8GVEppGNN7DV");
