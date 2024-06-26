@@ -1,4 +1,5 @@
 use crate::consts::{CHAN_MINT, FEE_KEY};
+use crate::libraries::MulDiv;
 use crate::models::chan_swap::ChanSwap;
 use crate::models::staking::StakingPool;
 use anchor_lang::prelude::*;
@@ -136,7 +137,7 @@ impl<'info> InitChanAmmPool<'info> {
         &self,
         staking_signer_seeds: &[&[&[u8]]],
         swap_signer_seeds: &[&[&[u8]]],
-        sol_amount: u64,
+        quote_amount: u64,
         chan_amount: u64,
     ) -> Result<()> {
         let cpi_accounts = Transfer {
@@ -151,7 +152,7 @@ impl<'info> InitChanAmmPool<'info> {
                 cpi_accounts,
                 staking_signer_seeds,
             ),
-            sol_amount,
+            quote_amount,
         )?;
 
         let cpi_accounts = Transfer {
@@ -284,8 +285,13 @@ pub fn handle(ctx: Context<InitChanAmmPool>) -> Result<()> {
 
     // 1. Swap SOL to CHAN
     let quote_amt = accs.staking_quote_vault.amount;
-    let chan_amt =
-        (quote_amt * accs.chan_swap.chan_sol_price_num) / accs.chan_swap.chan_sol_price_denom;
+    let chan_amt = quote_amt
+        .mul_div_floor(
+            accs.chan_swap.chan_sol_price_num,
+            accs.chan_swap.chan_sol_price_denom,
+        )
+        .unwrap();
+    msg!("swapped {} to {} chan tokens", quote_amt, chan_amt);
     accs.swap_tokens(staking_signer_seeds, swap_signer_seeds, quote_amt, chan_amt)?;
 
     // 2. Get supply values for the new pool

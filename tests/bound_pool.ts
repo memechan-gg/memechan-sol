@@ -222,6 +222,7 @@ export class BoundPoolWrapper {
         authority: admin,
         recentSlot: LUTSLOT,
       }),
+      tokens_airdropped: 10_000_000 * 10 ** 6,
     });
 
     return new BoundPoolWrapper(bpClient);

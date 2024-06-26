@@ -1,8 +1,9 @@
 use crate::consts::{
     DEFAULT_MAX_M, DEFAULT_MAX_M_LP, DEFAULT_PRICE_FACTOR_DENOMINATOR,
-    DEFAULT_PRICE_FACTOR_NUMERATOR, FEE_KEY, MAX_MEME_TOKENS,
+    DEFAULT_PRICE_FACTOR_NUMERATOR, FEE_KEY, MAX_AIRDROPPED_TOKENS, MAX_MEME_TOKENS,
 };
 use crate::err;
+use crate::err::AmmError;
 use crate::models::bound::{compute_alpha_abs, compute_beta, BoundPool, Config, Decimals};
 use crate::models::fees::Fees;
 use crate::models::fees::FEE;
@@ -91,11 +92,15 @@ impl<'info> NewPool<'info> {
     }
 }
 
-pub fn handle(ctx: Context<NewPool>) -> Result<()> {
+pub fn handle(ctx: Context<NewPool>, airdropped_tokens: u64) -> Result<()> {
     let accs = ctx.accounts;
 
     if accs.meme_mint.supply != 0 {
-        return Err(error!(err::acc("")));
+        return Err(error!(AmmError::NonZeroInitialMemeSupply));
+    }
+
+    if airdropped_tokens > MAX_AIRDROPPED_TOKENS {
+        return Err(error!(AmmError::AirdroppedTokensOvercap));
     }
 
     let seeds = &[
@@ -170,6 +175,7 @@ pub fn handle(ctx: Context<NewPool>) -> Result<()> {
     pool.meme_reserve.vault = accs.meme_vault.key();
     pool.locked = false;
     pool.creator_addr = accs.sender.key();
+    pool.airdropped_tokens = airdropped_tokens;
 
     Ok(())
 }

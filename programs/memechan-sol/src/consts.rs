@@ -13,36 +13,42 @@ pub const MAX_MEME_TOKENS: u128 = DEFAULT_MAX_M_LP + DEFAULT_MAX_M;
 
 pub const DECIMALS_S: u128 = 1_000_000_000;
 
+pub const MAX_AIRDROPPED_TOKENS: u64 = 300_000_000_000_000;
+
 #[cfg(not(feature = "mainnet"))]
 pub const LOCK_TIME: i64 = 60; // 1 minute
 #[cfg(feature = "mainnet")]
-pub const LOCK_TIME: i64 = 3600; // 1 hour
+pub const LOCK_TIME: i64 = 180; // 1 hour
 
 #[cfg(not(feature = "mainnet"))]
 pub const DEFAULT_CLIFF: i64 = 180; // 3 minutes;
 #[cfg(feature = "mainnet")]
-pub const DEFAULT_CLIFF: i64 = 86_400; // 1 day;
+pub const DEFAULT_CLIFF: i64 = 600; // 1 day;
 
 #[cfg(not(feature = "mainnet"))]
 pub const DEFAULT_LINEAR: i64 = 1800; // 0.5 hours;
 #[cfg(feature = "mainnet")]
-pub const DEFAULT_LINEAR: i64 = 604_800; // 7 days;
+pub const DEFAULT_LINEAR: i64 = 3600; // 7 days;
 
 #[cfg(not(feature = "mainnet"))]
 pub const ADMIN_KEY: Pubkey =
     solana_program::pubkey!("8SvkUtJZCyJwSQGkiszwcRcPv7c8pPSr8GVEppGNN7DV");
 #[cfg(feature = "mainnet")]
 pub const ADMIN_KEY: Pubkey =
-    solana_program::pubkey!("KZbAoMgCcb2gDEn2Ucea86ux84y25y3ybbWQGQpd9D6");
+    solana_program::pubkey!("8SvkUtJZCyJwSQGkiszwcRcPv7c8pPSr8GVEppGNN7DV");
 
 #[cfg(not(feature = "mainnet"))]
 pub const SWAP_AUTH_KEY: Pubkey =
     solana_program::pubkey!("8SvkUtJZCyJwSQGkiszwcRcPv7c8pPSr8GVEppGNN7DV");
 #[cfg(feature = "mainnet")]
 pub const SWAP_AUTH_KEY: Pubkey =
-    solana_program::pubkey!("KZbAoMgCcb2gDEn2Ucea86ux84y25y3ybbWQGQpd9D6");
+    solana_program::pubkey!("8SvkUtJZCyJwSQGkiszwcRcPv7c8pPSr8GVEppGNN7DV");
 
 pub const FEE_KEY: Pubkey = solana_program::pubkey!("feeLPZEfzJFwDR11cdMWE3nSa4nr7sPPM4u6tmDTw3Y");
 
+#[cfg(not(feature = "mainnet"))]
 pub const CHAN_MINT: Pubkey =
     solana_program::pubkey!("HX2pp5za2aBkrA5X5iTioZXcrpWb2q9DiaeWPW3qKMaw");
+#[cfg(feature = "mainnet")]
+pub const CHAN_MINT: Pubkey =
+    solana_program::pubkey!("9pECN2xxLQo22bFYpsNr3T3eW1UdEDtSqPQopFrGv7n4");

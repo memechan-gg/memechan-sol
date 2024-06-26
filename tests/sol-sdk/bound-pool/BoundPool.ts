@@ -66,6 +66,7 @@ import {
   MEMECHAN_QUOTE_TOKEN,
   MEMECHAN_QUOTE_TOKEN_DECIMALS,
   memechan,
+  ADMIN_PUB_KEY,
 } from "../config/config";
 import { formatAmmKeysById } from "../raydium/formatAmmKeysById";
 
@@ -271,6 +272,7 @@ export class BoundPoolClient {
       transaction = new Transaction(),
       adminSolPublicKey,
       tokenMetadata,
+      tokens_airdropped,
     } = args;
     const { connection, memechanProgram } = client;
     console.log(payer, quoteToken, adminSolPublicKey);
@@ -360,7 +362,7 @@ export class BoundPoolClient {
     transaction.add(...createLaunchVaultInstructions);
 
     const createPoolInstruction = await memechanProgram.methods
-      .newPool()
+      .newPool(new BN(tokens_airdropped))
       .accounts({
         feeQuoteVault: adminQuoteVault,
         memeVault: launchVault,
@@ -984,6 +986,16 @@ export class BoundPoolClient {
       transaction: tx,
     });
 
+    const airdropTokenVault = (
+      await getOrCreateAssociatedTokenAccount(
+        this.client.connection,
+        payer,
+        this.memeTokenMint,
+        ADMIN_PUB_KEY,
+        false
+      )
+    ).address;
+
     const initStakingPoolInstruction = await memechan.methods
       .initStakingPool()
       .accounts({
@@ -996,16 +1008,19 @@ export class BoundPoolClient {
         stakingMemeVault,
         stakingQuoteVault: stakingQuoteVault,
         stakingChanVault: stakingChanVault,
+        memeMint: boundPoolInfo.memeReserve.mint,
         quoteMint: this.quoteTokenMint,
         staking: stakingId,
         stakingPoolSignerPda: stakingSigner,
         feeVaultQuote: boundPoolInfo.feeVaultQuote,
+
+        airdropOwner: ADMIN_PUB_KEY,
+        airdropTokenVault,
+
+        rent: SYSVAR_RENT_PUBKEY,
         systemProgram: SystemProgram.programId,
         tokenProgram: TOKEN_PROGRAM_ID,
-        clock: SYSVAR_CLOCK_PUBKEY,
-        rent: SYSVAR_RENT_PUBKEY,
-        memeMint: boundPoolInfo.memeReserve.mint,
-        ataProgram: ATA_PROGRAM_ID,
+        associatedTokenProgram: ATA_PROGRAM_ID,
       })
       .instruction();
 

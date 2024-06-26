@@ -13,14 +13,14 @@ use endpoints::*;
 #[cfg(not(feature = "mainnet"))]
 declare_id!("EWsBchGns4n9dtcsBvByHRfHhZ2iseNkjA3CsEUaGZFo"); // localnet
 #[cfg(feature = "mainnet")]
-declare_id!("memeVtsr1AqAjfRzW2PuzymQdP2m7SgL6FQ1xgMc9MR"); // mainnet test
+declare_id!("CaR9ciDnNnE6WX35tZWrjeGdKUPaft7r4oQGF4JhwVxZ"); // mainnet test
 
 #[program]
 pub mod memechan_sol {
     use super::*;
 
-    pub fn new_pool(ctx: Context<NewPool>) -> Result<()> {
-        new_pool::handle(ctx)
+    pub fn new_pool(ctx: Context<NewPool>, airdropped_tokens: u64) -> Result<()> {
+        new_pool::handle(ctx, airdropped_tokens)
     }
 
     pub fn create_metadata(

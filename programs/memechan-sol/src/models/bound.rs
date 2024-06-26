@@ -21,6 +21,7 @@ pub struct BoundPool {
     pub creator_addr: Pubkey,
     pub fees: Fees,
     pub config: Config,
+    pub airdropped_tokens: u64,
     pub locked: bool,
 }
 
@@ -40,6 +41,8 @@ impl BoundPool {
         let fees = mem::size_of::<Fees>();
         let config = mem::size_of::<Config>();
         let locked = 1;
+        let airdropped_tokens = 8;
+        let padding = 128;
 
         discriminant
             + meme_reserve
@@ -51,6 +54,8 @@ impl BoundPool {
             + fees
             + config
             + locked
+            + airdropped_tokens
+            + padding
     }
 }
 

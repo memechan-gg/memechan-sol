@@ -102,6 +102,7 @@ export interface BoundPoolArgs {
   quoteToken: Token;
   tokenMetadata: TokenMetadata;
   lutAddr?: PublicKey;
+  tokens_airdropped: number;
 }
 
 export type GetCreateNewBondingPoolAndTokenTransactionArgs = Omit<

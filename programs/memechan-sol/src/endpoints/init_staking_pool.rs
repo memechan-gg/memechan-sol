@@ -1,5 +1,4 @@
-use crate::consts::CHAN_MINT;
-use crate::consts::FEE_KEY;
+use crate::consts::{CHAN_MINT, FEE_KEY, SWAP_AUTH_KEY};
 use crate::err;
 use crate::err::AmmError;
 use crate::libraries::MulDiv;
@@ -10,7 +9,7 @@ use crate::models::staking::StakingPool;
 use crate::vesting;
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::program_option::COption;
-use anchor_spl::associated_token::AssociatedToken;
+use anchor_spl::associated_token::{self, AssociatedToken};
 use anchor_spl::token;
 use anchor_spl::token::{Mint, Token, TokenAccount, Transfer};
 
@@ -112,16 +111,25 @@ pub struct InitStakingPool<'info> {
     #[account(
         mut,
         constraint = staking_chan_vault.owner == staking_pool_signer_pda.key()
-        @ err::acc("Staking chan vault authority must match staking pool signer"),
+            @ err::acc("Staking chan vault authority must match staking pool signer"),
         constraint = staking_chan_vault.mint == CHAN_MINT
-        @ err::acc("Staking chan vault must be of chan mint"),
+            @ err::acc("Staking chan vault must be of chan mint"),
         constraint = staking_chan_vault.close_authority == COption::None
-        @ err::acc("Staking chan vault must not have close authority"),
+            @ err::acc("Staking chan vault must not have close authority"),
         constraint = staking_chan_vault.delegate == COption::None
-        @ err::acc("Staking chan vault must not have delegate"),
+            @ err::acc("Staking chan vault must not have delegate"),
     )]
     /// Bonding Pool CHAN vault
     pub staking_chan_vault: Box<Account<'info, TokenAccount>>,
+    #[account(
+        mut,
+        associated_token::mint = meme_mint,
+        associated_token::authority = airdrop_owner
+    )]
+    pub airdrop_token_vault: Box<Account<'info, TokenAccount>>,
+    #[account(constraint = airdrop_owner.key() == SWAP_AUTH_KEY)]
+    /// CHECK: constraint
+    pub airdrop_owner: AccountInfo<'info>,
     //
     /// Meme Ticket Account of Admin
     #[account(
@@ -132,20 +140,28 @@ pub struct InitStakingPool<'info> {
         bump
     )]
     pub meme_ticket: Box<Account<'info, MemeTicket>>,
-    //
+
     // Sysvars
     pub rent: Sysvar<'info, Rent>,
-    pub clock: Sysvar<'info, Clock>,
 
     // Programs
-    /// CHECK: Checks done in cpi call to raydium
-    pub ata_program: Program<'info, AssociatedToken>,
-    // Checked by raydium account
+    pub associated_token_program: Program<'info, AssociatedToken>,
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
 }
 
 impl<'info> InitStakingPool<'info> {
+    fn transfer_airdrop_meme_ctx(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+        let cpi_accounts = Transfer {
+            from: self.pool_meme_vault.to_account_info(),
+            to: self.airdrop_token_vault.to_account_info(),
+            authority: self.bound_pool_signer_pda.to_account_info(),
+        };
+        let cpi_program = self.token_program.to_account_info();
+        CpiContext::new(cpi_program, cpi_accounts)
+    }
+
+    #[inline(never)]
     fn token_transfer_meme_ctx(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
             from: self.pool_meme_vault.to_account_info(),
@@ -243,6 +259,18 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, InitStakingPool<'info>>) ->
         accs.pool_quote_vault.amount,
     )
     .unwrap();
+
+    // 4. Calculate amount and transfer tokens to airdrop
+    let to_airdrop_amt =
+        accs.pool_meme_vault.amount.mul_div_floor(5, 100).unwrap() + accs.pool.airdropped_tokens;
+    token::transfer(
+        accs.transfer_airdrop_meme_ctx()
+            .with_signer(bp_signer_seeds),
+        to_airdrop_amt,
+    )
+    .unwrap();
+
+    accs.pool_meme_vault.reload().unwrap();
 
     msg!(
         "Amount of Meme to transfer {:?}",

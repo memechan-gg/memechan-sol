@@ -54,6 +54,8 @@ pub enum AmmError {
     NoFeesToAdd,
     #[msg("Staking should be fully initialized before it can be interacted with")]
     StakingIsNotActive,
+    NonZeroInitialMemeSupply,
+    AirdroppedTokensOvercap,
 }
 
 #[allow(dead_code)]

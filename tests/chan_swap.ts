@@ -34,7 +34,7 @@ export class ChanSwapWrapper {
     )[0];
   }
 
-  static async new(num: number = 1, denom: number = 1000) {
+  static async new(num: number = 45_000, denom: number = 1) {
     const tcdata = await memechan.account.chanSwap.fetchNullable(
       ChanSwapWrapper.chanSwapId()
     );
