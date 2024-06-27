@@ -9,7 +9,7 @@ crate-type = ["cdylib", "lib"]
 name = "memechan_sol"
 
 [features]
-default = ["localnet"]
+default = ["mainnet"]
 cpi = ["no-entrypoint"]
 no-entrypoint = []
 no-idl = []
@@ -24,7 +24,6 @@ solana-program = "1.16.25"
 anchor-lang = { version = "0.29.0" }
 anchor-spl = { version = "0.29.0", features = ["metadata"] }
 uint = "0.9.5"
-# serum_dex = { git = "https://github.com/openbook-dex/program.git", features = ["no-entrypoint"] }
 bytemuck = "*"
 spl-math = { version = "0.2.0", features = ["no-entrypoint"] }
 dynamic-amm = { path = "../../../mercurial-dynamic-amm-sdk/programs/dynamic-amm", features = ["cpi"] }

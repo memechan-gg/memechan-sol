@@ -54,4 +54,4 @@ pub const CHAN_MINT: Pubkey =
     solana_program::pubkey!("HX2pp5za2aBkrA5X5iTioZXcrpWb2q9DiaeWPW3qKMaw");
 #[cfg(feature = "mainnet")]
 pub const CHAN_MINT: Pubkey =
-    solana_program::pubkey!("9pECN2xxLQo22bFYpsNr3T3eW1UdEDtSqPQopFrGv7n4");
+    solana_program::pubkey!("59uVEJ3baADZ7Pg79MtV1erDrqGXYQK7qqJg3JwjGgm3");

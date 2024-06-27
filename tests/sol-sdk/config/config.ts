@@ -22,9 +22,6 @@ export const BE_REGION = "us-east-1";
  *
  * @constant {string}
  */
-export const SLERF_MINT = new PublicKey(
-  "7BgBvyjrZX1YKz4oh9mjb8ZScatkkwb8DzFx7LoiVkM3"
-);
 
 export const QUOTE_MINT = new PublicKey(
   "So11111111111111111111111111111111111111112"
@@ -49,7 +46,7 @@ export const MEMECHAN_QUOTE_TOKEN_INFO: TokenInfo = {
 
 export const CHAN_TOKEN_INFO: TokenInfo = {
   chainId: 0,
-  address: "HX2pp5za2aBkrA5X5iTioZXcrpWb2q9DiaeWPW3qKMaw",
+  address: "59uVEJ3baADZ7Pg79MtV1erDrqGXYQK7qqJg3JwjGgm3",
   name: "memechan",
   decimals: 9,
   symbol: "CHAN",
