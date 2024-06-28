@@ -15,16 +15,22 @@ pub const DECIMALS_S: u128 = 1_000_000_000;
 
 pub const MAX_AIRDROPPED_TOKENS: u64 = 300_000_000_000_000;
 
-#[cfg(not(feature = "mainnet"))]
+#[cfg(feature = "testing")]
 pub const LOCK_TIME: i64 = 60; // 1 minute
 #[cfg(feature = "mainnet")]
-pub const LOCK_TIME: i64 = 180; // 1 hour
+pub const LOCK_TIME: i64 = 3600; // 1 hour
 
-#[cfg(not(feature = "mainnet"))]
+#[cfg(feature = "localnet-testing")]
+pub const DEFAULT_CLIFF: i64 = 15; // 15 seconds;
+#[cfg(feature = "mainnet-testing")]
 pub const DEFAULT_CLIFF: i64 = 180; // 3 minutes;
 #[cfg(feature = "mainnet")]
-pub const DEFAULT_CLIFF: i64 = 600; // 1 day;
-pub const MIN_LINEAR: i64 = 600; // 1 day
+pub const DEFAULT_CLIFF: i64 = 86_400; // 1 day;
+
+#[cfg(feature = "testing")]
+pub const MIN_LINEAR: i64 = 600; // 10 minutes
+#[cfg(feature = "mainnet")]
+pub const MIN_LINEAR: i64 = 86_400; // 1 day
 pub const MAX_LINEAR: i64 = 1_123_200; // 13 days
 
 pub const INSTANT_TOKEN_PERCENTAGE_NUM: u64 = 10;
