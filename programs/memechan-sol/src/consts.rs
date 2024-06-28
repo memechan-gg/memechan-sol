@@ -24,34 +24,34 @@ pub const LOCK_TIME: i64 = 180; // 1 hour
 pub const DEFAULT_CLIFF: i64 = 180; // 3 minutes;
 #[cfg(feature = "mainnet")]
 pub const DEFAULT_CLIFF: i64 = 600; // 1 day;
-
-#[cfg(not(feature = "mainnet"))]
-pub const DEFAULT_LINEAR: i64 = 1800; // 0.5 hours;
-#[cfg(feature = "mainnet")]
-pub const DEFAULT_LINEAR: i64 = 3600; // 7 days;
+pub const MIN_LINEAR: i64 = 600; // 1 day
+pub const MAX_LINEAR: i64 = 1_123_200; // 13 days
 
 pub const INSTANT_TOKEN_PERCENTAGE_NUM: u64 = 10;
 pub const INSTANT_TOKEN_PERCENTAGE_DENOM: u64 = 100;
 
-#[cfg(not(feature = "mainnet"))]
+#[cfg(feature = "testing")]
 pub const ADMIN_KEY: Pubkey =
     solana_program::pubkey!("8SvkUtJZCyJwSQGkiszwcRcPv7c8pPSr8GVEppGNN7DV");
 #[cfg(feature = "mainnet")]
 pub const ADMIN_KEY: Pubkey =
-    solana_program::pubkey!("8SvkUtJZCyJwSQGkiszwcRcPv7c8pPSr8GVEppGNN7DV");
+    solana_program::pubkey!("KZbAoMgCcb2gDEn2Ucea86ux84y25y3ybbWQGQpd9D6");
 
-#[cfg(not(feature = "mainnet"))]
+#[cfg(feature = "testing")]
 pub const SWAP_AUTH_KEY: Pubkey =
     solana_program::pubkey!("8SvkUtJZCyJwSQGkiszwcRcPv7c8pPSr8GVEppGNN7DV");
 #[cfg(feature = "mainnet")]
 pub const SWAP_AUTH_KEY: Pubkey =
-    solana_program::pubkey!("8SvkUtJZCyJwSQGkiszwcRcPv7c8pPSr8GVEppGNN7DV");
+    solana_program::pubkey!("389y4YsTxFKpz2HxVHpvDk13FSXan48LZQtGv8pD4vQA");
 
 pub const FEE_KEY: Pubkey = solana_program::pubkey!("feeLPZEfzJFwDR11cdMWE3nSa4nr7sPPM4u6tmDTw3Y");
 
-#[cfg(not(feature = "mainnet"))]
-pub const CHAN_MINT: Pubkey =
-    solana_program::pubkey!("HX2pp5za2aBkrA5X5iTioZXcrpWb2q9DiaeWPW3qKMaw");
-#[cfg(feature = "mainnet")]
+#[cfg(feature = "localnet-testing")]
 pub const CHAN_MINT: Pubkey =
     solana_program::pubkey!("59uVEJ3baADZ7Pg79MtV1erDrqGXYQK7qqJg3JwjGgm3");
+#[cfg(feature = "mainnet-testing")]
+pub const CHAN_MINT: Pubkey =
+    solana_program::pubkey!("9pECN2xxLQo22bFYpsNr3T3eW1UdEDtSqPQopFrGv7n4");
+#[cfg(feature = "mainnet")]
+pub const CHAN_MINT: Pubkey =
+    solana_program::pubkey!("ChanGGuDHboPswpTmKDfsTVGQL96VHhmvpwrE4UjWssd");

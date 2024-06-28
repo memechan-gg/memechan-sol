@@ -56,6 +56,7 @@ pub enum AmmError {
     StakingIsNotActive,
     NonZeroInitialMemeSupply,
     AirdroppedTokensOvercap,
+    InvalidVestingPeriod,
 }
 
 #[allow(dead_code)]

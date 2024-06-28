@@ -23,6 +23,7 @@ pub struct BoundPool {
     pub config: Config,
     pub airdropped_tokens: u64,
     pub locked: bool,
+    pub vesting_period: i64,
 }
 
 impl BoundPool {

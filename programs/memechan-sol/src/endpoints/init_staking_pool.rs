@@ -262,7 +262,7 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, InitStakingPool<'info>>) ->
     staking.quote_mint = accs.quote_mint.key();
     staking.chan_vault = accs.staking_chan_vault.key();
     staking.stakes_total = accs.pool.config.gamma_m;
-    staking.vesting_config = vesting::default_config();
+    staking.vesting_config = vesting::default_config(accs.pool.vesting_period);
     staking.fees_x_total = 0;
     staking.fees_y_total = 0;
     staking.fees_z_total = 0;

@@ -223,6 +223,7 @@ export class BoundPoolWrapper {
         recentSlot: LUTSLOT,
       }),
       tokens_airdropped: 10_000_000 * 10 ** 6,
+      vesting_linear_length: 1800,
     });
 
     return new BoundPoolWrapper(bpClient);

@@ -1,6 +1,6 @@
 [package]
 name = "memechan-sol"
-version = "0.1.0"
+version = "0.2.0"
 description = "Created with Anchor"
 edition = "2021"
 
@@ -9,14 +9,15 @@ crate-type = ["cdylib", "lib"]
 name = "memechan_sol"
 
 [features]
-default = ["mainnet"]
+default = ["localnet-testing"]
 cpi = ["no-entrypoint"]
 no-entrypoint = []
 no-idl = []
 no-log-ix-name = []
-localnet = []
-devnet = []
 mainnet = []
+testing = []
+mainnet-testing = ["testing"]
+localnet-testing = ["testing"]
 
 [dependencies]
 num-integer = "0.1.46"

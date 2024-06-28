@@ -1,6 +1,4 @@
-use crate::consts::{
-    DEFAULT_CLIFF, DEFAULT_LINEAR, INSTANT_TOKEN_PERCENTAGE_DENOM, INSTANT_TOKEN_PERCENTAGE_NUM,
-};
+use crate::consts::{DEFAULT_CLIFF, INSTANT_TOKEN_PERCENTAGE_DENOM, INSTANT_TOKEN_PERCENTAGE_NUM};
 use crate::libraries::MulDiv;
 use anchor_lang::prelude::*;
 
@@ -17,13 +15,13 @@ pub struct VestingData {
     pub notional: u64,
 }
 
-pub fn default_config() -> VestingConfig {
+pub fn default_config(vesting_time: i64) -> VestingConfig {
     let current_ts = Clock::get().unwrap().unix_timestamp;
 
     VestingConfig {
         start_ts: current_ts,
         cliff_ts: current_ts + DEFAULT_CLIFF,
-        end_ts: current_ts + DEFAULT_CLIFF + DEFAULT_LINEAR, // TODO: Unit test
+        end_ts: current_ts + DEFAULT_CLIFF + vesting_time,
     }
 }
 

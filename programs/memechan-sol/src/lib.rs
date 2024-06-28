@@ -10,17 +10,21 @@ use anchor_lang::prelude::*;
 use core as core_;
 use endpoints::*;
 
-#[cfg(not(feature = "mainnet"))]
-declare_id!("EWsBchGns4n9dtcsBvByHRfHhZ2iseNkjA3CsEUaGZFo"); // localnet
+#[cfg(feature = "testing")]
+declare_id!("CaR9ciDnNnE6WX35tZWrjeGdKUPaft7r4oQGF4JhwVxZ"); // localnet
 #[cfg(feature = "mainnet")]
-declare_id!("CaR9ciDnNnE6WX35tZWrjeGdKUPaft7r4oQGF4JhwVxZ"); // mainnet test
+declare_id!("tbd"); // mainnet test
 
 #[program]
 pub mod memechan_sol {
     use super::*;
 
-    pub fn new_pool(ctx: Context<NewPool>, airdropped_tokens: u64) -> Result<()> {
-        new_pool::handle(ctx, airdropped_tokens)
+    pub fn new_pool(
+        ctx: Context<NewPool>,
+        airdropped_tokens: u64,
+        vesting_period: u64,
+    ) -> Result<()> {
+        new_pool::handle(ctx, airdropped_tokens, vesting_period as i64)
     }
 
     pub fn create_metadata(

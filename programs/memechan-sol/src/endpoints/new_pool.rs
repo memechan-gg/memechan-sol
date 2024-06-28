@@ -1,6 +1,7 @@
 use crate::consts::{
     DEFAULT_MAX_M, DEFAULT_MAX_M_LP, DEFAULT_PRICE_FACTOR_DENOMINATOR,
-    DEFAULT_PRICE_FACTOR_NUMERATOR, FEE_KEY, MAX_AIRDROPPED_TOKENS, MAX_MEME_TOKENS,
+    DEFAULT_PRICE_FACTOR_NUMERATOR, FEE_KEY, MAX_AIRDROPPED_TOKENS, MAX_LINEAR, MAX_MEME_TOKENS,
+    MIN_LINEAR,
 };
 use crate::err;
 use crate::err::AmmError;
@@ -92,7 +93,7 @@ impl<'info> NewPool<'info> {
     }
 }
 
-pub fn handle(ctx: Context<NewPool>, airdropped_tokens: u64) -> Result<()> {
+pub fn handle(ctx: Context<NewPool>, airdropped_tokens: u64, vesting_period: i64) -> Result<()> {
     let accs = ctx.accounts;
 
     if accs.meme_mint.supply != 0 {
@@ -101,6 +102,10 @@ pub fn handle(ctx: Context<NewPool>, airdropped_tokens: u64) -> Result<()> {
 
     if airdropped_tokens > MAX_AIRDROPPED_TOKENS {
         return Err(error!(AmmError::AirdroppedTokensOvercap));
+    }
+
+    if MIN_LINEAR > vesting_period || vesting_period > MAX_LINEAR {
+        return Err(error!(AmmError::InvalidVestingPeriod));
     }
 
     let seeds = &[
@@ -176,6 +181,7 @@ pub fn handle(ctx: Context<NewPool>, airdropped_tokens: u64) -> Result<()> {
     pool.locked = false;
     pool.creator_addr = accs.sender.key();
     pool.airdropped_tokens = airdropped_tokens;
+    pool.vesting_period = vesting_period;
 
     Ok(())
 }
