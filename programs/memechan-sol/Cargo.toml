@@ -9,7 +9,6 @@ crate-type = ["cdylib", "lib"]
 name = "memechan_sol"
 
 [features]
-default = ["localnet-testing"]
 cpi = ["no-entrypoint"]
 no-entrypoint = []
 no-idl = []
