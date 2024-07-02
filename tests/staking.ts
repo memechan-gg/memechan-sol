@@ -124,7 +124,6 @@ export class StakingWrapper {
       vaultProgram.account.vault.fetchNullable(bVault),
     ]);
 
-    console.log("1");
     let aVaultLpMint = aLpMintPda;
     let bVaultLpMint = bLpMintPda;
     let preInstructions: Array<TransactionInstruction> = [];
@@ -152,8 +151,6 @@ export class StakingWrapper {
       bVaultLpMint = bVaultAccount.lpMint; // Old vault doesn't have lp mint pda
     }
 
-    console.log("2");
-
     const poolPubkey = derivePoolAddress(
       provider.connection,
       tokenInfoA,
@@ -161,7 +158,7 @@ export class StakingWrapper {
       false,
       tradeFeeBps
     );
-    console.log("3");
+
     const [[aVaultLp], [bVaultLp]] = [
       PublicKey.findProgramAddressSync(
         [aVault.toBuffer(), poolPubkey.toBuffer()],
@@ -184,7 +181,6 @@ export class StakingWrapper {
       ),
     ];
 
-    console.log("4");
     const [lpMint] = PublicKey.findProgramAddressSync(
       [Buffer.from(SEEDS.LP_MINT), poolPubkey.toBuffer()],
       ammProgram.programId
@@ -200,13 +196,11 @@ export class StakingWrapper {
       ammProgram.programId
     );
 
-    console.log("5");
     preInstructions = [];
 
     const payerPoolLp = await getAssociatedTokenAccount(lpMint, stakingSigner);
 
     const escrowAta = await getAssociatedTokenAccount(lpMint, lockEscrowPK);
-    console.log(escrowAta);
 
     const memeFeeVault = (
       await getOrCreateAssociatedTokenAccount(
@@ -229,8 +223,6 @@ export class StakingWrapper {
       tokenInfoB.address === CHAN_TOKEN_INFO.address
         ? staking.chanVault
         : staking.quoteVault;
-
-    console.log("7");
 
     await memechan.methods
       .addFees()

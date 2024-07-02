@@ -25,12 +25,12 @@ import { before, beforeEach } from "mocha";
 import { ASSOCIATED_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
 import { MPL_TOKEN_METADATA_PROGRAM_ID } from "@metaplex-foundation/mpl-token-metadata";
 import { ChanSwapWrapper } from "../chan_swap";
-import { memechan } from "../sol-sdk/config/config";
+import { DEFAULT_TARGET, memechan } from "../sol-sdk/config/config";
 
 export function test() {
   describe("create_bound_pool", () => {
     it("creates target config", async () => {
-      await TargetConfigWrapper.new(100_000_000);
+      await TargetConfigWrapper.new(DEFAULT_TARGET);
     });
 
     it("creates chan swap", async () => {
@@ -67,7 +67,7 @@ export function test() {
       const txDig = await provider.connection.sendTransaction(tx, [
         adminSigner,
       ]);
-      console.log(
+      console.debug(
         LUTaddr,
         getLUTPDA({
           authority: admin,

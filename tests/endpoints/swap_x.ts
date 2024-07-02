@@ -6,12 +6,12 @@ import {
   createWrappedNativeAccount,
   getAccount,
 } from "@solana/spl-token";
-import { memechan, payer, provider, sleep } from "../helpers";
+import { payer, provider, sleep } from "../helpers";
 import { BN } from "@coral-xyz/anchor";
 
 export function test() {
-  describe.skip("swap_x", () => {
-    it.skip("swaps user sol->memecoin->sol", async () => {
+  describe("swap_x", () => {
+    it("swaps user sol->memecoin->sol", async () => {
       const user = Keypair.generate();
       const pool = await BoundPoolWrapper.new();
 
@@ -39,7 +39,7 @@ export function test() {
       // })
     });
 
-    it.skip("swaps sol->memecoin->sol->full meme", async () => {
+    it("swaps sol->memecoin->sol->full meme", async () => {
       const user = Keypair.generate();
       const pool = await BoundPoolWrapper.new();
 

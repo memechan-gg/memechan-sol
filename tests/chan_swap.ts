@@ -53,8 +53,6 @@ export class ChanSwapWrapper {
       true
     );
 
-    console.log(chanVault);
-
     await mintChan(chanVault.address, 10_000_000 * 10 ** 9);
 
     await memechan.methods

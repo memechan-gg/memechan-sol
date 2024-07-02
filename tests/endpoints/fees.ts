@@ -11,8 +11,8 @@ import { StakingWrapper } from "../staking";
 import { BoundPoolWrapper } from "../bound_pool";
 
 export function test() {
-  describe.skip("fees", () => {
-    it.skip("withdraw fees", async () => {
+  describe("fees", () => {
+    it("withdraw fees", async () => {
       const user = Keypair.generate();
       await airdrop(user.publicKey);
 
@@ -30,7 +30,7 @@ export function test() {
 
       sleep(1000);
 
-      const [amm, staking] = await boundPool.go_live();
+      const [amm, amm2, staking] = await boundPool.go_live();
 
       const solWallet = await createWrappedNativeAccount(
         provider.connection,
@@ -46,9 +46,9 @@ export function test() {
         user.publicKey
       );
 
-      await amm.swap(user, solWallet, memeWallet, 1e9, 1);
+      await amm.swap(user, 1e9, 1);
 
-      await staking.add_fees(amm);
+      await staking.add_fees(amm, amm2);
     });
   });
 }

@@ -29,7 +29,7 @@ import { PublicKey } from "@saberhq/solana-contrib";
 
 export function test() {
   describe("staking", () => {
-    it.skip("unstake", async () => {
+    it("unstake", async () => {
       const users = [
         Keypair.generate(),
         Keypair.generate(),
@@ -95,7 +95,6 @@ export function test() {
     });
 
     it("withdraw fees", async () => {
-      console.log("0");
       const users = [
         Keypair.generate(),
         Keypair.generate(),
@@ -104,7 +103,6 @@ export function test() {
       const user = users[0];
       await Promise.all(users.map((user) => airdrop(user.publicKey)));
       const pool = await BoundPoolWrapper.new();
-      console.log("\nbpclient\n", pool.bpClient.id);
 
       const addr = await getOrCreateAssociatedTokenAccount(
         provider.connection,
@@ -112,9 +110,7 @@ export function test() {
         QUOTE_MINT,
         payer.publicKey
       );
-      console.log("-1");
       if (QUOTE_MINT.equals(NATIVE_MINT)) {
-        console.log("0");
         const tx = new Transaction();
         tx.add(
           ...wrapSOLInstruction(
@@ -130,7 +126,6 @@ export function test() {
         await mintQuote(addr.address);
       }
 
-      console.log("1");
       await sleep(1000);
 
       const tickets: MemeTicketWrapper[] = [];
@@ -157,13 +152,10 @@ export function test() {
         })
       );
       sleep(500);
-      console.log("-2");
       const [amm, amm2, staking] = await pool.go_live();
-      sleep(1000);
+      sleep(500);
 
       const stakingInfo = await staking.fetch();
-
-      console.log("-1");
       const memeWalletId = Keypair.generate();
       const memeWallet = await createAccount(
         provider.connection,
@@ -173,8 +165,7 @@ export function test() {
         memeWalletId
       );
 
-      await sleep(1000);
-      console.log("preparing accounts for swaps");
+      await sleep(200);
 
       const inputTokenAccount = await getOrCreateAssociatedTokenAccount(
         provider.connection,
@@ -191,24 +182,16 @@ export function test() {
       );
 
       await mintChan(chanTokenAccount.address);
-
-      console.log("first swap");
       await amm.swap(payer, 20e9, 1);
-
-      console.log("second swap");
       await amm2.swap(payer, 5e9, 1);
-
-      console.log("add_fees");
       await staking.add_fees(amm, amm2);
 
-      console.log("withdraw_fees");
       await staking.withdraw_fees({
         ticket: tickets[0],
         user: users[0],
       });
 
       await sleep(500);
-      console.log(`fetching ticket ${tickets[0].id}`);
       const fetchedTicket = await tickets[0].fetch();
       console.log(
         "ticket % ",

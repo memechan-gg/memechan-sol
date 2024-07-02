@@ -67,6 +67,8 @@ export const DEFAULT_MAX_S = 90;
 export const DECIMALS_ALPHA = 1_000_000; // consider increase
 export const DECIMALS_BETA = 1_000_000; // consider increase
 
+export const DEFAULT_TARGET: number = 300 * 10 ** 9;
+
 export const MAX_TRANSACTION_SIZE = 1232;
 
 export const ADMIN_PUB_KEY = new PublicKey(

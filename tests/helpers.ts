@@ -18,7 +18,7 @@ import {
 import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
 import { expect } from "chai";
 import { MemechanSol } from "../target/types/memechan_sol";
-import { mintTo } from "@solana/spl-token";
+import { NATIVE_MINT, mintTo } from "@solana/spl-token";
 import { config } from "dotenv";
 
 import * as bigintBuffer from "bigint-buffer";
@@ -106,6 +106,10 @@ export async function mintQuote(
   to: PublicKey,
   amount: number = 1_000_000_000_000_000
 ) {
+  if (QUOTE_MINT.equals(NATIVE_MINT)) {
+    await airdrop(to, amount);
+    return;
+  }
   await mintTo(
     provider.connection,
     adminSigner,

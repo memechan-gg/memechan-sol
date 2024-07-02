@@ -6,25 +6,28 @@ import {
   createWrappedNativeAccount,
   getAccount,
 } from "@solana/spl-token";
-import { memechan, payer, provider, sleep } from "../helpers";
+import { mintQuote, payer, provider, sleep } from "../helpers";
 import { BN } from "@coral-xyz/anchor";
 import { MemeTicketWrapper } from "../ticket";
+import {
+  DEFAULT_MAX_M,
+  DEFAULT_MAX_M_LP,
+  DEFAULT_TARGET,
+} from "../sol-sdk/config/config";
 
 export function test() {
-  describe.skip("swap_y", () => {
-    it.skip("swaps full sol->memecoin in one go", async () => {
+  describe("swap_y", () => {
+    it("swaps full sol->memecoin in one go", async () => {
       const pool = await BoundPoolWrapper.new();
-
+      await mintQuote(payer.publicKey);
       await sleep(1000);
 
       // call to the swap endpoint
       const ticketId = await pool.swap_y({
         memeTokensOut: new BN(1),
-        quoteTokensIn: new BN(303 * 1e9),
+        quoteTokensIn: new BN(DEFAULT_TARGET * 1.05),
       });
-
       sleep(1000);
-
       const poolInfo = await pool.fetch();
 
       assert(poolInfo.locked, "pool should be locked");
@@ -33,51 +36,56 @@ export function test() {
 
       const memesTotal = ticketInfo.amount.add(poolInfo.adminFeesMeme);
       assert(
-        memesTotal.eq(new BN(9e14)),
-        "total sum of memetokens with fees should amount to 9e14"
+        memesTotal.eq(new BN(DEFAULT_MAX_M)),
+        `total sum of memetokens with fees expected ${DEFAULT_MAX_M} got ${memesTotal.toString()}`
       );
 
-      const solAmt = poolInfo.memeReserve.tokens;
-      assert(solAmt.eq(new BN(3e11)), "pool should have 300 sol");
+      const solAmt = poolInfo.quoteReserve.tokens;
+      assert(
+        solAmt.eq(new BN(DEFAULT_TARGET)),
+        `pool expected to have ${DEFAULT_TARGET} quote got ${solAmt.toString()}`
+      );
 
       const solVault = await getAccount(
         provider.connection,
-        poolInfo.memeReserve.vault
+        poolInfo.quoteReserve.vault
       );
 
       const totalAmt =
         solVault.amount - BigInt(poolInfo.adminFeesQuote.toNumber());
+
       assert(
-        totalAmt === BigInt(3e11),
-        "pool should have 300 sol without admin fees"
+        totalAmt === BigInt(DEFAULT_TARGET),
+        `pool expected to have ${DEFAULT_TARGET} quote without admin fees got ${totalAmt.toString()}`
       );
     });
 
-    it.skip("swaps full sol->memecoin in multiple swaps", async () => {
+    it("swaps full sol->memecoin in multiple swaps", async () => {
       const pool = await BoundPoolWrapper.new();
 
       await sleep(1000);
 
       const tickets: MemeTicketWrapper[] = [];
-
       tickets.push(
         await pool.swap_y({
           memeTokensOut: new BN(1),
-          quoteTokensIn: new BN(50.5 * 1e9),
+          quoteTokensIn: new BN(DEFAULT_TARGET * 0.159),
+          ticketNumber: 1,
+        })
+      );
+      tickets.push(
+        await pool.swap_y({
+          memeTokensOut: new BN(1),
+          quoteTokensIn: new BN(DEFAULT_TARGET * 0.259),
+          ticketNumber: 2,
         })
       );
 
       tickets.push(
         await pool.swap_y({
           memeTokensOut: new BN(1),
-          quoteTokensIn: new BN(70.7 * 1e9),
-        })
-      );
-
-      tickets.push(
-        await pool.swap_y({
-          memeTokensOut: new BN(1),
-          quoteTokensIn: new BN(181.8 * 1e9),
+          quoteTokensIn: new BN(DEFAULT_TARGET * 0.65),
+          ticketNumber: 3,
         })
       );
 
@@ -94,26 +102,27 @@ export function test() {
         const ticketInfo = await ticket1Id.fetch();
         sum = sum.add(ticketInfo.amount);
       }
-
       assert(
-        sum.add(poolInfo.adminFeesMeme).eq(new BN(9e14)),
-        "total sum of memetokens with fees should amount to 9e14"
+        sum.add(poolInfo.adminFeesMeme).eq(new BN(DEFAULT_MAX_M)),
+        `total sum of memetokens with fees expected ${DEFAULT_MAX_M} got ${sum
+          .add(poolInfo.adminFeesMeme)
+          .toString()}`
       );
 
       const solVault = await getAccount(
         provider.connection,
-        poolInfo.memeReserve.vault
+        poolInfo.quoteReserve.vault
       );
 
       const totalAmt =
         solVault.amount - BigInt(poolInfo.adminFeesQuote.toNumber());
       assert(
-        totalAmt === BigInt(3e11),
-        "pool should have 300 sol without admin fees"
+        totalAmt.toString() === DEFAULT_TARGET.toString(),
+        `pool expected to have ${DEFAULT_TARGET} sol without admin fees got ${totalAmt.toString()}`
       );
     });
 
-    it.skip("user swaps more than have", async () => {
+    it("user swaps more than have", async () => {
       const pool = await BoundPoolWrapper.new();
 
       await sleep(1000);

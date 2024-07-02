@@ -19,6 +19,7 @@ import {
 import BN from "bn.js";
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
+  NATIVE_MINT,
   TOKEN_PROGRAM_ID,
   createAssociatedTokenAccount,
   createMint,
@@ -50,6 +51,7 @@ import { associatedAddress } from "@coral-xyz/anchor/dist/cjs/utils/token";
 import { TokenInfo } from "@solana/spl-token-registry";
 import AmmImpl from "@mercurial-finance/dynamic-amm-sdk";
 import { ChanSwapWrapper } from "./chan_swap";
+import { createWrappedNativeAccount } from "@solana/spl-token";
 
 export const RAYDIUM_PROGRAM_ID = new PublicKey(
   "HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8"
@@ -78,7 +80,7 @@ export class BoundPoolWrapper {
   }
 
   public async go_live(): Promise<[AmmPool, AmmPool, StakingWrapper]> {
-    console.log("go_live");
+    console.debug("go_live");
     const res = await this.bpClient.initStakingPool({
       boundPoolInfo: this.bpClient.poolInfo,
       payer,
@@ -110,7 +112,6 @@ export class BoundPoolWrapper {
       tokenInfoA,
       tokenInfoB,
     });
-    console.log("initQuoteAmmPool END");
 
     const chanSwap = ChanSwapWrapper.chanSwapId();
 
@@ -125,9 +126,8 @@ export class BoundPoolWrapper {
       tokenInfoB: tokenInfoC,
       chanSwap,
     });
-    console.log("initChanAmmPool END");
+
     const staking = await memechan.account.stakingPool.fetch(res.staking);
-    console.log(staking.memeMint, staking.quoteAmmPool);
 
     await sleep(500);
     const ammImplQuote = await AmmImpl.create(
@@ -136,14 +136,13 @@ export class BoundPoolWrapper {
       tokenInfoA,
       tokenInfoB
     );
-    console.log("aiq");
+
     const ammImplChan = await AmmImpl.create(
       provider.connection,
       staking.chanAmmPool,
       tokenInfoA,
       tokenInfoC
     );
-    console.log("aic");
 
     return [
       new AmmPool(
@@ -165,36 +164,46 @@ export class BoundPoolWrapper {
 
   public async swap_y(args: SwapYArgs): Promise<MemeTicketWrapper> {
     const user = args.user ?? payer;
-    const memeTokensOut = args.memeTokensOut;
-    const quoteAmountIn = args.quoteTokensIn;
+    const { memeTokensOut, quoteTokensIn, ticketNumber } = args;
 
-    const userQuoteAcc =
-      args.userQuoteAcc ??
-      (
-        await getOrCreateAssociatedTokenAccount(
+    const userQuoteAcc = args.userQuoteAcc
+      ? args.userQuoteAcc!
+      : QUOTE_MINT.equals(NATIVE_MINT)
+      ? await createWrappedNativeAccount(
           client.connection,
           payer,
-          QUOTE_MINT,
-          user.publicKey
+          user.publicKey,
+          quoteTokensIn.toNumber(),
+          Keypair.generate()
         )
-      ).address;
-    console.log(userQuoteAcc);
-    await transfer(
-      provider.connection,
-      payer,
-      associatedAddress({ mint: QUOTE_MINT, owner: payer.publicKey }),
-      userQuoteAcc,
-      payer,
-      quoteAmountIn.toNumber()
-    );
+      : (
+          await getOrCreateAssociatedTokenAccount(
+            client.connection,
+            payer,
+            QUOTE_MINT,
+            user.publicKey
+          )
+        ).address;
+
+    if (!QUOTE_MINT.equals(NATIVE_MINT)) {
+      await transfer(
+        provider.connection,
+        payer,
+        associatedAddress({ mint: QUOTE_MINT, owner: payer.publicKey }),
+        userQuoteAcc,
+        payer,
+        quoteTokensIn.toNumber()
+      );
+    }
     const ticket = await this.bpClient.swapY({
       memeTokensOut,
-      quoteAmountIn,
+      quoteAmountIn: quoteTokensIn,
       payer,
       pool: this.bpClient.id,
       quoteMint: QUOTE_MINT,
       user,
       userQuoteAcc,
+      ticketNumber,
     });
 
     return new MemeTicketWrapper(ticket.id);
@@ -225,7 +234,6 @@ export class BoundPoolWrapper {
       tokens_airdropped: 10_000_000 * 10 ** 6,
       vesting_linear_length: 1800,
     });
-
     return new BoundPoolWrapper(bpClient);
   }
 
