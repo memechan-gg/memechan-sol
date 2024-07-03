@@ -1059,12 +1059,12 @@ export class BoundPoolClient {
       await this.client.memechanProgram.methods
         .swapX(new BN(meme_in), new BN(minQuoteAmountOut))
         .accounts({
-          memeTicket: memeTicket.id,
-          owner: user.publicKey,
           pool: pool,
-          poolSigner: poolSignerPda,
-          quoteVault: this.quoteVault,
+          memeTicket: memeTicket.id,
           userSol: userSolAcc,
+          quoteVault: this.quoteVault,
+          owner: user.publicKey,
+          poolSigner: poolSignerPda,
           tokenProgram: TOKEN_PROGRAM_ID,
         })
         .instruction();

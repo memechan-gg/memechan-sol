@@ -52,6 +52,7 @@ import { TokenInfo } from "@solana/spl-token-registry";
 import AmmImpl from "@mercurial-finance/dynamic-amm-sdk";
 import { ChanSwapWrapper } from "./chan_swap";
 import { createWrappedNativeAccount } from "@solana/spl-token";
+import { MemeTicket } from "./sol-sdk/memeticket/MemeTicket";
 
 export const RAYDIUM_PROGRAM_ID = new PublicKey(
   "HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8"
@@ -72,6 +73,14 @@ export interface SwapYArgs {
   quoteTokensIn: BN;
   userQuoteAcc?: PublicKey;
   ticketNumber?: number;
+}
+
+export interface SwapXArgs {
+  user?: Keypair;
+  userMemeTicket: MemeTicketWrapper;
+  userQuoteAcc?: PublicKey;
+  memeAmountIn?: BN;
+  minQuoteAmountOut?: BN;
 }
 
 export class BoundPoolWrapper {
@@ -164,7 +173,8 @@ export class BoundPoolWrapper {
 
   public async swap_y(args: SwapYArgs): Promise<MemeTicketWrapper> {
     const user = args.user ?? payer;
-    const { memeTokensOut, quoteTokensIn, ticketNumber } = args;
+    const { memeTokensOut, quoteTokensIn } = args;
+    const ticketNumber = args.ticketNumber ?? 1;
 
     const userQuoteAcc = args.userQuoteAcc
       ? args.userQuoteAcc!
@@ -207,6 +217,24 @@ export class BoundPoolWrapper {
     });
 
     return new MemeTicketWrapper(ticket.id);
+  }
+
+  public async swap_x(args: SwapXArgs) {
+    const user = args.user ?? payer;
+    const { userQuoteAcc, userMemeTicket } = args;
+
+    const memeAmountIn =
+      args.memeAmountIn ?? (await userMemeTicket.fetch()).amount;
+    const minQuoteAmountOut = args.minQuoteAmountOut ?? new BN(1);
+
+    await this.bpClient.swapX({
+      memeAmountIn,
+      minQuoteAmountOut,
+      userMemeTicket,
+      userQuoteAcc,
+      quoteMint: QUOTE_MINT,
+      user,
+    });
   }
 
   private constructor(public bpClient: BoundPoolClient) {

@@ -6,6 +6,7 @@ import { MemeTicket } from "../memeticket/MemeTicket";
 import { TokenMetadata } from "../token/types";
 import { BoundPoolType } from "../../bound_pool";
 import { TokenInfo } from "@solana/spl-token-registry";
+import { MemeTicketWrapper } from "../../ticket";
 
 export interface SwapYArgs {
   payer: Signer;
@@ -44,7 +45,7 @@ export interface SwapXArgs {
   //poolSignerPda: PublicKey;
   memeAmountIn: BN;
   minQuoteAmountOut: BN;
-  userMemeTicket: MemeTicket;
+  userMemeTicket: MemeTicketWrapper;
   userQuoteAcc: PublicKey;
   quoteMint: PublicKey;
 }

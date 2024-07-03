@@ -15,19 +15,23 @@ pub const DECIMALS_S: u128 = 1_000_000_000;
 
 pub const MAX_AIRDROPPED_TOKENS: u64 = 300_000_000_000_000;
 
-#[cfg(feature = "testing")]
+#[cfg(feature = "localnet-testing")]
+pub const LOCK_TIME: i64 = 4; // 4 seconds
+#[cfg(feature = "mainnet-testing")]
 pub const LOCK_TIME: i64 = 60; // 1 minute
 #[cfg(feature = "mainnet")]
 pub const LOCK_TIME: i64 = 3600; // 1 hour
 
 #[cfg(feature = "localnet-testing")]
-pub const DEFAULT_CLIFF: i64 = 15; // 15 seconds;
+pub const DEFAULT_CLIFF: i64 = 5; // 5 seconds
 #[cfg(feature = "mainnet-testing")]
-pub const DEFAULT_CLIFF: i64 = 180; // 3 minutes;
+pub const DEFAULT_CLIFF: i64 = 180; // 3 minutes
 #[cfg(feature = "mainnet")]
-pub const DEFAULT_CLIFF: i64 = 86_400; // 1 day;
+pub const DEFAULT_CLIFF: i64 = 86_400; // 1 day
 
-#[cfg(feature = "testing")]
+#[cfg(feature = "localnet-testing")]
+pub const MIN_LINEAR: i64 = 10; // 10 seconds
+#[cfg(feature = "mainnet-testing")]
 pub const MIN_LINEAR: i64 = 600; // 10 minutes
 #[cfg(feature = "mainnet")]
 pub const MIN_LINEAR: i64 = 86_400; // 1 day
