@@ -1,6 +1,7 @@
 use crate::consts::{DEFAULT_CLIFF, INSTANT_TOKEN_PERCENTAGE_DENOM, INSTANT_TOKEN_PERCENTAGE_NUM};
 use crate::libraries::MulDiv;
 use anchor_lang::prelude::*;
+use std::cmp::max;
 
 #[derive(AnchorDeserialize, AnchorSerialize, Copy, Clone, Debug, Eq, PartialEq, Default)]
 pub struct VestingConfig {
@@ -27,11 +28,12 @@ pub fn default_config(vesting_time: i64) -> VestingConfig {
 
 impl VestingData {
     pub fn total_vested(&self, config: &VestingConfig, current_ts: i64) -> u64 {
+        let cliff_amount = self
+            .notional
+            .mul_div_floor(INSTANT_TOKEN_PERCENTAGE_NUM, INSTANT_TOKEN_PERCENTAGE_DENOM)
+            .unwrap();
         if current_ts <= config.cliff_ts {
-            return self
-                .notional
-                .mul_div_floor(INSTANT_TOKEN_PERCENTAGE_NUM, INSTANT_TOKEN_PERCENTAGE_DENOM)
-                .unwrap();
+            return cliff_amount;
         }
 
         if current_ts >= config.end_ts {
@@ -43,7 +45,10 @@ impl VestingData {
             .unwrap();
         let total = config.duration() as u64;
 
-        self.notional.mul_div_floor(passed, total).unwrap()
+        max(
+            self.notional.mul_div_floor(passed, total).unwrap(),
+            cliff_amount,
+        )
     }
 
     pub fn to_release(&self, config: &VestingConfig, current_ts: i64) -> u64 {
