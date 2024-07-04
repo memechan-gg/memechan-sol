@@ -1,7 +1,6 @@
 use crate::consts::{DEFAULT_CLIFF, INSTANT_TOKEN_PERCENTAGE_DENOM, INSTANT_TOKEN_PERCENTAGE_NUM};
 use crate::libraries::MulDiv;
 use anchor_lang::prelude::*;
-use std::cmp::max;
 
 #[derive(AnchorDeserialize, AnchorSerialize, Copy, Clone, Debug, Eq, PartialEq, Default)]
 pub struct VestingConfig {

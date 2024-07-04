@@ -6,7 +6,8 @@
     "build-testing": "solana-install init 1.17.31 && anchor build -- --features mainnet-testing",
     "build-release": "solana-install init 1.17.31 && anchor build -- --features mainnet --no-default-features",
     "bt": "yarn build-testing",
-    "write-buffer": "yarn build-testing && solana-install init 1.18.17 && cd target/deploy && solana program write-buffer --buffer bufkey.json memechan_sol.so -C ~/mconf3.yml"
+    "write-buffer": "yarn build-testing && solana-install init 1.18.17 && cd target/deploy && solana program write-buffer --buffer bufkey.json memechan_sol.so -C ~/mconf3.yml",
+    "wb": "yarn write-buffer"
   },
   "dependencies": {
     "@aws-crypto/sha256-browser": "^5.2.0",

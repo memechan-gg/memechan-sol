@@ -14,18 +14,10 @@ pub struct Fees {
 
 impl Fees {
     pub fn get_fee_meme_amount(&self, amount: u64) -> Result<u64> {
-        msg!(
-            "get_fee_meme_amount {}",
-            get_fee_amount(amount, self.fee_meme_percent).unwrap()
-        );
         get_fee_amount(amount, self.fee_meme_percent)
     }
 
     pub fn get_fee_quote_amount(&self, amount: u64) -> Result<u64> {
-        msg!(
-            "get_fee_quote_amount {}",
-            get_fee_amount(amount, self.fee_quote_percent).unwrap()
-        );
         get_fee_amount(amount, self.fee_quote_percent)
     }
 }
