@@ -44,11 +44,9 @@ impl VestingData {
             .checked_sub(config.cliff_ts as u64)
             .unwrap();
         let total = config.duration() as u64;
+        let tokens_after_cliff = self.notional - cliff_amount;
 
-        max(
-            self.notional.mul_div_floor(passed, total).unwrap(),
-            cliff_amount,
-        )
+        cliff_amount + tokens_after_cliff.mul_div_floor(passed, total).unwrap()
     }
 
     pub fn to_release(&self, config: &VestingConfig, current_ts: i64) -> u64 {
