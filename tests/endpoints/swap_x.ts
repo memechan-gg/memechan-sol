@@ -78,7 +78,7 @@ export function test() {
 
       const ticketId = await pool.swap_y({
         memeTokensOut: new BN(1),
-        quoteTokensIn: new BN(303 * 1e9),
+        quoteTokensIn: new BN(304 * 1e9),
       });
 
       await sleep(1000);

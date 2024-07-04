@@ -13,7 +13,7 @@ pub const MAX_MEME_TOKENS: u128 = DEFAULT_MAX_M_LP + DEFAULT_MAX_M;
 
 pub const DECIMALS_S: u128 = 1_000_000_000;
 
-pub const MAX_AIRDROPPED_TOKENS: u64 = 300_000_000_000_000;
+pub const MAX_AIRDROPPED_TOKENS: u64 = 100_000_000_000_000;
 
 #[cfg(feature = "localnet-testing")]
 pub const LOCK_TIME: i64 = 4; // 4 seconds

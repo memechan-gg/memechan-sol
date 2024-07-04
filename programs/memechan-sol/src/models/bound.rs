@@ -105,7 +105,7 @@ impl BoundPool {
 
         let max_delta_s = p.gamma_s - s_t0;
 
-        let admin_fee_in = self.fees.get_fee_in_amount(delta_s).unwrap();
+        let admin_fee_in = self.fees.get_fee_quote_amount(delta_s).unwrap();
         let is_max = delta_s - admin_fee_in >= max_delta_s;
 
         let net_delta_s = min(delta_s - admin_fee_in, max_delta_s);
@@ -116,7 +116,7 @@ impl BoundPool {
             self.compute_delta_m(s_t0, s_t0 + net_delta_s)?
         };
 
-        let admin_fee_out = self.fees.get_fee_out_amount(delta_m).unwrap();
+        let admin_fee_out = self.fees.get_fee_meme_amount(delta_m).unwrap();
         let net_delta_m = delta_m - admin_fee_out;
 
         if net_delta_m < min_delta_m {
@@ -138,8 +138,8 @@ impl BoundPool {
 
         let max_delta_m = p.gamma_m - m_b; // TODO: confirm
 
-        let admin_fee_in = self.fees.get_fee_in_amount(delta_m).unwrap();
-        let is_max = delta_m - admin_fee_in > max_delta_m; // TODO: shouldn't it be >=?
+        let admin_fee_in = self.fees.get_fee_meme_amount(delta_m).unwrap();
+        let is_max = delta_m - admin_fee_in >= max_delta_m;
 
         let net_delta_m = min(delta_m - admin_fee_in, max_delta_m);
 
@@ -148,8 +148,7 @@ impl BoundPool {
         } else {
             self.compute_delta_s(s_b, net_delta_m)?
         };
-
-        let admin_fee_out = self.fees.get_fee_out_amount(delta_s).unwrap();
+        let admin_fee_out = self.fees.get_fee_quote_amount(delta_s).unwrap();
         let net_delta_s = delta_s - admin_fee_out;
 
         //assert!(net_delta_s >= min_delta_s, errors::slippage());

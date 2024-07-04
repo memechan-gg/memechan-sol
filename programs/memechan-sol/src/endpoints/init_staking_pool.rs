@@ -3,7 +3,7 @@ use crate::err;
 use crate::err::AmmError;
 use crate::libraries::MulDiv;
 use crate::models::bound::BoundPool;
-use crate::models::fees::{LAUNCH_FEE, PRECISION};
+use crate::models::fees::{FEE_PRECISION, LAUNCH_FEE};
 use crate::models::staked_lp::MemeTicket;
 use crate::models::staking::StakingPool;
 use crate::vesting;
@@ -216,7 +216,9 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, InitStakingPool<'info>>) ->
 
     // 2. Collect live fees
     msg!("2");
-    let live_fee_amt = quote_supply.mul_div_ceil(LAUNCH_FEE, PRECISION).unwrap();
+    let live_fee_amt = quote_supply
+        .mul_div_ceil(LAUNCH_FEE, FEE_PRECISION)
+        .unwrap();
     token::transfer(
         accs.send_admin_fee_sol().with_signer(bp_signer_seeds),
         live_fee_amt,

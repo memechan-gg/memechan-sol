@@ -130,8 +130,8 @@ pub fn handle(ctx: Context<NewPool>, airdropped_tokens: u64, vesting_period: i64
         vault: accs.quote_vault.key(),
     };
     pool.fees = Fees {
-        fee_in_percent: FEE,
-        fee_out_percent: FEE,
+        fee_meme_percent: 0,
+        fee_quote_percent: FEE,
     };
 
     let mint_decimals = 10_u128

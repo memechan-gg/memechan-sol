@@ -52,9 +52,7 @@ impl VestingData {
     }
 
     pub fn to_release(&self, config: &VestingConfig, current_ts: i64) -> u64 {
-        let to_release = self.total_vested(config, current_ts) - self.released;
-
-        to_release
+        self.total_vested(config, current_ts) - self.released
     }
 
     pub fn release(&mut self, amount: u64) {
