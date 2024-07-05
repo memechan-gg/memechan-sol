@@ -1,7 +1,7 @@
+use crate::consts::LOCK_TIME;
 use crate::vesting::VestingData;
 use anchor_lang::prelude::*;
 use std::mem;
-use crate::consts::LOCK_TIME;
 
 #[derive(Default)]
 #[account]
@@ -11,6 +11,7 @@ pub struct MemeTicket {
     pub amount: u64,
     pub withdraws_meme: u64,
     pub withdraws_quote: u64,
+    pub withdraws_chan: u64,
     pub until_timestamp: i64,
     pub vesting: VestingData,
 }
@@ -25,8 +26,10 @@ impl MemeTicket {
         let amount = 8;
         let withdraws_meme = 8;
         let withdraws_quote = 8;
+        let withdraws_chan = 8;
         let until_timestamp = 8;
         let vesting = mem::size_of::<VestingData>();
+        let padding = 64;
 
         discriminant
             + owner
@@ -34,8 +37,10 @@ impl MemeTicket {
             + amount
             + withdraws_meme
             + withdraws_quote
+            + withdraws_chan
             + until_timestamp
             + vesting
+            + padding
     }
 
     pub fn is_unlocked(&self) -> bool {

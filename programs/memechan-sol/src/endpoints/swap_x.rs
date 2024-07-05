@@ -50,8 +50,6 @@ pub fn handle(ctx: Context<SwapCoinX>, coin_in_amount: u64, coin_y_min_value: u6
 
     let user_ticket = &mut accs.meme_ticket;
 
-    msg!(&user_ticket.until_timestamp.to_string());
-    msg!(&Clock::get().unwrap().unix_timestamp.to_string());
     if !user_ticket.is_unlocked() {
         return Err(error!(AmmError::TicketTokensLocked));
     }

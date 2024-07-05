@@ -1,8 +1,10 @@
 use crate::consts::{
-    DEFAULT_MAX_M, DEFAULT_MAX_M_LP, DEFAULT_PRICE_FACTOR, FEE_KEY, MAX_MEME_TOKENS,
-    MAX_TICKET_TOKENS, MEME_TOKEN_DECIMALS,
+    DEFAULT_MAX_M, DEFAULT_MAX_M_LP, DEFAULT_PRICE_FACTOR_DENOMINATOR,
+    DEFAULT_PRICE_FACTOR_NUMERATOR, FEE_KEY, MAX_AIRDROPPED_TOKENS, MAX_LINEAR, MAX_MEME_TOKENS,
+    MIN_LINEAR,
 };
 use crate::err;
+use crate::err::AmmError;
 use crate::models::bound::{compute_alpha_abs, compute_beta, BoundPool, Config, Decimals};
 use crate::models::fees::Fees;
 use crate::models::fees::FEE;
@@ -27,16 +29,16 @@ pub struct NewPool<'info> {
     #[account(
         mut,
         constraint = meme_mint.mint_authority == COption::Some(pool_signer.key())
-            @ err::acc("meme mint authority must be the pool signer"),
+            @ err::acc("Meme mint authority must be the pool signer"),
         constraint = meme_mint.freeze_authority == COption::None
-            @ err::acc("meme mint mustn't have a freeze authority"),
+            @ err::acc("Meme mint mustn't have a freeze authority"),
     )]
     pub meme_mint: Account<'info, Mint>,
     #[account(
         constraint = quote_vault.mint == quote_mint.key()
-            @ err::acc("quote vault must be of ticket mint"),
+            @ err::acc("Quote vault must be of ticket mint"),
         constraint = quote_vault.owner == pool_signer.key()
-            @ err::acc("quote vault authority must match pool pda"),
+            @ err::acc("Quote vault authority must match the pool signer"),
         constraint = quote_vault.close_authority == COption::None
             @ err::acc("Quote vault must not have close authority"),
         constraint = quote_vault.delegate == COption::None
@@ -48,7 +50,7 @@ pub struct NewPool<'info> {
         constraint = fee_quote_vault.mint == quote_mint.key()
             @ err::acc("Fee quote vault must be of quote mint"),
         constraint = fee_quote_vault.owner == FEE_KEY
-            @ err::acc("Fee quote vault authority must match admin"),
+            @ err::acc("Fee quote vault authority must match fee key"),
         constraint = fee_quote_vault.close_authority == COption::None
             @ err::acc("Fee quote vault must not have close authority"),
         constraint = fee_quote_vault.delegate == COption::None
@@ -58,9 +60,9 @@ pub struct NewPool<'info> {
     #[account(
         mut,
         constraint = meme_vault.mint == meme_mint.key()
-            @ err::acc("admin ticket vault must be of ticket mint"),
+            @ err::acc("Meme vault must be of meme mint"),
         constraint = meme_vault.owner == pool_signer.key()
-            @ err::acc("Meme vault authority must match admin"),
+            @ err::acc("Meme vault authority must match the pool signer"),
         constraint = meme_vault.close_authority == COption::None
             @ err::acc("Meme vault must not have close authority"),
         constraint = meme_vault.delegate == COption::None
@@ -91,11 +93,19 @@ impl<'info> NewPool<'info> {
     }
 }
 
-pub fn handle(ctx: Context<NewPool>) -> Result<()> {
+pub fn handle(ctx: Context<NewPool>, airdropped_tokens: u64, vesting_period: i64) -> Result<()> {
     let accs = ctx.accounts;
 
     if accs.meme_mint.supply != 0 {
-        return Err(error!(err::acc("")));
+        return Err(error!(AmmError::NonZeroInitialMemeSupply));
+    }
+
+    if airdropped_tokens > MAX_AIRDROPPED_TOKENS {
+        return Err(error!(AmmError::AirdroppedTokensOvercap));
+    }
+
+    if MIN_LINEAR > vesting_period || vesting_period > MAX_LINEAR {
+        return Err(error!(AmmError::InvalidVestingPeriod));
     }
 
     let seeds = &[
@@ -108,7 +118,7 @@ pub fn handle(ctx: Context<NewPool>) -> Result<()> {
 
     token::mint_to(
         accs.mint_meme_tokens().with_signer(signer_seeds),
-        MAX_MEME_TOKENS * MEME_TOKEN_DECIMALS,
+        MAX_MEME_TOKENS as u64,
     )
     .unwrap();
 
@@ -120,37 +130,58 @@ pub fn handle(ctx: Context<NewPool>) -> Result<()> {
         vault: accs.quote_vault.key(),
     };
     pool.fees = Fees {
-        fee_in_percent: FEE,
-        fee_out_percent: FEE,
+        fee_meme_percent: 0,
+        fee_quote_percent: FEE,
     };
 
-    let mint_decimals = 10_u64.checked_pow(accs.quote_mint.decimals as u32).unwrap();
-    let gamma_s = (accs.target_config.token_target_amount / mint_decimals) as u128;
+    let mint_decimals = 10_u128
+        .checked_pow(accs.quote_mint.decimals as u32)
+        .unwrap();
+    let gamma_s = accs.target_config.token_target_amount as u128;
     let gamma_m = DEFAULT_MAX_M;
     let omega_m = DEFAULT_MAX_M_LP;
-    let price_factor = DEFAULT_PRICE_FACTOR;
+    let price_factor_num = DEFAULT_PRICE_FACTOR_NUMERATOR;
+    let price_factor_denom = DEFAULT_PRICE_FACTOR_DENOMINATOR;
 
-    let (alpha_abs, decimals) = compute_alpha_abs(gamma_s, gamma_m, omega_m, price_factor)?;
+    let (alpha_abs, decimals) = compute_alpha_abs(
+        gamma_s,
+        mint_decimals,
+        gamma_m,
+        omega_m,
+        price_factor_num,
+        price_factor_denom,
+    )?;
 
     pool.config = Config {
         alpha_abs,
-        beta: compute_beta(gamma_s, gamma_m, omega_m, price_factor, decimals)?,
+        beta: compute_beta(
+            gamma_s,
+            mint_decimals,
+            gamma_m,
+            omega_m,
+            price_factor_num,
+            price_factor_denom,
+            decimals,
+        )?,
         gamma_s: gamma_s as u64,
         gamma_m: gamma_m as u64,
         omega_m: omega_m as u64,
-        price_factor,
+        price_factor_num,
+        price_factor_denom,
         decimals: Decimals {
             alpha: decimals,
             beta: decimals,
-            quote: mint_decimals,
+            quote: mint_decimals as u64,
         },
     };
 
-    pool.meme_reserve.tokens = MAX_TICKET_TOKENS * MEME_TOKEN_DECIMALS;
+    pool.meme_reserve.tokens = DEFAULT_MAX_M as u64;
     pool.meme_reserve.mint = accs.meme_mint.key();
     pool.meme_reserve.vault = accs.meme_vault.key();
     pool.locked = false;
     pool.creator_addr = accs.sender.key();
+    pool.airdropped_tokens = airdropped_tokens;
+    pool.vesting_period = vesting_period;
 
     Ok(())
 }
