@@ -25,7 +25,7 @@ export function test() {
       // call to the swap endpoint
       const ticketId = await pool.swap_y({
         memeTokensOut: new BN(1),
-        quoteTokensIn: new BN(DEFAULT_TARGET * 1.05),
+        quoteTokensIn: new BN(DEFAULT_TARGET * 10.05),
       });
       sleep(1000);
       const poolInfo = await pool.fetch();

@@ -31,6 +31,7 @@ pub fn handle(ctx: Context<StakingMergeTickets>) -> Result<()> {
     ticket_into.amount += ticket_from.amount;
     ticket_into.withdraws_quote += ticket_from.withdraws_quote;
     ticket_into.withdraws_meme += ticket_from.withdraws_meme;
+    ticket_into.withdraws_chan += ticket_from.withdraws_chan;
     ticket_into.vesting.notional += ticket_from.vesting.notional;
     ticket_into.vesting.released += ticket_from.vesting.released;
 

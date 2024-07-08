@@ -175,6 +175,7 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<
         .checked_sub(meme_vault_initial_amt)
         .unwrap();
     let fees_x_comms = get_fee_amount(fees_x, COMMS_FEE).unwrap();
+    let fees_x_no_comms = fees_x.checked_sub(fees_x_comms).unwrap();
 
     let fees_y = accs
         .quote_vault
@@ -182,6 +183,7 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<
         .checked_sub(quote_vault_initial_amt)
         .unwrap();
     let fees_y_comms = get_fee_amount(fees_y, COMMS_FEE).unwrap();
+    let fees_y_no_comms = fees_y.checked_sub(fees_y_comms).unwrap();
 
     // Send commissions
     token::transfer(
@@ -196,12 +198,12 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<
     // Mutate the staking
     let state = &mut accs.staking;
 
-    state.fees_x_total += fees_x - fees_x_comms;
+    state.fees_x_total += fees_x_no_comms;
 
     if accs.quote_mint.key() == CHAN_MINT {
-        state.fees_z_total += fees_y - fees_y_comms;
+        state.fees_z_total += fees_y_no_comms;
     } else {
-        state.fees_y_total += fees_y - fees_y_comms;
+        state.fees_y_total += fees_y_no_comms;
     }
 
     Ok(())

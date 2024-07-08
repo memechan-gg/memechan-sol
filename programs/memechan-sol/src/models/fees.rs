@@ -3,7 +3,7 @@ use anchor_lang::prelude::*;
 
 pub const FEE: u64 = 10_000_000; // 1%
 pub const LAUNCH_FEE: u64 = 50_000_000; // 5%
-pub const COMMS_FEE: u64 = 50_000_000;
+pub const COMMS_FEE: u64 = 50_000_000; // 5%
 pub const FEE_PRECISION: u64 = 1_000_000_000;
 
 #[derive(AnchorDeserialize, AnchorSerialize, Copy, Clone, Debug, Eq, PartialEq, Default)]
