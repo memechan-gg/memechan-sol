@@ -1,7 +1,6 @@
 use crate::consts::{
-    DEFAULT_MAX_M, DEFAULT_MAX_M_LP, DEFAULT_PRICE_FACTOR_DENOMINATOR,
-    DEFAULT_PRICE_FACTOR_NUMERATOR, FEE_KEY, MAX_AIRDROPPED_TOKENS, MAX_LINEAR, MAX_MEME_TOKENS,
-    MIN_LINEAR,
+    BP_FEE_KEY, DEFAULT_MAX_M, DEFAULT_MAX_M_LP, DEFAULT_PRICE_FACTOR_DENOMINATOR,
+    DEFAULT_PRICE_FACTOR_NUMERATOR, MAX_AIRDROPPED_TOKENS, MAX_LINEAR, MAX_MEME_TOKENS, MIN_LINEAR,
 };
 use crate::err;
 use crate::err::AmmError;
@@ -49,7 +48,7 @@ pub struct NewPool<'info> {
     #[account(
         constraint = fee_quote_vault.mint == quote_mint.key()
             @ err::acc("Fee quote vault must be of quote mint"),
-        constraint = fee_quote_vault.owner == FEE_KEY
+        constraint = fee_quote_vault.owner == BP_FEE_KEY
             @ err::acc("Fee quote vault authority must match fee key"),
         constraint = fee_quote_vault.close_authority == COption::None
             @ err::acc("Fee quote vault must not have close authority"),

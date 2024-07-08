@@ -101,7 +101,11 @@ import {
 } from "../../helpers";
 import { MemechanSol } from "../../../target/types/memechan_sol";
 import { BoundPoolType } from "../../bound_pool";
-import { FEE_VAULT, FEE_VAULT_OWNER } from "../../common";
+import {
+  BP_FEE_VAULT_OWNER,
+  LP_FEE_VAULT_OWNER,
+  SWAP_FEE_VAULT_OWNER,
+} from "../../common";
 import { ASSOCIATED_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
 import AmmImpl, {
   LockEscrow,
@@ -306,7 +310,7 @@ export class BoundPoolClient {
         client.connection,
         payer,
         QUOTE_MINT,
-        FEE_VAULT_OWNER
+        BP_FEE_VAULT_OWNER
       )
     ).address;
 
@@ -1504,7 +1508,7 @@ export class BoundPoolClient {
 
         feeQuoteVault: await getAssociatedTokenAccount(
           QUOTE_MINT,
-          FEE_VAULT_OWNER
+          SWAP_FEE_VAULT_OWNER
         ),
         chanSwap,
         chanSwapSignerPda: ChanSwapWrapper.chanSwapSigner(),

@@ -4,7 +4,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::token;
 use anchor_spl::token::{Mint, Token, TokenAccount, Transfer};
 
-use crate::consts::{CHAN_MINT, FEE_KEY};
+use crate::consts::{CHAN_MINT, LP_FEE_KEY};
 use crate::err::{self, AmmError};
 use crate::models::fees::{get_fee_amount, COMMS_FEE};
 use dynamic_amm::program::DynamicAmm as MeteoraAmm;
@@ -27,9 +27,9 @@ pub struct AddFees<'info> {
     #[account(mut)]
     pub quote_vault: Box<Account<'info, TokenAccount>>,
     pub quote_mint: Box<Account<'info, Mint>>,
-    #[account(mut, token::authority = FEE_KEY)]
+    #[account(mut, token::authority = LP_FEE_KEY)]
     pub meme_fee_vault: Box<Account<'info, TokenAccount>>,
-    #[account(mut, token::authority = FEE_KEY)]
+    #[account(mut, token::authority = LP_FEE_KEY)]
     pub quote_fee_vault: Box<Account<'info, TokenAccount>>,
     /// CHECK: pda
     #[account(mut, seeds = [StakingPool::SIGNER_PDA_PREFIX, staking.key().as_ref()], bump)]

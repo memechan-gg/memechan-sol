@@ -1,4 +1,4 @@
-use crate::consts::{CHAN_MINT, FEE_KEY};
+use crate::consts::{CHAN_MINT, LP_FEE_KEY};
 use crate::err;
 use crate::err::AmmError;
 use crate::libraries::MulDiv;
@@ -187,7 +187,7 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, InitStakingPool<'info>>) ->
     msg!("0");
     let meme_ticket = &mut accs.meme_ticket;
 
-    meme_ticket.setup(accs.pool.key(), FEE_KEY.key(), accs.pool.admin_fees_meme);
+    meme_ticket.setup(accs.pool.key(), LP_FEE_KEY.key(), accs.pool.admin_fees_meme);
 
     if accs.pool.admin_fees_quote != 0 {
         token::transfer(

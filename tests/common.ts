@@ -23,11 +23,14 @@ export const client = new MemechanClient({
   isTest: IS_TEST_ENV,
 });
 
-export const FEE_VAULT = new PublicKey(
-  "HiUyuwe4Uezuqq4mhGqugdzVQT3mA3ZzBQsUW2x1H3Ri"
+export const BP_FEE_VAULT_OWNER = new PublicKey(
+  "6YNJG9KDex3eNAmh1i64KUDbfKBiESkew3AWmnf6FiCy"
 );
-export const FEE_VAULT_OWNER = new PublicKey(
-  "feeLPZEfzJFwDR11cdMWE3nSa4nr7sPPM4u6tmDTw3Y"
+export const SWAP_FEE_VAULT_OWNER = new PublicKey(
+  "xqzvZzKFCjvPuRqkyg5rxA95avrvJxesZ41rCLfYwUM"
+);
+export const LP_FEE_VAULT_OWNER = new PublicKey(
+  "HQ1wVLaBcnuoUozegyX7r45yn6ogHvQjdPNj53iweC5V"
 );
 
 export const DUMMY_TOKEN_METADATA = {

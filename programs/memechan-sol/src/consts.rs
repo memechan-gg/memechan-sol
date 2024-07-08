@@ -54,7 +54,12 @@ pub const SWAP_AUTH_KEY: Pubkey =
 pub const SWAP_AUTH_KEY: Pubkey =
     solana_program::pubkey!("389y4YsTxFKpz2HxVHpvDk13FSXan48LZQtGv8pD4vQA");
 
-pub const FEE_KEY: Pubkey = solana_program::pubkey!("feeLPZEfzJFwDR11cdMWE3nSa4nr7sPPM4u6tmDTw3Y");
+pub const SWAP_FEE_KEY: Pubkey =
+    solana_program::pubkey!("xqzvZzKFCjvPuRqkyg5rxA95avrvJxesZ41rCLfYwUM");
+pub const LP_FEE_KEY: Pubkey =
+    solana_program::pubkey!("HQ1wVLaBcnuoUozegyX7r45yn6ogHvQjdPNj53iweC5V");
+pub const BP_FEE_KEY: Pubkey =
+    solana_program::pubkey!("6YNJG9KDex3eNAmh1i64KUDbfKBiESkew3AWmnf6FiCy");
 
 #[cfg(feature = "localnet-testing")]
 pub const CHAN_MINT: Pubkey =

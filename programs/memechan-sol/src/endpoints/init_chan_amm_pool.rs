@@ -1,4 +1,4 @@
-use crate::consts::{CHAN_MINT, FEE_KEY};
+use crate::consts::{CHAN_MINT, SWAP_FEE_KEY};
 use crate::libraries::MulDiv;
 use crate::models::chan_swap::ChanSwap;
 use crate::models::staking::StakingPool;
@@ -65,7 +65,7 @@ pub struct InitChanAmmPool<'info> {
     pub chan_swap_signer_pda: AccountInfo<'info>,
     #[account(mut)]
     pub chan_swap_vault: Box<Account<'info, TokenAccount>>,
-    #[account(mut, token::authority = FEE_KEY)]
+    #[account(mut, token::authority = SWAP_FEE_KEY)]
     pub fee_quote_vault: Box<Account<'info, TokenAccount>>,
     // Meteora Amm Program accounts
     #[account(mut)]
