@@ -1,11 +1,11 @@
-use crate::consts::SWAP_AUTH_KEY;
+use crate::consts::ADMIN_KEY;
 use crate::models::chan_swap::ChanSwap;
 use anchor_lang::context::Context;
 use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
 pub struct ChangeChanPrice<'info> {
-    #[account(constraint = sender.key() == SWAP_AUTH_KEY.key())]
+    #[account(constraint = sender.key() == ADMIN_KEY.key())]
     pub sender: Signer<'info>,
     #[account(mut)]
     pub chan_swap: Account<'info, ChanSwap>,

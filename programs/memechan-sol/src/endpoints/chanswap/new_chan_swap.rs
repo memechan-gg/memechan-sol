@@ -1,5 +1,4 @@
-use crate::consts::CHAN_MINT;
-use crate::consts::SWAP_AUTH_KEY;
+use crate::consts::{ADMIN_KEY, CHAN_MINT};
 use crate::err;
 use crate::models::chan_swap::ChanSwap;
 use anchor_lang::prelude::*;
@@ -10,7 +9,7 @@ use anchor_spl::token::TokenAccount;
 pub struct NewChanSwap<'info> {
     #[account(
         mut,
-        constraint = sender.key() == SWAP_AUTH_KEY.key()
+        constraint = sender.key() == ADMIN_KEY.key()
     )]
     pub sender: Signer<'info>,
     #[account(
