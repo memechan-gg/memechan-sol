@@ -130,6 +130,9 @@ import {
 import { ATA_PROGRAM_ID } from "../raydium/config";
 import { LockEscrowAccount } from "@mercurial-finance/dynamic-amm-sdk/dist/cjs/src/amm/types";
 import { ChanSwapWrapper } from "../../chan_swap";
+import { createAssociatedTokenAccount } from "@solana/spl-token";
+import { createAssociatedTokenAccountIdempotent } from "@solana/spl-token";
+import { createAssociatedTokenAccountIdempotentInstruction } from "@solana/spl-token";
 
 export class BoundPoolClient {
   private constructor(
@@ -292,7 +295,6 @@ export class BoundPoolClient {
       id,
       args.client.memechanProgram.programId
     );
-
     const createMemeMintWithPriorityInstructions = (
       await getCreateMintWithPriorityTransaction(
         connection,
@@ -304,15 +306,21 @@ export class BoundPoolClient {
       )
     ).instructions;
     transaction.add(...createMemeMintWithPriorityInstructions);
-
-    let adminQuoteVault: PublicKey = (
-      await getOrCreateAssociatedTokenAccount(
-        client.connection,
+    let adminQuoteVault: PublicKey = await getAssociatedTokenAddress(
+      QUOTE_MINT,
+      BP_FEE_VAULT_OWNER,
+      true
+    );
+    transaction.add(
+      await createAssociatedTokenAccountIdempotentInstruction(
         payer,
+        adminQuoteVault,
+        BP_FEE_VAULT_OWNER,
         QUOTE_MINT,
-        BP_FEE_VAULT_OWNER
+        TOKEN_PROGRAM_ID,
+        ASSOCIATED_TOKEN_PROGRAM_ID
       )
-    ).address;
+    );
 
     const poolQuoteVault = await getAssociatedTokenAddress(
       QUOTE_MINT,
@@ -335,7 +343,6 @@ export class BoundPoolClient {
         poolSigner
       );
     transaction.add(...createPoolQuoteVaultInstructions);
-
     const launchVault = await getAssociatedTokenAddress(
       memeMint,
       poolSigner,
@@ -351,6 +358,7 @@ export class BoundPoolClient {
     //     poolSigner,
     //     launchVaultId
     //   );
+
     const createLaunchVaultInstructions =
       await getCreateAssociatedTokenAccountInstructions(
         launchVault,
@@ -358,7 +366,6 @@ export class BoundPoolClient {
         memeMint,
         poolSigner
       );
-
     transaction.add(...createLaunchVaultInstructions);
 
     const createPoolInstruction = await memechanProgram.methods

@@ -76,7 +76,7 @@ export function test() {
       tickets.push(
         await pool.swap_y({
           memeTokensOut: new BN(1),
-          quoteTokensIn: new BN(DEFAULT_TARGET * 0.259),
+          quoteTokensIn: new BN(DEFAULT_TARGET * 0.21),
           ticketNumber: 2,
         })
       );
@@ -84,10 +84,21 @@ export function test() {
       tickets.push(
         await pool.swap_y({
           memeTokensOut: new BN(1),
-          quoteTokensIn: new BN(DEFAULT_TARGET * 0.65),
+          quoteTokensIn: new BN(DEFAULT_TARGET * 0.21),
           ticketNumber: 3,
         })
       );
+
+      for (let i = 0; i < 4; i++) {
+        tickets.push(
+          await pool.swap_y({
+            memeTokensOut: new BN(1),
+            quoteTokensIn: new BN(DEFAULT_TARGET * 0.11),
+            ticketNumber: 5 + i,
+          })
+        );
+      }
+      console.log("POOL!!", pool.bpClient.id);
 
       sleep(1000);
 

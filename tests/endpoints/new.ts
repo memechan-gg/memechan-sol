@@ -26,11 +26,19 @@ import { ASSOCIATED_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
 import { MPL_TOKEN_METADATA_PROGRAM_ID } from "@metaplex-foundation/mpl-token-metadata";
 import { ChanSwapWrapper } from "../chan_swap";
 import { DEFAULT_TARGET, memechan } from "../sol-sdk/config/config";
+import {
+  BP_FEE_VAULT_OWNER,
+  LP_FEE_VAULT_OWNER,
+  SWAP_FEE_VAULT_OWNER,
+} from "../common";
 
 export function test() {
   describe("create_bound_pool", () => {
     it("creates target config", async () => {
       await TargetConfigWrapper.new(DEFAULT_TARGET);
+      await airdrop(BP_FEE_VAULT_OWNER);
+      await airdrop(LP_FEE_VAULT_OWNER);
+      await airdrop(SWAP_FEE_VAULT_OWNER);
     });
 
     it("creates chan swap", async () => {

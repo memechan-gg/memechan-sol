@@ -57,17 +57,17 @@ export const memechan = workspace.MemechanSol as Program<MemechanSol>;
 export const MEMECHAN_MEME_TOKEN_DECIMALS = 6;
 
 // Contract constants
-export const MAX_TICKET_TOKENS = 500_000_000;
+export const MAX_TICKET_TOKENS = 690_000_000;
 
 export const DEFAULT_PRICE_FACTOR = 1;
-export const DEFAULT_MAX_M_LP = 500_000_000_000_000;
-export const DEFAULT_MAX_M = 500_000_000_000_000;
+export const DEFAULT_MAX_M_LP = 310_000_000_000_000;
+export const DEFAULT_MAX_M = 690_000_000_000_000;
 export const DEFAULT_MAX_S = 90;
 
 export const DECIMALS_ALPHA = 1_000_000; // consider increase
 export const DECIMALS_BETA = 1_000_000; // consider increase
 
-export const DEFAULT_TARGET: number = 300 * 10 ** 9;
+export const DEFAULT_TARGET: number = 69 * 10 ** 9;
 
 export const MAX_TRANSACTION_SIZE = 1232;
 
