@@ -1,65 +1,34 @@
-import {
-  PublicKey,
-  Keypair,
-} from "@solana/web3.js";
-import { amm, provider } from "./helpers";
-import { getAccount } from "@solana/spl-token";
+import { PublicKey, Keypair, sendAndConfirmTransaction } from "@solana/web3.js";
+
 import BN from "bn.js";
-import { discountAddress } from "./amm";
+import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { payer, provider } from "./helpers";
+import AmmImpl from "@mercurial-finance/dynamic-amm-sdk";
+import { TokenInfo } from "@solana/spl-token-registry";
+import {
+  MEMECHAN_MEME_TOKEN_DECIMALS,
+  MEMECHAN_QUOTE_TOKEN,
+} from "./sol-sdk/config/config";
 
 export class AmmPool {
-  public constructor(public id: PublicKey, public tollAuthority: PublicKey) {
-    //
+  async swap(user: Keypair, amountIn: number, amountOut: number) {
+    const swapTx = await this.ammImpl.swap(
+      user.publicKey,
+      this.quoteMint,
+      new BN(amountIn),
+      new BN(amountOut)
+    );
+
+    console.log(
+      "swap tx",
+      await sendAndConfirmTransaction(provider.connection, swapTx, [user])
+    );
   }
 
-  public async fetch() {
-    return amm.account.pool.fetch(this.id);
-  }
-
-  public static signerFrom(publicKey: PublicKey): PublicKey {
-    return PublicKey.findProgramAddressSync(
-      [Buffer.from("signer"), publicKey.toBytes()],
-      amm.programId
-    )[0];
-  }
-
-  public async swap(
-    user: Keypair,
-    sellWallet: PublicKey,
-    buyWallet: PublicKey,
-    sell: number,
-    minBuy: number
-  ) {
-    const pool = await this.fetch();
-    const getVaultOfWallet = async (wallet: PublicKey) => {
-      const { mint } = await getAccount(provider.connection, wallet);
-      const reserves = pool.reserves as any[];
-      return reserves.find((r) => r.mint.toBase58() === mint.toBase58()).vault;
-    };
-
-    await amm.methods
-      .swap({ amount: new BN(sell) }, { amount: new BN(minBuy) })
-      .accounts({
-        user: user.publicKey,
-        discount: discountAddress(user.publicKey),
-        sellWallet,
-        sellVault: await getVaultOfWallet(sellWallet),
-        buyWallet,
-        buyVault: await getVaultOfWallet(buyWallet),
-        pool: this.id,
-        poolSigner: this.signerPda(),
-        programTollWallet: pool.programTollWallet,
-        lpMint: pool.mint,
-      })
-      .signers([user])
-      .rpc();
-  }
-
-  public signer(): PublicKey {
-    return AmmPool.signerFrom(this.id);
-  }
-
-  public signerPda(): PublicKey {
-    return AmmPool.signerFrom(this.id);
-  }
+  public constructor(
+    public id: PublicKey,
+    public memeMint: PublicKey,
+    public quoteMint: PublicKey,
+    public ammImpl: AmmImpl
+  ) {}
 }

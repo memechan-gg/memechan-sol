@@ -1,11 +1,11 @@
 pub mod bound;
+pub mod chan_swap;
 pub mod fee_distribution;
 pub mod fees;
 pub mod staked_lp;
 pub mod staking;
 pub mod target_config;
 
-use crate::consts::OPENBOOK_PROGRAM_ID;
 use anchor_lang::prelude::*;
 
 extern crate std;
@@ -35,13 +35,4 @@ pub struct SwapAmount {
     pub amount_out: u64,
     pub admin_fee_in: u64,
     pub admin_fee_out: u64,
-}
-
-#[derive(Clone)]
-pub struct OpenBook;
-
-impl anchor_lang::Id for OpenBook {
-    fn id() -> Pubkey {
-        OPENBOOK_PROGRAM_ID
-    }
 }

@@ -1,161 +1,146 @@
-use crate::{
-    consts::RAYDIUM_PROGRAM_ID,
-    models::staking::{lp_tokens_to_burn, StakingPool},
-    raydium::{self, models::AmmInfo},
-};
+use crate::models::staking::StakingPool;
 
-use crate::models::OpenBook;
-use crate::raydium::RaydiumAmm;
 use anchor_lang::prelude::*;
-use anchor_spl::token::{Mint, Token, TokenAccount};
+use anchor_spl::token;
+use anchor_spl::token::{Mint, Token, TokenAccount, Transfer};
+
+use crate::consts::{CHAN_MINT, LP_FEE_KEY};
+use crate::err::{self, AmmError};
+use crate::models::fees::{get_fee_amount, COMMS_FEE};
+use dynamic_amm::program::DynamicAmm as MeteoraAmm;
+use dynamic_vault::program::DynamicVault as MeteoraVault;
 
 #[derive(Accounts)]
 pub struct AddFees<'info> {
     #[account(
         mut,
         has_one = meme_vault,
-        has_one = quote_vault,
-        has_one = raydium_amm
+        constraint = staking.quote_amm_pool == amm_pool.key() || staking.chan_amm_pool == amm_pool.key()
+            @ err::acc("amm pool key must be one of the staking's amm pools"),
+        constraint = staking.quote_vault == quote_vault.key() || staking.chan_vault == quote_vault.key()
+            @ err::acc("quote vault key must be one of the staking's vaults"),
     )]
     pub staking: Account<'info, StakingPool>,
     #[account(mut)]
-    pub meme_vault: Account<'info, TokenAccount>,
+    pub meme_vault: Box<Account<'info, TokenAccount>>,
+    pub meme_mint: Box<Account<'info, Mint>>,
     #[account(mut)]
-    pub quote_vault: Account<'info, TokenAccount>,
+    pub quote_vault: Box<Account<'info, TokenAccount>>,
+    pub quote_mint: Box<Account<'info, Mint>>,
+    #[account(mut, token::authority = LP_FEE_KEY)]
+    pub meme_fee_vault: Box<Account<'info, TokenAccount>>,
+    #[account(mut, token::authority = LP_FEE_KEY)]
+    pub quote_fee_vault: Box<Account<'info, TokenAccount>>,
     /// CHECK: pda
     #[account(mut, seeds = [StakingPool::SIGNER_PDA_PREFIX, staking.key().as_ref()], bump)]
     pub staking_signer_pda: AccountInfo<'info>,
-    #[account(
-        mut,
-        constraint = staking_lp_wallet.key() == staking.lp_vault
-    )]
-    pub staking_lp_wallet: Box<Account<'info, TokenAccount>>,
+    #[account(mut)]
+    /// CHECK: meteora cpi account
+    pub amm_pool: AccountInfo<'info>,
+    #[account(mut)]
+    /// CHECK: meteora cpi account
+    pub lp_mint: AccountInfo<'info>,
+    #[account(mut)]
+    /// CHECK: meteora cpi account
+    pub a_token_vault: AccountInfo<'info>,
+    #[account(mut)]
+    /// CHECK: meteora cpi account
+    pub a_vault: AccountInfo<'info>,
+    #[account(mut)]
+    /// CHECK: meteora cpi account
+    pub a_vault_lp: AccountInfo<'info>,
+    #[account(mut)]
+    /// CHECK: meteora cpi account
+    pub a_vault_lp_mint: AccountInfo<'info>,
+    #[account(mut)]
+    /// CHECK: meteora cpi account
+    pub b_token_vault: AccountInfo<'info>,
+    #[account(mut)]
+    /// CHECK: meteora cpi account
+    pub b_vault: AccountInfo<'info>,
+    #[account(mut)]
+    /// CHECK: meteora cpi account
+    pub b_vault_lp: AccountInfo<'info>,
+    #[account(mut)]
+    /// CHECK: meteora cpi account
+    pub b_vault_lp_mint: AccountInfo<'info>,
+    #[account(mut)]
+    pub lock_escrow: Box<Account<'info, dynamic_amm::state::LockEscrow>>,
+    #[account(mut)]
+    /// CHECK: meteora cpi account
+    pub escrow_vault: AccountInfo<'info>,
+    #[account(mut)]
+    /// CHECK: meteora cpi account
+    pub source_tokens: AccountInfo<'info>,
 
     #[account(mut)]
     pub signer: Signer<'info>,
-
-    // raydium
-    /// CHECK: Checks are done by us and in cpi call to raydium
-    // Raydium
-    #[account(mut)]
-    pub raydium_amm: AccountInfo<'info>,
-    /// CHECK: Checks done in cpi call to raydium
-    pub raydium_amm_authority: AccountInfo<'info>,
-    #[account(mut)]
-    pub raydium_meme_vault: Box<Account<'info, TokenAccount>>,
-    #[account(mut)]
-    pub raydium_quote_vault: Box<Account<'info, TokenAccount>>,
-    #[account(
-        mut,
-        constraint = raydium_lp_mint.key() == staking.lp_mint
-    )]
-    pub raydium_lp_mint: Account<'info, Mint>,
-    // Open Book
-    /// CHECK: Checks done in cpi call to raydium
-    #[account(mut)]
-    pub open_orders: AccountInfo<'info>,
-    /// CHECK: Checks done in cpi call to raydium
-    #[account(mut)]
-    pub target_orders: AccountInfo<'info>,
-    /// CHECK: Checks done in cpi call to raydium
-    #[account(mut)]
-    pub market_account: AccountInfo<'info>,
-    /// CHECK: Checks done in cpi call to raydium
-    #[account(mut)]
-    pub market_event_queue: AccountInfo<'info>,
-    #[account(mut)]
-    pub market_coin_vault: Box<Account<'info, TokenAccount>>,
-    #[account(mut)]
-    pub market_pc_vault: Box<Account<'info, TokenAccount>>,
-    /// CHECK: Checks done in cpi call to raydium
-    pub market_vault_signer: AccountInfo<'info>,
-    /// CHECK: Checks done in cpi call to raydium
-    #[account(mut)]
-    pub market_bids: AccountInfo<'info>,
-    /// CHECK: Checks done in cpi call to raydium
-    #[account(mut)]
-    pub market_asks: AccountInfo<'info>,
     // Programs
     pub token_program: Program<'info, Token>,
-    pub raydium_program: Program<'info, RaydiumAmm>,
-    pub market_program_id: Program<'info, OpenBook>,
+    pub amm_program: Program<'info, MeteoraAmm>,
+    pub vault_program: Program<'info, MeteoraVault>,
+    /// CHECK: Check is done by Raydium inside CPI
+    pub memo_program: AccountInfo<'info>,
 }
 
 impl<'info> AddFees<'info> {
-    pub fn redeem_liquidity(&self, amount: u64, signer_seeds: &[&[&[u8]]]) -> Result<()> {
-        let instruction = raydium::withdraw(
-            &self.raydium_program.key(),
-            // params
-            amount,
-            // accounts
-            &self.token_program.key(),
-            &self.raydium_amm.key(),
-            &self.raydium_amm_authority.key(),
-            &self.open_orders.key(),
-            &self.target_orders.key(),
-            &self.raydium_lp_mint.key(),     // lp mint
-            &self.raydium_meme_vault.key(),  // coin_vault
-            &self.raydium_quote_vault.key(), // pc_vault
-            &self.market_program_id.key(),
-            &self.market_account.key(),
-            &self.market_coin_vault.key(),
-            &self.market_pc_vault.key(),
-            &self.market_vault_signer.key(),
-            &self.staking_lp_wallet.key(),
-            &self.meme_vault.key(),         // user wallet (pool)
-            &self.quote_vault.key(),        // user wallet (pool)
-            &self.staking_signer_pda.key(), // user wallet
-            &self.market_event_queue.key(),
-            &self.market_bids.key(),
-            &self.market_asks.key(),
-        );
+    pub fn collect_fees(&self, amount: u64, signer_seeds: &[&[&[u8]]]) -> Result<()> {
+        let program = self.amm_program.to_account_info();
+        let cpi = dynamic_amm::cpi::accounts::ClaimFee {
+            owner: self.staking_signer_pda.to_account_info(),
+            lp_mint: self.lp_mint.to_account_info(),
+            pool: self.amm_pool.to_account_info(),
+            a_token_vault: self.a_token_vault.to_account_info(),
+            a_vault: self.a_vault.to_account_info(),
+            a_vault_lp: self.a_vault_lp.to_account_info(),
+            a_vault_lp_mint: self.a_vault_lp_mint.to_account_info(),
+            b_token_vault: self.b_token_vault.to_account_info(),
+            b_vault: self.b_vault.to_account_info(),
+            b_vault_lp: self.b_vault_lp.to_account_info(),
+            b_vault_lp_mint: self.b_vault_lp_mint.to_account_info(),
+            lock_escrow: self.lock_escrow.to_account_info(),
+            escrow_vault: self.escrow_vault.to_account_info(),
+            source_tokens: self.source_tokens.to_account_info(),
+            user_a_token: self.meme_vault.to_account_info(),
+            user_b_token: self.quote_vault.to_account_info(),
 
-        solana_program::program::invoke_signed(
-            &instruction,
-            &[
-                self.token_program.to_account_info().clone(),
-                self.raydium_amm.to_account_info().clone(),
-                self.raydium_amm_authority.to_account_info().clone(),
-                self.open_orders.to_account_info().clone(),
-                self.target_orders.to_account_info().clone(),
-                self.raydium_lp_mint.to_account_info().clone(),
-                self.raydium_meme_vault.to_account_info().clone(),
-                self.raydium_quote_vault.to_account_info().clone(),
-                self.market_program_id.to_account_info().clone(),
-                self.market_account.to_account_info().clone(),
-                self.market_coin_vault.to_account_info().clone(),
-                self.market_pc_vault.to_account_info().clone(),
-                self.market_vault_signer.to_account_info().clone(),
-                self.staking_lp_wallet.to_account_info().clone(),
-                self.meme_vault.to_account_info().clone(),
-                self.quote_vault.to_account_info().clone(),
-                self.staking_signer_pda.to_account_info().clone(),
-                self.market_event_queue.to_account_info().clone(),
-                self.market_bids.to_account_info().clone(),
-                self.market_asks.to_account_info().clone(),
-            ],
-            signer_seeds,
-        )?;
+            vault_program: self.vault_program.to_account_info(),
+            token_program: self.token_program.to_account_info(),
+        };
 
-        Ok(())
+        let cpi_ctx = CpiContext::new_with_signer(program, cpi, signer_seeds);
+        dynamic_amm::cpi::claim_fee(cpi_ctx, amount)
     }
 
-    // pub fn withdraw_fees_ctx(&self) -> CpiContext<'_, '_, '_, 'info, RedeemLiquidity<'info>> {
-    //     let cpi_program = self.aldrin_amm_program.to_account_info();
-    //     let cpi_accounts = RedeemLiquidity {
-    //         user: self.staking_signer_pda.to_account_info(),
-    //         pool: self.aldrin_pool_acc.to_account_info(),
-    //         pool_signer: self.aldrin_pool_signer.to_account_info(),
-    //         lp_mint: self.aldrin_lp_mint.to_account_info(),
-    //         lp_token_wallet: self.aldrin_pool_lp_wallet.to_account_info(),
-    //         token_program: self.token_program.to_account_info(),
-    //     };
-    //     CpiContext::new(cpi_program, cpi_accounts)
-    // }
+    fn send_meme_comms(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+        let cpi_accounts = Transfer {
+            from: self.meme_vault.to_account_info(),
+            to: self.meme_fee_vault.to_account_info(),
+            authority: self.staking_signer_pda.to_account_info(),
+        };
+
+        let cpi_program = self.token_program.to_account_info();
+        CpiContext::new(cpi_program, cpi_accounts)
+    }
+
+    fn send_quote_comms(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+        let cpi_accounts = Transfer {
+            from: self.quote_vault.to_account_info(),
+            to: self.quote_fee_vault.to_account_info(),
+            authority: self.staking_signer_pda.to_account_info(),
+        };
+
+        let cpi_program = self.token_program.to_account_info();
+        CpiContext::new(cpi_program, cpi_accounts)
+    }
 }
 
 pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<()> {
     let accs = ctx.accounts;
+
+    if !accs.staking.is_active {
+        return Err(error!(AmmError::StakingIsNotActive));
+    }
 
     let staking_seeds = &[
         StakingPool::SIGNER_PDA_PREFIX,
@@ -165,45 +150,61 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<
 
     let staking_signer_seeds = &[&staking_seeds[..]];
 
+    let lp_tokens_total = accs.lock_escrow.total_locked_amount;
+
     let meme_vault_initial_amt = accs.meme_vault.amount;
     let quote_vault_initial_amt = accs.quote_vault.amount;
 
-    let amm_info = &accs.raydium_amm.clone();
-    let amm = AmmInfo::load_checked(amm_info, &RAYDIUM_PROGRAM_ID).unwrap();
-
-    let cumulated_fees_meme = amm.state_data.swap_acc_coin_fee;
-    let cumulated_fees_quote = amm.state_data.swap_acc_pc_fee;
-
-    drop(amm);
-
-    let fee_ratio = accs.staking.compute_fee_ratio(
-        accs.raydium_meme_vault.amount,
-        cumulated_fees_meme,
-        accs.raydium_quote_vault.amount,
-        cumulated_fees_quote,
-    )?;
-
-    let lp_tokens_owned = accs.staking_lp_wallet.amount;
-
-    let lp_tokens_to_burn = lp_tokens_to_burn(fee_ratio, lp_tokens_owned)?;
-
-    if lp_tokens_to_burn == 0 {
-        msg!("No fees to collect");
-        return Ok(());
-    }
-
-    accs.redeem_liquidity(lp_tokens_to_burn, staking_signer_seeds)?;
+    accs.collect_fees(lp_tokens_total, staking_signer_seeds)?;
 
     accs.meme_vault.reload().unwrap();
     accs.quote_vault.reload().unwrap();
 
+    msg!(
+        "meme_vault_amt {} meme_vault_initial_amt {} quote_vault_amt {} quote_vault_initial_amt {}",
+        accs.meme_vault.amount,
+        meme_vault_initial_amt,
+        accs.quote_vault.amount,
+        quote_vault_initial_amt
+    );
+
+    // Calculate fees received and commissions
+    let fees_x = accs
+        .meme_vault
+        .amount
+        .checked_sub(meme_vault_initial_amt)
+        .unwrap();
+    let fees_x_comms = get_fee_amount(fees_x, COMMS_FEE).unwrap();
+    let fees_x_no_comms = fees_x.checked_sub(fees_x_comms).unwrap();
+
+    let fees_y = accs
+        .quote_vault
+        .amount
+        .checked_sub(quote_vault_initial_amt)
+        .unwrap();
+    let fees_y_comms = get_fee_amount(fees_y, COMMS_FEE).unwrap();
+    let fees_y_no_comms = fees_y.checked_sub(fees_y_comms).unwrap();
+
+    // Send commissions
+    token::transfer(
+        accs.send_meme_comms().with_signer(staking_signer_seeds),
+        fees_x_comms,
+    )?;
+    token::transfer(
+        accs.send_quote_comms().with_signer(staking_signer_seeds),
+        fees_y_comms,
+    )?;
+
+    // Mutate the staking
     let state = &mut accs.staking;
 
-    state.raydium_fees.last_cum_meme_fees = cumulated_fees_meme;
-    state.raydium_fees.last_cum_quote_fees = cumulated_fees_quote;
+    state.fees_x_total += fees_x_no_comms;
 
-    state.fees_x_total += accs.meme_vault.amount - meme_vault_initial_amt;
-    state.fees_y_total += accs.quote_vault.amount - quote_vault_initial_amt;
+    if accs.quote_mint.key() == CHAN_MINT {
+        state.fees_z_total += fees_y_no_comms;
+    } else {
+        state.fees_y_total += fees_y_no_comms;
+    }
 
     Ok(())
 }

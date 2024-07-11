@@ -1,5 +1,5 @@
-use crate::models::bound::BoundPool;
 use crate::consts::ADMIN_KEY;
+use crate::models::bound::BoundPool;
 use anchor_lang::prelude::*;
 use anchor_spl::token;
 use anchor_spl::token::{Token, TokenAccount, Transfer};
@@ -35,7 +35,7 @@ pub struct WithdrawAdminFee<'info> {
 }
 
 impl<'info> WithdrawAdminFee<'info> {
-  fn send_admin_fee_sol(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+    fn send_admin_fee_sol(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
             from: self.pool_quote_vault.to_account_info(),
             to: self.fee_vault_quote.to_account_info(),
@@ -58,12 +58,12 @@ pub fn handle<'info>(ctx: Context<WithdrawAdminFee<'info>>) -> Result<()> {
 
     let bp_signer_seeds = &[&bp_seeds[..]];
 
-
     if accs.pool.admin_fees_quote != 0 {
         token::transfer(
             accs.send_admin_fee_sol().with_signer(bp_signer_seeds),
             accs.pool.admin_fees_quote,
-        ).unwrap();
+        )
+        .unwrap();
     };
 
     accs.pool.admin_fees_quote = 0;

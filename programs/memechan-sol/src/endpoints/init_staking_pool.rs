@@ -1,16 +1,14 @@
-use crate::consts::{FEE_KEY, MAX_TICKET_TOKENS, MEME_TOKEN_DECIMALS};
+use crate::consts::{CHAN_MINT, LP_FEE_KEY};
 use crate::err;
 use crate::err::AmmError;
 use crate::libraries::MulDiv;
 use crate::models::bound::BoundPool;
-use crate::models::fees::{LAUNCH_FEE, PRECISION};
+use crate::models::fees::{FEE_PRECISION, LAUNCH_FEE};
 use crate::models::staked_lp::MemeTicket;
 use crate::models::staking::StakingPool;
-use crate::models::OpenBook;
 use crate::vesting;
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::program_option::COption;
-use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token;
 use anchor_spl::token::{Mint, Token, TokenAccount, Transfer};
 
@@ -19,7 +17,6 @@ pub struct InitStakingPool<'info> {
     /// Signer
     #[account(mut)]
     pub signer: Signer<'info>,
-    //
     //
     // ===== Bonding Pool =====
     //
@@ -54,10 +51,6 @@ pub struct InitStakingPool<'info> {
     )]
     pub fee_vault_quote: Box<Account<'info, TokenAccount>>,
     //
-    //
-    //
-    //
-    //
     // ===== Memechan Mint Accounts =====
     //
     /// Mint Account for Meme
@@ -72,10 +65,6 @@ pub struct InitStakingPool<'info> {
             @ err::acc("Quote mint should be the same for both pool and staking")
     )]
     pub quote_mint: Box<Account<'info, Mint>>,
-    //
-    //
-    //
-    //
     //
     // ===== Staking Pool Accounts =====
     //
@@ -93,13 +82,12 @@ pub struct InitStakingPool<'info> {
     /// CHECK: live phase pda signer
     #[account(mut, seeds = [StakingPool::SIGNER_PDA_PREFIX, staking.key().as_ref()], bump)]
     pub staking_pool_signer_pda: AccountInfo<'info>,
-
     #[account(
         mut,
         constraint = staking_meme_vault.owner == staking_pool_signer_pda.key()
-            @ err::acc("Staking meme vault authority must match staking pool pda"),
+            @ err::acc("Staking meme vault authority must match staking pool signer"),
         constraint = staking_meme_vault.mint == meme_mint.key()
-            @ err::acc("Staking meme vault must be of ticket mint"),
+            @ err::acc("Staking meme vault must be of meme mint"),
         constraint = staking_meme_vault.close_authority == COption::None
             @ err::acc("Staking meme vault must not have close authority"),
         constraint = staking_meme_vault.delegate == COption::None
@@ -109,7 +97,7 @@ pub struct InitStakingPool<'info> {
     #[account(
         mut,
         constraint = staking_quote_vault.owner == staking_pool_signer_pda.key()
-            @ err::acc("Staking quote vault authority must match staking pool pda"),
+            @ err::acc("Staking quote vault authority must match staking pool signer"),
         constraint = staking_quote_vault.mint == quote_mint.key()
             @ err::acc("Staking quote vault must be of ticket mint"),
         constraint = staking_quote_vault.close_authority == COption::None
@@ -117,8 +105,21 @@ pub struct InitStakingPool<'info> {
         constraint = staking_quote_vault.delegate == COption::None
             @ err::acc("Staking quote vault must not have delegate"),
     )]
-    /// Bonding Pool WSOL vault
+    /// Bonding Pool Quote vault
     pub staking_quote_vault: Box<Account<'info, TokenAccount>>,
+    #[account(
+        mut,
+        constraint = staking_chan_vault.owner == staking_pool_signer_pda.key()
+            @ err::acc("Staking chan vault authority must match staking pool signer"),
+        constraint = staking_chan_vault.mint == CHAN_MINT
+            @ err::acc("Staking chan vault must be of chan mint"),
+        constraint = staking_chan_vault.close_authority == COption::None
+            @ err::acc("Staking chan vault must not have close authority"),
+        constraint = staking_chan_vault.delegate == COption::None
+            @ err::acc("Staking chan vault must not have delegate"),
+    )]
+    /// Bonding Pool CHAN vault
+    pub staking_chan_vault: Box<Account<'info, TokenAccount>>,
     //
     /// Meme Ticket Account of Admin
     #[account(
@@ -129,20 +130,11 @@ pub struct InitStakingPool<'info> {
         bump
     )]
     pub meme_ticket: Box<Account<'info, MemeTicket>>,
-    //
-    //
-    //
-    //
-    //
+
     // Sysvars
     pub rent: Sysvar<'info, Rent>,
-    pub clock: Sysvar<'info, Clock>,
 
     // Programs
-    /// CHECK: Checks done in cpi call to raydium
-    pub ata_program: Program<'info, AssociatedToken>,
-    // Checked by raydium account
-    pub market_program_id: Program<'info, OpenBook>,
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
 }
@@ -195,7 +187,7 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, InitStakingPool<'info>>) ->
     msg!("0");
     let meme_ticket = &mut accs.meme_ticket;
 
-    meme_ticket.setup(accs.pool.key(), FEE_KEY.key(), accs.pool.admin_fees_meme);
+    meme_ticket.setup(accs.pool.key(), LP_FEE_KEY.key(), accs.pool.admin_fees_meme);
 
     if accs.pool.admin_fees_quote != 0 {
         token::transfer(
@@ -218,13 +210,15 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, InitStakingPool<'info>>) ->
         quote_decimals
     );
 
-    if quote_supply != target_token_amt * quote_decimals {
+    if quote_supply != target_token_amt {
         return Err(error!(AmmError::InvariantViolation));
     }
 
     // 2. Collect live fees
     msg!("2");
-    let live_fee_amt = quote_supply.mul_div_ceil(LAUNCH_FEE, PRECISION).unwrap();
+    let live_fee_amt = quote_supply
+        .mul_div_ceil(LAUNCH_FEE, FEE_PRECISION)
+        .unwrap();
     token::transfer(
         accs.send_admin_fee_sol().with_signer(bp_signer_seeds),
         live_fee_amt,
@@ -251,6 +245,9 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, InitStakingPool<'info>>) ->
         accs.pool_meme_vault.amount
     );
 
+    // let to_airdrop_amt =
+    //     accs.pool_meme_vault.amount.mul_div_floor(5, 100).unwrap() + accs.pool.airdropped_tokens;
+
     token::transfer(
         accs.token_transfer_meme_ctx().with_signer(bp_signer_seeds),
         accs.pool_meme_vault.amount,
@@ -264,12 +261,16 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, InitStakingPool<'info>>) ->
     staking.meme_vault = accs.staking_meme_vault.key();
     staking.meme_mint = accs.meme_mint.key();
     staking.quote_vault = accs.staking_quote_vault.key();
-    staking.stakes_total = MAX_TICKET_TOKENS * MEME_TOKEN_DECIMALS;
-    staking.vesting_config = vesting::default_config();
+    staking.quote_mint = accs.quote_mint.key();
+    staking.chan_vault = accs.staking_chan_vault.key();
+    staking.stakes_total = accs.pool.config.gamma_m;
+    staking.vesting_config = vesting::default_config(accs.pool.vesting_period);
     staking.fees_x_total = 0;
     staking.fees_y_total = 0;
-    staking.raydium_fees.last_cum_quote_fees = 0;
-    staking.raydium_fees.last_cum_meme_fees = 0;
+    staking.fees_z_total = 0;
+    staking.to_airdrop = 0;
+    staking.is_active = false;
+
     staking.pool = accs.pool.key();
 
     msg!("5");

@@ -12,8 +12,7 @@ pub enum AmmError {
     #[msg("One of the provided input arguments is invalid")]
     InvalidArg,
     #[msg(
-        "Given amount of tokens to swap would result in \
-        less than minimum requested tokens to receive"
+        "Given amount of tokens to swap would result in less than minimum requested tokens to receive"
     )]
     SlippageExceeded,
     /// Use this error for program paths which should never be reached if the
@@ -52,6 +51,11 @@ pub enum AmmError {
     InvalidStatus,
     CantUnstakeBeforeCliff,
     NoFeesToAdd,
+    #[msg("Staking should be fully initialized before it can be interacted with")]
+    StakingIsNotActive,
+    NonZeroInitialMemeSupply,
+    AirdroppedTokensOvercap,
+    InvalidVestingPeriod,
 }
 
 #[allow(dead_code)]

@@ -32,6 +32,7 @@ pub fn handle(ctx: Context<BoundMergeTickets>) -> Result<()> {
     ticket_into.amount += ticket_from.amount;
     ticket_into.withdraws_quote += ticket_from.withdraws_quote;
     ticket_into.withdraws_meme += ticket_from.withdraws_meme;
+    ticket_into.withdraws_chan += ticket_from.withdraws_chan;
     ticket_into.vesting.notional += ticket_from.vesting.notional;
     ticket_into.vesting.released += ticket_from.vesting.released;
     ticket_into.until_timestamp = max(ticket_into.until_timestamp, ticket_from.until_timestamp);

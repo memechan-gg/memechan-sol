@@ -4,22 +4,27 @@ pub mod err;
 pub mod libraries;
 pub mod math;
 pub mod models;
-pub mod raydium;
 pub mod vesting;
 
 use anchor_lang::prelude::*;
 use core as core_;
-
 use endpoints::*;
 
-declare_id!("memeVtsr1AqAjfRzW2PuzymQdP2m7SgL6FQ1xgMc9MR");
+#[cfg(feature = "testing")]
+declare_id!("CaR9ciDnNnE6WX35tZWrjeGdKUPaft7r4oQGF4JhwVxZ"); // localnet
+#[cfg(feature = "mainnet")]
+declare_id!("tbd"); // mainnet test
 
 #[program]
 pub mod memechan_sol {
     use super::*;
 
-    pub fn new_pool(ctx: Context<NewPool>) -> Result<()> {
-        new_pool::handle(ctx)
+    pub fn new_pool(
+        ctx: Context<NewPool>,
+        airdropped_tokens: u64,
+        vesting_period: u64,
+    ) -> Result<()> {
+        new_pool::handle(ctx, airdropped_tokens, vesting_period as i64)
     }
 
     pub fn create_metadata(
@@ -59,7 +64,7 @@ pub mod memechan_sol {
         ctx: Context<SwapCoinY>,
         coin_in_amount: u64,
         coin_x_min_value: u64,
-        ticket_number: u64
+        ticket_number: u64,
     ) -> Result<()> {
         swap_y::handle(ctx, coin_in_amount, coin_x_min_value, ticket_number)
     }
@@ -68,6 +73,18 @@ pub mod memechan_sol {
         ctx: Context<'_, '_, '_, 'info, InitStakingPool<'info>>,
     ) -> Result<()> {
         init_staking_pool::handle(ctx)
+    }
+
+    pub fn send_airdrop_funds(ctx: Context<SendAirdropFunds>) -> Result<()> {
+        send_airdrop_funds::handle(ctx)
+    }
+
+    pub fn init_meme_amm_pool(ctx: Context<InitQuoteAmmPool>) -> Result<()> {
+        init_quote_amm_pool::handle(ctx)
+    }
+
+    pub fn init_chan_amm_pool(ctx: Context<InitChanAmmPool>) -> Result<()> {
+        init_chan_amm_pool::handle(ctx)
     }
 
     pub fn new_target_config(ctx: Context<NewTargetConfig>, target_amount: u64) -> Result<()> {
@@ -81,8 +98,20 @@ pub mod memechan_sol {
         change_target_config::handle(ctx, target_amount)
     }
 
-    pub fn go_live<'info>(ctx: Context<'_, '_, '_, 'info, GoLive<'info>>, nonce: u8) -> Result<()> {
-        go_live::handle(ctx, nonce)
+    pub fn new_chan_swap(
+        ctx: Context<NewChanSwap>,
+        new_price_num: u64,
+        new_price_denom: u64,
+    ) -> Result<()> {
+        new_chan_swap::handle(ctx, new_price_num, new_price_denom)
+    }
+
+    pub fn change_chan_price(
+        ctx: Context<ChangeChanPrice>,
+        new_price_num: u64,
+        new_price_denom: u64,
+    ) -> Result<()> {
+        change_chan_price::handle(ctx, new_price_num, new_price_denom)
     }
 
     pub fn add_fees<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<()> {
@@ -113,7 +142,10 @@ pub mod memechan_sol {
         withdraw_admin_fees::handle(ctx)
     }
 
-    pub fn increase_vesting(ctx: Context<IncreaseVestingTime>, vesting_ts_increase: u64) -> Result<()> {
+    pub fn increase_vesting(
+        ctx: Context<IncreaseVestingTime>,
+        vesting_ts_increase: u64,
+    ) -> Result<()> {
         increase_vesting_time::handle(ctx, vesting_ts_increase)
     }
 }
