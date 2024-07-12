@@ -26,8 +26,8 @@ anchor-spl = { version = "0.29.0", features = ["metadata"] }
 uint = "0.9.5"
 bytemuck = "*"
 spl-math = { version = "0.2.0", features = ["no-entrypoint"] }
-dynamic-amm = { path = "../../../mercurial-dynamic-amm-sdk/programs/dynamic-amm", features = ["cpi"] }
-dynamic-vault = { path = "../../../mercurial-dynamic-amm-sdk/programs/dynamic-vault", features = ["cpi"] }
+dynamic-amm = { git = "https://github.com/memechan-gg/mercurial-dynamic-amm-sdk", features = ["cpi"] }
+dynamic-vault = { git = "https://github.com/memechan-gg/mercurial-dynamic-amm-sdk", features = ["cpi"] }
 
 [dev-dependencies]
 csv = "1.1"
