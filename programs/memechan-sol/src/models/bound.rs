@@ -142,13 +142,6 @@ impl BoundPool {
         let is_max = delta_m - admin_fee_in >= max_delta_m;
 
         let net_delta_m = min(delta_m - admin_fee_in, max_delta_m);
-        msg!(
-            "dm {} afi {} mdm {} ndm {}",
-            delta_m,
-            admin_fee_in,
-            max_delta_m,
-            net_delta_m
-        );
 
         let delta_s = if is_max {
             s_b
@@ -160,13 +153,7 @@ impl BoundPool {
 
         let admin_fee_out = self.fees.get_fee_quote_amount(delta_s).unwrap();
         let net_delta_s = delta_s - admin_fee_out;
-        msg!(
-            "ds {} nds {} sb {} ndm {}",
-            delta_s,
-            net_delta_s,
-            s_b,
-            net_delta_m
-        );
+
         //assert!(net_delta_s >= min_delta_s, errors::slippage());
         if net_delta_s < min_delta_s {
             return Err(error!(AmmError::SlippageExceeded));
