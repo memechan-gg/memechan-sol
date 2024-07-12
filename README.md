@@ -4,6 +4,10 @@
 
 Used math lib from Raydium, thanks for that.
 
+# build
+- clone this repo
+- clone https://github.com/memechan-gg/mercurial-dynamic-amm-sdk outside this repo's folder
+
 `solana config set --keypair ${pwd}/keypairs/devnet-keypair.json`
 
 `anchor deploy --program-name memechan_sol --program-keypair keypairs/kp.json`
