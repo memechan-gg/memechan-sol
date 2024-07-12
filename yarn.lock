@@ -246,7 +246,7 @@
     strict-event-emitter-types "^2.0.0"
     uuid "^8.3.2"
 
-"@mercurial-finance/dynamic-amm-sdk@^0.4.21":
+"@mercurial-finance/dynamic-amm-sdk@^0.4.24":
   version "0.4.24"
   resolved "https://registry.yarnpkg.com/@mercurial-finance/dynamic-amm-sdk/-/dynamic-amm-sdk-0.4.24.tgz#d629efda1c8d3128905b99d98a1834036ac3d1fe"
   integrity sha512-d+dVa2Ay3Dih0z9s5s12TN/0YYz7QWtSL6QxffvQ4HhtqGQbAHEzOFUu4nt4cP/qGuGvoEmL6c0v+9xMvdaiwA==
