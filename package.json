@@ -7,7 +7,7 @@
     "build-release": "solana-install init 1.17.31 && anchor build -- --features mainnet --no-default-features",
     "bt": "yarn build-testing",
     "write-buffer": "yarn build-testing && solana-install init 1.18.17 && cd target/deploy && solana program write-buffer --buffer bufkey.json memechan_sol.so -C ~/mconf3.yml",
-    "wb": "yarn write-buffer",
+    "wbt": "yarn write-buffer",
     "dt": "cd target/deploy && solana program deploy --buffer bufkey.json --program-id CaR9ciDnNnE6WX35tZWrjeGdKUPaft7r4oQGF4JhwVxZ -C ~/mconf3.yml",
     "cb": "solana program close --buffers -C ~/mconf3.yml"
   },
@@ -15,7 +15,7 @@
     "@aws-crypto/sha256-browser": "^5.2.0",
     "@aws-sdk/types": "^3.577.0",
     "@coral-xyz/anchor": "0.29.0",
-    "@mercurial-finance/dynamic-amm-sdk": "0.4.21",
+    "@mercurial-finance/dynamic-amm-sdk": "^0.4.21",
     "@mercurial-finance/vault-sdk": "^0.5.3",
     "@metaplex-foundation/mpl-token-metadata": "^3.2.1",
     "@metaplex-foundation/umi": "^0.9.1",

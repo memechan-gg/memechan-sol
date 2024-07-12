@@ -12,6 +12,7 @@ import { getOrCreateAssociatedTokenAccount } from "@solana/spl-token";
 import { client } from "../common";
 import { DEFAULT_MAX_M, DEFAULT_TARGET } from "../sol-sdk/config/config";
 import { TargetConfig } from "../sol-sdk/targetconfig/TargetConfig";
+import { MemeTicketWrapper } from "../ticket";
 
 export function test() {
   describe("swap_x", () => {
@@ -43,6 +44,76 @@ export function test() {
         userMemeTicket: ticketId,
         userQuoteAcc,
       });
+    });
+
+    it("swaps multiple SOL->meme then all back", async () => {
+      const user = Keypair.generate();
+      const pool = await BoundPoolWrapper.new();
+
+      const userQuoteAcc = (
+        await getOrCreateAssociatedTokenAccount(
+          client.connection,
+          payer,
+          QUOTE_MINT,
+          user.publicKey
+        )
+      ).address;
+
+      await airdrop(user.publicKey);
+
+      await sleep(1000);
+
+      const userTickets: MemeTicketWrapper[] = [];
+
+      userTickets.push(
+        await pool.swap_y({
+          user,
+          memeTokensOut: new BN(1),
+          quoteTokensIn: new BN(0.1 * 1e9),
+          ticketNumber: 1,
+        })
+      );
+      userTickets.push(
+        await pool.swap_y({
+          user,
+          memeTokensOut: new BN(1),
+          quoteTokensIn: new BN(0.1 * 1e9),
+          ticketNumber: 2,
+        })
+      );
+      userTickets.push(
+        await pool.swap_y({
+          user,
+          memeTokensOut: new BN(1),
+          quoteTokensIn: new BN(0.1 * 1e9),
+          ticketNumber: 3,
+        })
+      );
+
+      for (let i = 1; i < userTickets.length; i++) {
+        const ticket = userTickets[i];
+        console.log((await ticket.fetch()).amount.toString());
+        await userTickets[0].bound_merge({
+          pool: pool.bpClient.id,
+          ticketToMerge: ticket,
+          user,
+        });
+      }
+
+      await sleep(6000);
+
+      await pool.swap_x({
+        user,
+        userMemeTicket: userTickets[0],
+        userQuoteAcc,
+      });
+
+      await sleep(500);
+      const fetchedPool = await pool.fetch();
+      console.log(
+        fetchedPool.adminFeesMeme.toString(),
+        fetchedPool.adminFeesQuote.toString()
+      );
     });
 
     it("swaps sol->memecoin->sol->full meme", async () => {

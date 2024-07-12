@@ -66,6 +66,13 @@ pub fn handle(ctx: Context<SwapCoinX>, coin_in_amount: u64, coin_y_min_value: u6
 
     let swap_amount = pool_state.swap_amounts(coin_in_amount, coin_y_min_value, false);
 
+    msg!(
+        "rt {} swo {} af {}",
+        pool_state.quote_reserve.tokens,
+        swap_amount.amount_out,
+        swap_amount.admin_fee_out
+    );
+
     pool_state.admin_fees_meme += swap_amount.admin_fee_in;
     pool_state.admin_fees_quote += swap_amount.admin_fee_out;
 
