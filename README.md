@@ -4,27 +4,10 @@
 
 Used math lib from Raydium, thanks for that.
 
-# build
-- clone this repo
-- clone https://github.com/memechan-gg/mercurial-dynamic-amm-sdk outside this repo's folder
-
-`solana config set --keypair ${pwd}/keypairs/devnet-keypair.json`
-
-`anchor deploy --program-name memechan_sol --program-keypair keypairs/kp.json`
-
-`solana config set --url localhost`
-
-`solana config set --url devnet`
-
-`solana-keygen new --outfile kp.json`
-
-
-# devnet deploy
-- generate new keypar (gen_devkp.sh steps)
-- replace old id everywhere
-- anchor clean
-- anchor build
-- anchor deploy  --program-name memechan_sol --program-keypair keypairs/kp.json
+# mainnet testing deploy
+- "yarn bt"
+- "yarn wt" until buffer gets written fully
+- "yarn dt
 
 # mainnet deploy
 - generate new keypair corresponding to pubkey you want to deploy your program to (and save private key to kp.json) or create random one using "solana-keygen new -o kp.json"
