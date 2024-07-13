@@ -6,6 +6,7 @@ use crate::{
 use anchor_lang::prelude::*;
 use solana_program::pubkey::Pubkey;
 use spl_math::uint::U256;
+use std::ops::Mul;
 use std::{cmp::min, mem};
 
 use super::{fees::Fees, Reserve, SwapAmount};
@@ -103,7 +104,7 @@ impl BoundPool {
 
         let p = &self.config;
 
-        let max_delta_s = p.gamma_s - s_t0;
+        let max_delta_s = (p.gamma_s * p.decimals.quote) - s_t0;
 
         let admin_fee_in = self.fees.get_fee_quote_amount(delta_s).unwrap();
         let is_max = delta_s - admin_fee_in >= max_delta_s;
@@ -146,9 +147,7 @@ impl BoundPool {
         let delta_s = if is_max {
             s_b
         } else {
-            let d_s = self.compute_delta_s(s_b, net_delta_m)?;
-            let cd_s = (d_s as u128 * 99_990_000u128) / 100_000_000u128;
-            cd_s as u64
+            self.compute_delta_s(s_b, net_delta_m)?
         };
 
         let admin_fee_out = self.fees.get_fee_quote_amount(delta_s).unwrap();
@@ -209,7 +208,6 @@ impl BoundPool {
 
 pub fn compute_alpha_abs(
     gamma_s: u128,
-    gamma_s_denom: u128,
     gamma_m: u128,
     omega_m: u128,
     price_factor_num: u64,
@@ -222,7 +220,7 @@ pub fn compute_alpha_abs(
         .checked_div(price_factor_denom as u128)
         .unwrap();
 
-    let num = 2 * (gamma_m - left) * (gamma_s_denom * gamma_s_denom);
+    let num = 2 * (gamma_m - left);
     let denom = gamma_s * gamma_s;
 
     if num <= denom {
@@ -257,7 +255,6 @@ pub fn compute_decimals(scale: u64) -> Result<u128> {
 
 pub fn compute_beta(
     gamma_s: u128,
-    gamma_s_denom: u128,
     gamma_m: u128,
     omega_m: u128,
     price_factor_num: u64,
@@ -272,12 +269,10 @@ pub fn compute_beta(
         .checked_div(price_factor_denom as u128)
         .unwrap();
 
-    let num = U256::from(left - right)
-        .checked_mul(U256::from(gamma_s_denom))
-        .checked_mul(U256::from(beta_decimals));
-    let denom = U256::from(gamma_s);
+    let num = left - right;
+    let denom = gamma_s;
 
-    Ok(num.checked_div(denom).unwrap().as_u128())
+    Ok(num * beta_decimals / denom)
 }
 
 pub fn check_slope(
