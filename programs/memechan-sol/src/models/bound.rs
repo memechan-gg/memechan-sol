@@ -6,7 +6,6 @@ use crate::{
 use anchor_lang::prelude::*;
 use solana_program::pubkey::Pubkey;
 use spl_math::uint::U256;
-use std::ops::Mul;
 use std::{cmp::min, mem};
 
 use super::{fees::Fees, Reserve, SwapAmount};
@@ -104,7 +103,7 @@ impl BoundPool {
 
         let p = &self.config;
 
-        let max_delta_s = (p.gamma_s * p.decimals.quote) - s_t0;
+        let max_delta_s = p.gamma_s - s_t0;
 
         let admin_fee_in = self.fees.get_fee_quote_amount(delta_s).unwrap();
         let is_max = delta_s - admin_fee_in >= max_delta_s;
@@ -208,6 +207,7 @@ impl BoundPool {
 
 pub fn compute_alpha_abs(
     gamma_s: u128,
+    gamma_s_denom: u128,
     gamma_m: u128,
     omega_m: u128,
     price_factor_num: u64,
@@ -220,22 +220,25 @@ pub fn compute_alpha_abs(
         .checked_div(price_factor_denom as u128)
         .unwrap();
 
-    let num = 2 * (gamma_m - left);
-    let denom = gamma_s * gamma_s;
+    let num = U256::from(2 * (gamma_m - left)) * U256::from(gamma_s_denom * gamma_s_denom);
+    let denom = U256::from(gamma_s * gamma_s);
 
     if num <= denom {
         return Err(error!(AmmError::EGammaSAboveRelativeLimit));
     }
 
-    let num_scale = compute_scale(num);
-    let denom_scale = compute_scale(denom);
+    let num_scale = compute_scale(num.as_u128());
+    let denom_scale = compute_scale(denom.as_u128());
 
     let net_scale = num_scale - denom_scale;
 
-    let alpha_decimals = compute_decimals(net_scale)?;
+    let alpha_decimals = U256::from(compute_decimals(net_scale)?);
 
     // We compute |alpha|, hence the subtraction is switched
-    Ok(((num * alpha_decimals) / denom, alpha_decimals))
+    Ok((
+        ((num * alpha_decimals) / denom).as_u128(),
+        alpha_decimals.as_u128(),
+    ))
 }
 
 pub fn compute_decimals(scale: u64) -> Result<u128> {
@@ -255,6 +258,7 @@ pub fn compute_decimals(scale: u64) -> Result<u128> {
 
 pub fn compute_beta(
     gamma_s: u128,
+    gamma_s_denom: u128,
     gamma_m: u128,
     omega_m: u128,
     price_factor_num: u64,
@@ -269,10 +273,10 @@ pub fn compute_beta(
         .checked_div(price_factor_denom as u128)
         .unwrap();
 
-    let num = left - right;
+    let num = (left - right) * gamma_s_denom;
     let denom = gamma_s;
 
-    Ok(num * beta_decimals / denom)
+    Ok((num * beta_decimals) / denom)
 }
 
 pub fn check_slope(
@@ -466,7 +470,7 @@ fn delta_m1_strategy(
     s_a: u128,
     s_b: u128,
 ) -> Option<u128> {
-    let left_num = (s_b.checked_sub(s_a)).checked_mul(beta);
+    let left_num = s_b.checked_sub(s_a).checked_mul(beta);
 
     if let None = left_num {
         return None;
@@ -483,12 +487,11 @@ fn delta_m1_strategy(
     if let None = left {
         return None;
     }
-
     let right = s_b
         .checked_pow(2)
         .checked_sub_(s_a.checked_pow(2))
-        .checked_div_(DECIMALS_S.checked_pow(2))
         .checked_mul(alpha_abs)
+        .checked_div_(DECIMALS_S.checked_pow(2))
         .checked_div(2 * alpha_decimals);
 
     if let None = right {
@@ -503,6 +506,10 @@ mod tests {
     use proptest::*;
     use std::fs::File;
 
+    use crate::consts::{
+        DEFAULT_MAX_M, DEFAULT_MAX_M_LP, DEFAULT_PRICE_FACTOR_DENOMINATOR,
+        DEFAULT_PRICE_FACTOR_NUMERATOR,
+    };
     use csv::ReaderBuilder;
 
     use super::*;
@@ -1250,6 +1257,71 @@ mod tests {
 
         assert_eq!(delta_s1.unwrap(), 1000000000000);
 
+        Ok(())
+    }
+
+    #[test]
+    pub fn check_whole_curve_buy() -> Result<()> {
+        let mint_decimals = 10_u128.checked_pow(9u32).unwrap();
+        let gamma_m = DEFAULT_MAX_M;
+        let omega_m = DEFAULT_MAX_M_LP;
+        let price_factor_num = DEFAULT_PRICE_FACTOR_NUMERATOR;
+        let price_factor_denom = DEFAULT_PRICE_FACTOR_DENOMINATOR;
+        let step: u64 = 10_000_000;
+
+        for j in 0..4 {
+            let gamma_s = 690_000_000u128 * 10u128.pow(j + 1);
+
+            for i in 0..100 {
+                let step_i: u64 = step * (i + 1);
+
+                let (alpha_abs, decimals) = compute_alpha_abs(
+                    gamma_s,
+                    mint_decimals,
+                    gamma_m,
+                    omega_m,
+                    price_factor_num,
+                    price_factor_denom,
+                )?;
+
+                let mut pool = BoundPool {
+                    config: Config {
+                        alpha_abs,
+                        beta: compute_beta(
+                            gamma_s,
+                            mint_decimals,
+                            gamma_m,
+                            omega_m,
+                            price_factor_num,
+                            price_factor_denom,
+                            decimals,
+                        )?,
+                        gamma_s: gamma_s as u64,
+                        gamma_m: gamma_m as u64,
+                        omega_m: omega_m as u64,
+                        price_factor_num,
+                        price_factor_denom,
+                        decimals: Decimals {
+                            alpha: decimals,
+                            beta: decimals,
+                            quote: mint_decimals as u64,
+                        },
+                    },
+                    ..Default::default()
+                };
+                pool.meme_reserve.tokens = DEFAULT_MAX_M as u64;
+
+                for i in 0..gamma_s as u64 / step_i {
+                    let swap = pool.buy_meme_swap_amounts(step_i, 1).unwrap();
+
+                    pool.admin_fees_quote += swap.admin_fee_in;
+                    pool.admin_fees_meme += swap.admin_fee_out;
+
+                    pool.quote_reserve.tokens += swap.amount_in;
+                    pool.meme_reserve.tokens -= swap.amount_out + swap.admin_fee_out;
+                }
+            }
+        }
         Ok(())
     }
 

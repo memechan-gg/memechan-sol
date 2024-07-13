@@ -1,7 +1,7 @@
 use crate::libraries::MulDiv;
 use anchor_lang::prelude::*;
 
-pub const MEME_FEE: u64 = 0; // 0%
+pub const MEME_FEE: u64 = 1_000_000; // 0.1%
 pub const FEE: u64 = 10_000_000; // 1%
 pub const LAUNCH_FEE: u64 = 50_000_000; // 5%
 pub const COMMS_FEE: u64 = 50_000_000; // 5%

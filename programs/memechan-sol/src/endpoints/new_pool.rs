@@ -133,8 +133,10 @@ pub fn handle(ctx: Context<NewPool>, airdropped_tokens: u64, vesting_period: i64
         fee_quote_percent: FEE,
     };
 
-    let mint_decimals = 10_u64.checked_pow(accs.quote_mint.decimals as u32).unwrap();
-    let gamma_s = (accs.target_config.token_target_amount / mint_decimals) as u128;
+    let mint_decimals = 10_u128
+        .checked_pow(accs.quote_mint.decimals as u32)
+        .unwrap();
+    let gamma_s = accs.target_config.token_target_amount as u128;
     let gamma_m = DEFAULT_MAX_M;
     let omega_m = DEFAULT_MAX_M_LP;
     let price_factor_num = DEFAULT_PRICE_FACTOR_NUMERATOR;
@@ -142,6 +144,7 @@ pub fn handle(ctx: Context<NewPool>, airdropped_tokens: u64, vesting_period: i64
 
     let (alpha_abs, decimals) = compute_alpha_abs(
         gamma_s,
+        mint_decimals,
         gamma_m,
         omega_m,
         price_factor_num,
@@ -152,6 +155,7 @@ pub fn handle(ctx: Context<NewPool>, airdropped_tokens: u64, vesting_period: i64
         alpha_abs,
         beta: compute_beta(
             gamma_s,
+            mint_decimals,
             gamma_m,
             omega_m,
             price_factor_num,
@@ -166,7 +170,7 @@ pub fn handle(ctx: Context<NewPool>, airdropped_tokens: u64, vesting_period: i64
         decimals: Decimals {
             alpha: decimals,
             beta: decimals,
-            quote: mint_decimals,
+            quote: mint_decimals as u64,
         },
     };
 

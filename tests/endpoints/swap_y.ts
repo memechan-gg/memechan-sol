@@ -162,16 +162,17 @@ export function test() {
       await sleep(1000);
 
       const ticketsNo = 2000;
+      const step: number = 0.1;
 
       for (let i = 0; i < ticketsNo; i++) {
         const ticketId = await pool.swap_y({
           memeTokensOut: new BN(1),
-          quoteTokensIn: new BN(0.1 * 10 ** 9),
+          quoteTokensIn: new BN(step * 10 ** 9),
           ticketNumber: i + 1,
         });
         await sleep(100);
         const ticket = await ticketId.fetch();
-        console.log(ticket.amount.toString(), (i + 1) * Number(0.1));
+        console.log(ticket.amount.toString(), (i + 1) * step);
       }
     });
   });
