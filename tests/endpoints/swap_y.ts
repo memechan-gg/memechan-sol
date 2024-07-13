@@ -155,5 +155,25 @@ export function test() {
         assert(false, "rpc should have failed");
       } catch (e) {}
     });
+
+    it("swaps many times", async () => {
+      const pool = await BoundPoolWrapper.new();
+      await mintQuote(payer.publicKey);
+      await sleep(1000);
+
+      const ticketsNo = 2000;
+      const step: number = 0.1;
+
+      for (let i = 0; i < ticketsNo; i++) {
+        const ticketId = await pool.swap_y({
+          memeTokensOut: new BN(1),
+          quoteTokensIn: new BN(step * 10 ** 9),
+          ticketNumber: i + 1,
+        });
+        await sleep(100);
+        const ticket = await ticketId.fetch();
+        console.log(ticket.amount.toString(), (i + 1) * step);
+      }
+    });
   });
 }
