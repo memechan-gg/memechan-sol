@@ -174,15 +174,15 @@ impl BoundPool {
         let alpha_decimals = self.config.decimals.alpha;
         let beta_decimals = self.config.decimals.beta;
 
-        match delta_m1_strategy(alpha_abs, beta, alpha_decimals, beta_decimals, s_a, s_b) {
-            Some(delta_m) => return Ok(delta_m as u64),
+        return match delta_m1_strategy(alpha_abs, beta, alpha_decimals, beta_decimals, s_a, s_b) {
+            Some(delta_m) => Ok(delta_m as u64),
             None => {
                 match delta_m2_strategy(alpha_abs, beta, alpha_decimals, beta_decimals, s_a, s_b) {
-                    Some(delta_m) => return Ok(delta_m as u64),
-                    None => return Err(error!(AmmError::MathOverflow)),
+                    Some(delta_m) => Ok(delta_m as u64),
+                    None => Err(error!(AmmError::MathOverflow)),
                 }
             }
-        }
+        };
     }
 
     pub fn compute_delta_s(&self, s_b: u64, delta_m: u64) -> Result<u64> {
@@ -384,7 +384,10 @@ fn delta_s_strategy(
     }
     let a = a.unwrap();
 
-    let b = ((v.checked_pow(U256::from(2))).checked_mul(alpha_decimals)).sqrt();
+    let b = v
+        .checked_pow(U256::from(2))
+        .checked_mul(alpha_decimals)
+        .sqrt();
 
     if let None = b {
         return None;
@@ -510,6 +513,7 @@ mod tests {
         DEFAULT_MAX_M, DEFAULT_MAX_M_LP, DEFAULT_PRICE_FACTOR_DENOMINATOR,
         DEFAULT_PRICE_FACTOR_NUMERATOR,
     };
+    use crate::models::fees::{FEE, MEME_FEE};
     use csv::ReaderBuilder;
 
     use super::*;
@@ -946,7 +950,7 @@ mod tests {
         let price_factor_num = 1;
         let price_factor_denom = 1;
         let delta_m = 1643350384685596;
-        let s_b = 1000000000000 as u64;
+        let s_b = 1000000000000u64;
 
         let (alpha, alpha_decimals) = compute_alpha_abs(
             gamma_s,
@@ -984,7 +988,7 @@ mod tests {
             ..Default::default()
         };
 
-        let delta_s = pool.compute_delta_s(s_b as u64, delta_m)?;
+        let delta_s = pool.compute_delta_s(s_b, delta_m)?;
 
         assert_eq!(delta_s, 1000000000000);
 
@@ -1038,7 +1042,7 @@ mod tests {
             ..Default::default()
         };
 
-        let delta_s = pool.compute_delta_s(s_b as u64, delta_m)?;
+        let delta_s = pool.compute_delta_s(s_b, delta_m)?;
 
         assert_eq!(delta_s, 1000000000000);
 
@@ -1169,7 +1173,7 @@ mod tests {
             delta_m,
         );
 
-        assert!(delta_s1.unwrap() == 1000000000000);
+        assert_eq!(delta_s1.unwrap(), 1000000000000);
 
         Ok(())
     }
@@ -1183,7 +1187,7 @@ mod tests {
         let price_factor = 1;
         let price_factor_denom = 1;
         let delta_m = 317216881990209;
-        let s_b = 1000000000000 as u64;
+        let s_b = 1000000000000u64;
 
         let (alpha, alpha_decimals) = compute_alpha_abs(
             gamma_s,
@@ -1307,6 +1311,10 @@ mod tests {
                             quote: mint_decimals as u64,
                         },
                     },
+                    fees: Fees {
+                        fee_meme_percent: MEME_FEE,
+                        fee_quote_percent: FEE,
+                    },
                     ..Default::default()
                 };
                 pool.meme_reserve.tokens = DEFAULT_MAX_M as u64;
@@ -1379,18 +1387,18 @@ mod tests {
 
         let net_scale = num_scale - denom_scale;
 
-        match net_scale {
-            0..=4 => return false,
-            5 => return true,
-            6 => return true,
-            7 => return true,
-            8 => return true,
-            9 => return true,
-            10 => return true,
-            11 => return true,
-            12 => return true,
-            _ => return true,
-        }
+        return match net_scale {
+            0..=4 => false,
+            5 => true,
+            6 => true,
+            7 => true,
+            8 => true,
+            9 => true,
+            10 => true,
+            11 => true,
+            12 => true,
+            _ => true,
+        };
     }
 
     proptest! {
@@ -1460,7 +1468,7 @@ mod tests {
 
                 let delta_m = delta_m.unwrap();
 
-                assert!(delta_m != 0);
+                assert_ne!(delta_m, 0);
 
                 let delta_s_ = pool.compute_delta_s((s_a + delta_s as u64) * 1_000_000_000, delta_m);
 
@@ -1488,7 +1496,7 @@ mod tests {
                     //     price_factor
                     // );
 
-                    assert!(delta_s_.unwrap() == (delta_s * 1_000_000_000) as u64);
+                    assert_eq!(delta_s_.unwrap(), (delta_s * 1_000_000_000) as u64);
                 }
 
                 s_a += 1;
