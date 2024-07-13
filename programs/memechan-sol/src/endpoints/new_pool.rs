@@ -166,7 +166,7 @@ pub fn handle(ctx: Context<NewPool>, airdropped_tokens: u64, vesting_period: i64
         decimals: Decimals {
             alpha: decimals,
             beta: decimals,
-            quote: mint_decimals as u64,
+            quote: mint_decimals,
         },
     };
 

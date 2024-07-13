@@ -77,9 +77,9 @@ pub struct Config {
     // In raw denomination
     pub gamma_s: u64,
     // In raw denomination
-    pub gamma_m: u64, // DEFAULT_MAX_M * DECIMALS_M = 500_000_000_000_000
+    pub gamma_m: u64, // DEFAULT_MAX_M * DECIMALS_M = 690_000_000_000_000
     // In raw denomination
-    pub omega_m: u64, // DEFAULT_MAX_M_LP * DECIMALS_M = 500_000_000_000_000
+    pub omega_m: u64, // DEFAULT_MAX_M_LP * DECIMALS_M = 310_000_000_000_000
     pub decimals: Decimals,
 }
 
