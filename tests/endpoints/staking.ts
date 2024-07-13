@@ -21,10 +21,9 @@ import {
   getAssociatedTokenAddressSync,
   NATIVE_MINT,
 } from "@solana/spl-token";
-import { associatedAddress } from "@coral-xyz/anchor/dist/cjs/utils/token";
 import BigNumber from "bignumber.js";
 import { wrapSOLInstruction } from "@mercurial-finance/vault-sdk/dist/cjs/src/vault/utils";
-import { CHAN_TOKEN_INFO } from "../sol-sdk/config/config";
+import { CHAN_TOKEN_INFO, DEFAULT_TARGET } from "../sol-sdk/config/config";
 import { PublicKey } from "@saberhq/solana-contrib";
 
 export function test() {
@@ -45,19 +44,21 @@ export function test() {
         await pool.swap_y({
           user,
           memeTokensOut: new BN(1),
-          quoteTokensIn: new BN(6000 * 1e9),
+          quoteTokensIn: new BN(0.152 * DEFAULT_TARGET),
         })
       );
       tickets.push(
         await pool.swap_y({
           memeTokensOut: new BN(1),
-          quoteTokensIn: new BN(8070 * 1e9),
+          quoteTokensIn: new BN(0.253 * DEFAULT_TARGET),
+          ticketNumber: 1,
         })
       );
       tickets.push(
         await pool.swap_y({
           memeTokensOut: new BN(1),
-          quoteTokensIn: new BN(28180 * 1e9),
+          quoteTokensIn: new BN(0.75 * DEFAULT_TARGET),
+          ticketNumber: 2,
         })
       );
 
@@ -134,23 +135,24 @@ export function test() {
         await pool.swap_y({
           user: users[0],
           memeTokensOut: new BN(1),
-          quoteTokensIn: new BN(0.015 * 1e9),
+          quoteTokensIn: new BN(0.152 * DEFAULT_TARGET),
         })
       );
       tickets.push(
         await pool.swap_y({
           user: users[1],
           memeTokensOut: new BN(1),
-          quoteTokensIn: new BN(0.03 * 1e9),
+          quoteTokensIn: new BN(0.253 * DEFAULT_TARGET),
         })
       );
       tickets.push(
         await pool.swap_y({
           user: users[2],
           memeTokensOut: new BN(1),
-          quoteTokensIn: new BN(0.1 * 1e9),
+          quoteTokensIn: new BN(0.75 * DEFAULT_TARGET),
         })
       );
+
       sleep(500);
       const [amm, amm2, staking] = await pool.go_live();
       sleep(500);

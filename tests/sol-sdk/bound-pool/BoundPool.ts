@@ -1365,13 +1365,13 @@ export class BoundPoolClient {
     );
 
     const modifyComputeUnits = ComputeBudgetProgram.setComputeUnitLimit({
-      units: 500000,
+      units: 550000,
     });
 
     transaction.add(modifyComputeUnits);
 
     const addPriorityFee = ComputeBudgetProgram.setComputeUnitPrice({
-      microLamports: 5000000,
+      microLamports: 5500000,
     });
 
     transaction.add(addPriorityFee);
@@ -1420,14 +1420,15 @@ export class BoundPoolClient {
     } else {
       bVaultLpMint = bVaultAccount.lpMint; // Old vault doesn't have lp mint pda
     }
-
-    console.log(
-      await sendAndConfirmTransaction(
-        provider.connection,
-        new Transaction().add(...preInstructions),
-        [user]
-      )
-    );
+    try {
+      console.log(
+        await sendAndConfirmTransaction(
+          provider.connection,
+          new Transaction().add(...preInstructions),
+          [user]
+        )
+      );
+    } catch (e) {}
 
     const poolPubkey = derivePoolAddress(
       provider.connection,
@@ -1484,6 +1485,11 @@ export class BoundPoolClient {
       stakingId
     );
 
+    const swapFeeVault = await getAssociatedTokenAccount(
+      QUOTE_MINT,
+      SWAP_FEE_VAULT_OWNER
+    );
+
     const goLiveInstruction = await this.client.memechanProgram.methods
       .initChanAmmPool()
       .accounts({
@@ -1513,10 +1519,7 @@ export class BoundPoolClient {
         stakingChanVault: staking.chanVault,
         stakingQuoteVault: staking.quoteVault,
 
-        feeQuoteVault: await getAssociatedTokenAccount(
-          QUOTE_MINT,
-          SWAP_FEE_VAULT_OWNER
-        ),
+        feeQuoteVault: swapFeeVault,
         chanSwap,
         chanSwapSignerPda: ChanSwapWrapper.chanSwapSigner(),
         chanSwapVault: fetchedChanSwap.chanVault,
@@ -1532,6 +1535,17 @@ export class BoundPoolClient {
         vaultProgram: vaultProgram.programId,
       })
       .instruction();
+
+    transaction.add(
+      await createAssociatedTokenAccountIdempotentInstruction(
+        user.publicKey,
+        swapFeeVault,
+        SWAP_FEE_VAULT_OWNER,
+        QUOTE_MINT,
+        TOKEN_PROGRAM_ID,
+        ASSOCIATED_TOKEN_PROGRAM_ID
+      )
+    );
 
     transaction.add(goLiveInstruction);
 
@@ -1555,8 +1569,12 @@ export class BoundPoolClient {
         poolPubkey,
         user.publicKey,
         FEE_OWNER,
+        swapFeeVault,
         SYSVAR_RENT_PUBKEY,
+        memeVault,
+        stakingId,
         QUOTE_MINT,
+        stakingSigner,
         new PublicKey(CHAN_TOKEN_INFO.address),
         ChanSwapWrapper.chanSwapId(),
         ChanSwapWrapper.chanSwapSigner(),
@@ -1678,144 +1696,6 @@ export class BoundPoolClient {
     });
 
     return stakingPoolInstance;
-  }
-
-  public async goLive(
-    input: GoLiveArgs
-  ): Promise<[StakingPool, ApiPoolInfoV4]> {
-    const user = input.user!;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const boundPoolInfo = input.boundPoolInfo as any;
-    const stakingId = BoundPoolClient.findStakingPda(
-      boundPoolInfo.memeReserve.mint,
-      this.client.memechanProgram.programId
-    );
-    const stakingSigner = StakingPool.findSignerPda(
-      stakingId,
-      this.client.memechanProgram.programId
-    );
-
-    const baseTokenInfo = new Token(
-      TOKEN_PROGRAM_ID,
-      new PublicKey(boundPoolInfo.memeReserve.mint),
-      MEMECHAN_MEME_TOKEN_DECIMALS
-    );
-    //const marketId = new PublicKey("AHZCwnUuiB3CUEyk2nybsU5c85WVDTHVP2UwuQwpVaR1");
-    const quoteTokenInfo = MEMECHAN_QUOTE_TOKEN;
-
-    // const modifyComputeUnits = ComputeBudgetProgram.setComputeUnitLimit({
-    //   units: 300,
-    // });
-
-    // const addPriorityFee = ComputeBudgetProgram.setComputeUnitPrice({
-    //   microLamports: 20000,
-    // });
-
-    const transferTx = new Transaction().add(
-      // modifyComputeUnits,
-      // addPriorityFee,
-      SystemProgram.transfer({
-        fromPubkey: user.publicKey,
-        toPubkey: stakingSigner,
-        lamports: 2_000_000_000,
-      })
-    );
-
-    const transferSignature = await sendAndConfirmTransaction(
-      this.client.connection,
-      transferTx,
-      [user],
-      {
-        skipPreflight: true,
-        commitment: "confirmed",
-      }
-    );
-
-    const transferTxBH0 = await this.client.connection.getLatestBlockhash(
-      "confirmed"
-    );
-    const transferTxSyncResult =
-      await this.client.connection.confirmTransaction(
-        {
-          signature: transferSignature,
-          blockhash: transferTxBH0.blockhash,
-          lastValidBlockHeight: transferTxBH0.lastValidBlockHeight,
-        },
-        "confirmed"
-      );
-
-    if (transferTxSyncResult.value.err) {
-      console.error(
-        "transferTxSyncResult error: ",
-        JSON.stringify(transferTxSyncResult)
-      );
-      throw new Error("transferTxSyncResult failed");
-    } else {
-      console.log(
-        "transferTxSyncResult: " + JSON.stringify(transferTxSyncResult)
-      );
-    }
-    const ammConfig = BoundPoolClient.getAssociatedConfigId({
-      programId: CPMM,
-    });
-    const feeDestination = input.feeDestinationWalletAddress;
-    const ammId = BoundPoolClient.getAssociatedId({
-      programId: CPMM,
-      configId: ammConfig,
-      mint0: this.memeTokenMint,
-      mint1: QUOTE_MINT,
-    });
-    const raydiumAmmAuthority = BoundPoolClient.getAssociatedAuthority({
-      programId: CPMM,
-    });
-
-    const modifyComputeUnits = ComputeBudgetProgram.setComputeUnitLimit({
-      units: 250000,
-    });
-
-    const addPriorityFee = ComputeBudgetProgram.setComputeUnitPrice({
-      microLamports: 5000000,
-    });
-
-    // const data = Buffer.from(
-    //   Uint8Array.of(0, ...new BN(500000).toArray("le", 4))
-    // );
-    // const additionalComputeBudgetInstruction = new TransactionInstruction({
-    //   keys: [],
-    //   programId: new PublicKey("ComputeBudget111111111111111111111111111111"),
-    //   data,
-    // });
-
-    try {
-      const result = await this.client.memechanProgram.methods
-        .goLive()
-        .accounts({
-          signer: user.publicKey,
-        })
-        .signers([user])
-        .preInstructions([modifyComputeUnits, addPriorityFee])
-        .rpc({ skipPreflight: true, commitment: "confirmed" });
-      console.log("goLive Transaction successful:", result);
-
-      return [
-        await StakingPool.fromStakingPoolId({
-          client: this.client,
-          poolAccountAddressId: stakingId,
-        }),
-        await formatAmmKeysById(ammId.toBase58(), this.client.connection),
-      ];
-    } catch (error) {
-      if (error instanceof AnchorError) {
-        console.error("Error details:", error);
-        if (error.logs) {
-          error.logs.forEach((log) => console.log("Program log:", log));
-        }
-      } else {
-        console.error("Unexpected error:", error);
-      }
-
-      throw error;
-    }
   }
 
   public async fetchRelatedTickets() {

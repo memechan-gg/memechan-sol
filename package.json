@@ -7,7 +7,7 @@
     "build-release": "solana-install init 1.17.31 && anchor build -- --features mainnet --no-default-features",
     "bt": "yarn build-testing",
     "write-buffer": "yarn build-testing && solana-install init 1.18.17 && cd target/deploy && solana program write-buffer --buffer bufkey.json memechan_sol.so -C ~/mconf3.yml",
-    "wb": "yarn write-buffer",
+    "wbt": "yarn write-buffer",
     "dt": "cd target/deploy && solana program deploy --buffer bufkey.json --program-id CaR9ciDnNnE6WX35tZWrjeGdKUPaft7r4oQGF4JhwVxZ -C ~/mconf3.yml",
     "cb": "solana program close --buffers -C ~/mconf3.yml"
   },

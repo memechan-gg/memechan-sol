@@ -36,6 +36,7 @@ import {
   memechan,
 } from "./sol-sdk/config/config";
 import { MemechanSol } from "../target/types/memechan_sol";
+import { LP_FEE_VAULT_OWNER } from "./common";
 
 export type Staking = IdlAccounts<MemechanSol>["stakingPool"];
 
@@ -206,7 +207,8 @@ export class StakingWrapper {
         provider.connection,
         payer,
         tokenAMint,
-        LP_VAULT_OWNER
+        LP_FEE_VAULT_OWNER,
+        true
       )
     ).address;
     const quoteFeeVault = (
@@ -214,7 +216,8 @@ export class StakingWrapper {
         provider.connection,
         payer,
         tokenBMint,
-        LP_VAULT_OWNER
+        LP_FEE_VAULT_OWNER,
+        true
       )
     ).address;
 

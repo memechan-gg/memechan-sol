@@ -6,7 +6,7 @@ Used math lib from Raydium, thanks for that.
 
 # mainnet testing deploy
 - "yarn bt"
-- "yarn wt" until buffer gets written fully
+- "yarn wbt" until buffer gets written fully
 - "yarn dt
 
 # mainnet deploy

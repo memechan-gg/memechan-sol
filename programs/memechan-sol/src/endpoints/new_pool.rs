@@ -5,8 +5,8 @@ use crate::consts::{
 use crate::err;
 use crate::err::AmmError;
 use crate::models::bound::{compute_alpha_abs, compute_beta, BoundPool, Config, Decimals};
-use crate::models::fees::Fees;
 use crate::models::fees::FEE;
+use crate::models::fees::{Fees, MEME_FEE};
 use crate::models::target_config::TargetConfig;
 use crate::models::Reserve;
 use anchor_lang::prelude::*;
@@ -129,7 +129,7 @@ pub fn handle(ctx: Context<NewPool>, airdropped_tokens: u64, vesting_period: i64
         vault: accs.quote_vault.key(),
     };
     pool.fees = Fees {
-        fee_meme_percent: 0,
+        fee_meme_percent: MEME_FEE,
         fee_quote_percent: FEE,
     };
 

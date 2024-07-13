@@ -13,8 +13,8 @@ describe("memechan-sol", () => {
   newPool.test();
   swapY.test();
   swapX.test();
-  // goLive.test();
+  goLive.test();
   // fees.test();
   // tickets.test();
-  // staking.test();
+  staking.test();
 });

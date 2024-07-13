@@ -146,8 +146,11 @@ impl BoundPool {
         let delta_s = if is_max {
             s_b
         } else {
-            self.compute_delta_s(s_b, net_delta_m)?
+            let d_s = self.compute_delta_s(s_b, net_delta_m)?;
+            let cd_s = (d_s as u128 * 99_990_000u128) / 100_000_000u128;
+            cd_s as u64
         };
+
         let admin_fee_out = self.fees.get_fee_quote_amount(delta_s).unwrap();
         let net_delta_s = delta_s - admin_fee_out;
 
@@ -269,10 +272,12 @@ pub fn compute_beta(
         .checked_div(price_factor_denom as u128)
         .unwrap();
 
-    let num = (left - right) * gamma_s_denom;
-    let denom = gamma_s;
+    let num = U256::from(left - right)
+        .checked_mul(U256::from(gamma_s_denom))
+        .checked_mul(U256::from(beta_decimals));
+    let denom = U256::from(gamma_s);
 
-    Ok((num * beta_decimals) / denom)
+    Ok(num.checked_div(denom).unwrap().as_u128())
 }
 
 pub fn check_slope(
