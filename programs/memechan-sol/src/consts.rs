@@ -42,16 +42,16 @@ pub const INSTANT_TOKEN_PERCENTAGE_DENOM: u64 = 100;
 
 #[cfg(feature = "testing")]
 pub const ADMIN_KEY: Pubkey =
-    solana_program::pubkey!("8SvkUtJZCyJwSQGkiszwcRcPv7c8pPSr8GVEppGNN7DV");
+    solana_program::pubkey!("8JvLLwD7oBvPfg3NL1dAL7GbQJuJznP4MhsYnfNkKjAR");
 #[cfg(feature = "mainnet")]
 pub const ADMIN_KEY: Pubkey =
     solana_program::pubkey!("KZbAoMgCcb2gDEn2Ucea86ux84y25y3ybbWQGQpd9D6");
 
 #[cfg(feature = "testing")]
-pub const SWAP_AUTH_KEY: Pubkey =
-    solana_program::pubkey!("8SvkUtJZCyJwSQGkiszwcRcPv7c8pPSr8GVEppGNN7DV");
+pub const BE_AUTH_KEY: Pubkey =
+    solana_program::pubkey!("8JvLLwD7oBvPfg3NL1dAL7GbQJuJznP4MhsYnfNkKjAR");
 #[cfg(feature = "mainnet")]
-pub const SWAP_AUTH_KEY: Pubkey =
+pub const BE_AUTH_KEY: Pubkey =
     solana_program::pubkey!("389y4YsTxFKpz2HxVHpvDk13FSXan48LZQtGv8pD4vQA");
 
 pub const SWAP_FEE_KEY: Pubkey =

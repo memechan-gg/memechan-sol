@@ -1,4 +1,4 @@
-use crate::consts::SWAP_AUTH_KEY;
+use crate::consts::BE_AUTH_KEY;
 use crate::err;
 use crate::models::staking::StakingPool;
 use anchor_lang::context::{Context, CpiContext};
@@ -14,7 +14,6 @@ pub struct SendAirdropFunds<'info> {
     pub sender: Signer<'info>,
     #[account(mut, constraint = staking.to_airdrop != 0)]
     pub staking: Box<Account<'info, StakingPool>>,
-    //
     /// Staking Pool Signer
     /// CHECK: live phase pda signer
     #[account(mut, seeds = [StakingPool::SIGNER_PDA_PREFIX, staking.key().as_ref()], bump)]
@@ -33,10 +32,10 @@ pub struct SendAirdropFunds<'info> {
         associated_token::authority = airdrop_owner
     )]
     pub airdrop_token_vault: Box<Account<'info, TokenAccount>>,
-    #[account(constraint = airdrop_owner.key() == SWAP_AUTH_KEY)]
     /// CHECK: constraint
+    #[account(constraint = airdrop_owner.key() == BE_AUTH_KEY)]
     pub airdrop_owner: AccountInfo<'info>,
-
+    // Programs
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,

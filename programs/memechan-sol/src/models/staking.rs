@@ -41,8 +41,9 @@ impl StakingPool {
         let fees_x_total = 8;
         let fees_y_total = 8;
         let fees_z_total = 8;
+        let to_airdrop = 8;
         let is_active = 8;
-        let padding = 128;
+        let padding = 120;
 
         discriminant
             + pool
@@ -58,6 +59,7 @@ impl StakingPool {
             + fees_x_total
             + fees_y_total
             + fees_z_total
+            + to_airdrop
             + is_active
             + padding
     }

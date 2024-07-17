@@ -31,7 +31,7 @@ setProvider(provider);
 export const payer = (provider.wallet as NodeWallet).payer;
 
 export const admin = new PublicKey(
-  "8SvkUtJZCyJwSQGkiszwcRcPv7c8pPSr8GVEppGNN7DV"
+  "8JvLLwD7oBvPfg3NL1dAL7GbQJuJznP4MhsYnfNkKjAR"
 );
 
 const payerSecretKey = JSON.parse(process.env.ADMIN_PRIV_KEY ?? "");

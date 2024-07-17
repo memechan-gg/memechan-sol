@@ -6,9 +6,11 @@ skip-lint = false
 
 [programs.localnet]
 memechan_sol = "CaR9ciDnNnE6WX35tZWrjeGdKUPaft7r4oQGF4JhwVxZ"
+meme_custodian = "AiTSMBoBUHfnGybUHUCMQyu9y4gwmznnrTXz5Dr97LtW"
 
 [programs.devnet]
 memechan_sol = "CaR9ciDnNnE6WX35tZWrjeGdKUPaft7r4oQGF4JhwVxZ"
+meme_custodian = "AiTSMBoBUHfnGybUHUCMQyu9y4gwmznnrTXz5Dr97LtW"
 
 [registry]
 url = "https://api.apr.dev"
