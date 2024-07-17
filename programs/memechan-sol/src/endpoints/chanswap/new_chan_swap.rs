@@ -16,7 +16,7 @@ pub struct NewChanSwap<'info> {
         init,
         payer = sender,
         space = ChanSwap::space(),
-        seeds = [ChanSwap::CHAN_SWAP_PREFIX],
+        seeds = [ChanSwap::CHAN_SWAP_PREFIX, chan_vault.mint.as_ref()],
         bump
     )]
     pub chan_swap: Account<'info, ChanSwap>,

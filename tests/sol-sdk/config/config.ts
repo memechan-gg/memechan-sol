@@ -1,8 +1,8 @@
-import { TOKEN_PROGRAM_ID, Token } from "@raydium-io/raydium-sdk";
 import { PublicKey } from "@solana/web3.js";
 import { TokenInfo } from "@solana/spl-token-registry";
 import { Program, workspace } from "@coral-xyz/anchor";
 import { MemechanSol } from "../../../target/types/memechan_sol";
+import { NATIVE_MINT } from "@solana/spl-token";
 
 /**
  * The base URL for the backend API for fetching off-chain data.
@@ -28,25 +28,18 @@ export const QUOTE_MINT = new PublicKey(
 );
 
 export const MEMECHAN_QUOTE_TOKEN_DECIMALS = 9; // current devnet quote token decimals
-export const MEMECHAN_QUOTE_TOKEN: Token = new Token(
-  TOKEN_PROGRAM_ID,
-  QUOTE_MINT,
-  MEMECHAN_QUOTE_TOKEN_DECIMALS,
-  "SLERF",
-  "SLERF"
-);
 
 export const MEMECHAN_QUOTE_TOKEN_INFO: TokenInfo = {
   chainId: 0,
   address: QUOTE_MINT.toBase58(),
-  name: MEMECHAN_QUOTE_TOKEN.name,
+  name: "wrapped SOL",
   decimals: MEMECHAN_QUOTE_TOKEN_DECIMALS,
-  symbol: MEMECHAN_QUOTE_TOKEN.symbol,
+  symbol: "WSOL",
 };
 
 export const CHAN_TOKEN_INFO: TokenInfo = {
   chainId: 0,
-  address: "59uVEJ3baADZ7Pg79MtV1erDrqGXYQK7qqJg3JwjGgm3",
+  address: "7wKaJ2mCthngM4RKsxCJYnyv9ZxWsw4TzEv8ZCkKaNnz",
   name: "memechan",
   decimals: 9,
   symbol: "CHAN",

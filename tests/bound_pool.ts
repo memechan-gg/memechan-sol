@@ -29,7 +29,6 @@ import {
   transfer,
 } from "@solana/spl-token";
 import { DUMMY_TOKEN_METADATA, client } from "./common";
-import { Token, publicKey } from "@raydium-io/raydium-sdk";
 import { BoundPoolClient } from "./sol-sdk/bound-pool/BoundPool";
 import { MemeTicketWrapper } from "./ticket";
 import { AmmPool } from "./pool";
@@ -43,23 +42,16 @@ import {
 } from "./sol-sdk/util/getCreateAccountInstruction";
 import {
   CHAN_TOKEN_INFO,
-  MEMECHAN_QUOTE_TOKEN,
   MEMECHAN_QUOTE_TOKEN_INFO,
   memechan,
 } from "./sol-sdk/config/config";
-import { associatedAddress } from "@coral-xyz/anchor/dist/cjs/utils/token";
 import { TokenInfo } from "@solana/spl-token-registry";
 import AmmImpl from "@mercurial-finance/dynamic-amm-sdk";
 import { ChanSwapWrapper } from "./chan_swap";
 import { createWrappedNativeAccount } from "@solana/spl-token";
 import { MemeTicket } from "./sol-sdk/memeticket/MemeTicket";
+import { associatedAddress } from "@coral-xyz/anchor/dist/cjs/utils/token";
 
-export const RAYDIUM_PROGRAM_ID = new PublicKey(
-  "HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8"
-);
-export const OPENBOOK_ID = new PublicKey(
-  "EoTcMgcDRTJVZDMZWBoU6rhYHZfkNTVEAfz3uUJRcYGj"
-);
 export const MEMECHAN_MEME_TOKEN_DECIMALS = 6;
 export const FEE_DESTINATION_ID = new PublicKey(
   "G11FKBRaAkHAKuLCgLM6K6NUc9rTjPAznRCjZifrTQe2"
@@ -249,9 +241,6 @@ export class BoundPoolWrapper {
       quoteToken: {
         programId: TOKEN_PROGRAM_ID,
         mint: QUOTE_MINT,
-        equals: function (other: Token): boolean {
-          throw new Error("Function not implemented.");
-        },
         decimals: 9,
       },
       tokenMetadata: DUMMY_TOKEN_METADATA,
@@ -260,7 +249,7 @@ export class BoundPoolWrapper {
         recentSlot: LUTSLOT,
       }),
       tokens_airdropped: 10_000_000 * 10 ** 6,
-      vesting_linear_length: 1800,
+      vesting_linear_length: 10,
     });
     return new BoundPoolWrapper(bpClient);
   }

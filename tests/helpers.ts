@@ -16,7 +16,6 @@ import {
   AddressLookupTableProgram,
 } from "@solana/web3.js";
 import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
-import { expect } from "chai";
 import { MemechanSol } from "../target/types/memechan_sol";
 import { NATIVE_MINT, mintTo } from "@solana/spl-token";
 import { config } from "dotenv";
@@ -30,14 +29,17 @@ export const provider = AnchorProvider.local();
 setProvider(provider);
 export const payer = (provider.wallet as NodeWallet).payer;
 
-export const admin = new PublicKey(
-  "8JvLLwD7oBvPfg3NL1dAL7GbQJuJznP4MhsYnfNkKjAR"
-);
-
 const payerSecretKey = JSON.parse(process.env.ADMIN_PRIV_KEY ?? "");
 export const adminSigner = Keypair.fromSecretKey(
   Uint8Array.from(payerSecretKey)
 );
+const mintSecretKey = JSON.parse(process.env.TEST_MINT_PRIV_KEY ?? "");
+export const mintKeypair = Keypair.fromSecretKey(
+  Uint8Array.from(mintSecretKey)
+);
+
+export const admin = adminSigner.publicKey;
+console.log(`admkey ${adminSigner.publicKey.toBase58()}`);
 
 export const QUOTE_MINT = new PublicKey(
   "So11111111111111111111111111111111111111112"
@@ -136,16 +138,6 @@ export async function mintChan(
 
 export async function sleep(ms: number) {
   await new Promise((r) => setTimeout(r, ms));
-}
-
-export async function assertApproxCurrentSlot(
-  input: { slot: BN },
-  delta: number = 2
-) {
-  expect(input.slot.toNumber()).to.be.approximately(
-    await getCurrentSlot(),
-    delta
-  );
 }
 
 export function getCurrentSlot(): Promise<number> {

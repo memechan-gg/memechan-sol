@@ -47,9 +47,12 @@ pub const ADMIN_KEY: Pubkey =
 pub const ADMIN_KEY: Pubkey =
     solana_program::pubkey!("KZbAoMgCcb2gDEn2Ucea86ux84y25y3ybbWQGQpd9D6");
 
-#[cfg(feature = "testing")]
+#[cfg(feature = "localnet-testing")]
 pub const BE_AUTH_KEY: Pubkey =
     solana_program::pubkey!("8JvLLwD7oBvPfg3NL1dAL7GbQJuJznP4MhsYnfNkKjAR");
+#[cfg(feature = "mainnet-testing")]
+pub const BE_AUTH_KEY: Pubkey =
+    solana_program::pubkey!("7WHMeJyxgcL8Do3vAfCsRfCa52ujV7kt8s1qaKqM4xcv");
 #[cfg(feature = "mainnet")]
 pub const BE_AUTH_KEY: Pubkey =
     solana_program::pubkey!("389y4YsTxFKpz2HxVHpvDk13FSXan48LZQtGv8pD4vQA");
@@ -63,10 +66,10 @@ pub const BP_FEE_KEY: Pubkey =
 
 #[cfg(feature = "localnet-testing")]
 pub const CHAN_MINT: Pubkey =
-    solana_program::pubkey!("59uVEJ3baADZ7Pg79MtV1erDrqGXYQK7qqJg3JwjGgm3");
+    solana_program::pubkey!("7wKaJ2mCthngM4RKsxCJYnyv9ZxWsw4TzEv8ZCkKaNnz");
 #[cfg(feature = "mainnet-testing")]
 pub const CHAN_MINT: Pubkey =
-    solana_program::pubkey!("9pECN2xxLQo22bFYpsNr3T3eW1UdEDtSqPQopFrGv7n4");
+    solana_program::pubkey!("7wKaJ2mCthngM4RKsxCJYnyv9ZxWsw4TzEv8ZCkKaNnz");
 #[cfg(feature = "mainnet")]
 pub const CHAN_MINT: Pubkey =
     solana_program::pubkey!("ChanGGuDHboPswpTmKDfsTVGQL96VHhmvpwrE4UjWssd");

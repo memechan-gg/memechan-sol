@@ -17,7 +17,6 @@ import { QUOTE_MINT, payer, provider } from "./helpers";
 import { AmmPool } from "./pool";
 import { Address, BN, IdlAccounts } from "@coral-xyz/anchor";
 import { MemeTicketWrapper } from "./ticket";
-import { MEMO_PROGRAM_ID } from "@raydium-io/raydium-sdk";
 import { StakingPool } from "./sol-sdk/staking-pool/StakingPool";
 import {
   createProgram,
@@ -32,11 +31,12 @@ import { TokenInfo } from "@solana/spl-token-registry";
 import { MEMECHAN_MEME_TOKEN_DECIMALS } from "./bound_pool";
 import {
   CHAN_TOKEN_INFO,
-  MEMECHAN_QUOTE_TOKEN,
   memechan,
+  MEMECHAN_QUOTE_TOKEN_INFO,
 } from "./sol-sdk/config/config";
 import { MemechanSol } from "../target/types/memechan_sol";
 import { LP_FEE_VAULT_OWNER } from "./common";
+import { MEMO_PROGRAM_ID } from "@solana/spl-memo";
 
 export type Staking = IdlAccounts<MemechanSol>["stakingPool"];
 
@@ -87,13 +87,7 @@ export class StakingWrapper {
       decimals: MEMECHAN_MEME_TOKEN_DECIMALS,
       symbol: "",
     };
-    const quoteInfo: TokenInfo = {
-      chainId: 0,
-      address: MEMECHAN_QUOTE_TOKEN.mint.toBase58(),
-      name: MEMECHAN_QUOTE_TOKEN.name,
-      decimals: MEMECHAN_QUOTE_TOKEN.decimals,
-      symbol: MEMECHAN_QUOTE_TOKEN.symbol,
-    };
+    const quoteInfo = MEMECHAN_QUOTE_TOKEN_INFO;
     const chanInfo = CHAN_TOKEN_INFO;
 
     await this.add_fees_one_pool(quoteAmmPool, staking, memeInfo, quoteInfo);
@@ -289,6 +283,12 @@ export class StakingWrapper {
       QUOTE_MINT,
       user.publicKey
     );
+    const chanAcc = await getOrCreateAssociatedTokenAccount(
+      provider.connection,
+      user,
+      new PublicKey(CHAN_TOKEN_INFO.address),
+      user.publicKey
+    );
 
     await memechan.methods
       .unstake(input.amount)
@@ -298,9 +298,11 @@ export class StakingWrapper {
         stakingSignerPda: this.signer(),
         memeVault: stakingInfo.memeVault,
         quoteVault: stakingInfo.quoteVault,
+        chanVault: stakingInfo.chanVault,
         staking: this.id,
         userMeme: memeAcc,
         userQuote: quoteAcc.address,
+        userChan: chanAcc.address,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
       .signers([user])

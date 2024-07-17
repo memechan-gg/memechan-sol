@@ -9,7 +9,6 @@ import {
 } from "../helpers";
 import { BN } from "@coral-xyz/anchor";
 import { client } from "../common";
-import { Token } from "@raydium-io/raydium-sdk";
 import { BoundPoolWrapper } from "../bound_pool";
 import { getOrCreateAssociatedTokenAccount } from "@solana/spl-token";
 

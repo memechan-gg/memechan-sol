@@ -1,4 +1,4 @@
-import { PublicKey, Keypair } from "@solana/web3.js";
+import { PublicKey, Keypair, SystemProgram } from "@solana/web3.js";
 import { memechan } from "./sol-sdk/config/config";
 
 export interface BoundMerge {
@@ -68,6 +68,7 @@ export class MemeTicketWrapper {
       .accounts({
         owner: user.publicKey,
         ticket: this.id,
+        systemProgram: SystemProgram.programId,
       })
       .signers([user])
       .rpc();
