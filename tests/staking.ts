@@ -48,7 +48,7 @@ export interface UnstakeArgs {
 
 export interface WithdrawFeesArgs {
   ticket: MemeTicketWrapper;
-  user: Keypair;
+  user: PublicKey;
 }
 
 export class StakingWrapper {
@@ -73,6 +73,13 @@ export class StakingWrapper {
   public static signerFrom(publicKey: PublicKey): PublicKey {
     return PublicKey.findProgramAddressSync(
       [Buffer.from("staking"), publicKey.toBytes()],
+      memechan.programId
+    )[0];
+  }
+
+  public findAdminMemeTicket(): PublicKey {
+    return PublicKey.findProgramAddressSync(
+      [Buffer.from("admin_ticket"), this.id.toBytes()],
       memechan.programId
     )[0];
   }
@@ -321,24 +328,26 @@ export class StakingWrapper {
     const memeAccKey = Keypair.generate();
     const memeAcc = await createAccount(
       provider.connection,
-      user,
+      payer,
       stakingInfo.memeMint,
-      user.publicKey,
+      user,
       memeAccKey
     );
 
     const wsolAccKey = Keypair.generate();
     const quoteAcc = await getOrCreateAssociatedTokenAccount(
       provider.connection,
-      user,
+      payer,
       QUOTE_MINT,
-      user.publicKey
+      user,
+      true
     );
     const chanAcc = await getOrCreateAssociatedTokenAccount(
       provider.connection,
-      user,
+      payer,
       new PublicKey(CHAN_TOKEN_INFO.address),
-      user.publicKey
+      user,
+      true
     );
 
     await memechan.methods
@@ -353,10 +362,9 @@ export class StakingWrapper {
         userMeme: memeAcc,
         userQuote: quoteAcc.address,
         userChan: chanAcc.address,
-        signer: user.publicKey,
+        owner: user,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
-      .signers([user])
       .rpc();
 
     return [memeAcc, quoteAcc.address];

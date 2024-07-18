@@ -1,4 +1,4 @@
-use crate::models::staked_lp::MemeTicket;
+use crate::models::meme_ticket::MemeTicket;
 use crate::models::staking::StakingPool;
 use anchor_lang::prelude::*;
 

@@ -297,7 +297,8 @@ pub fn handle(ctx: Context<InitChanAmmPool>) -> Result<()> {
     // 2. Get supply values for the new pool
     accs.staking_chan_vault.reload()?;
 
-    let meme_supply = accs.staking_meme_vault.amount - accs.staking.stakes_total;
+    let meme_supply = accs.staking_meme_vault.amount
+        - (accs.staking.stakes_total - accs.staking.admin_fee_position);
     let chan_supply = accs.staking_chan_vault.amount;
 
     msg!("3");

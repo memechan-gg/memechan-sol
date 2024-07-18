@@ -1,5 +1,5 @@
 use crate::models::bound::BoundPool;
-use crate::models::staked_lp::MemeTicket;
+use crate::models::meme_ticket::MemeTicket;
 use anchor_lang::prelude::*;
 use std::cmp::max;
 

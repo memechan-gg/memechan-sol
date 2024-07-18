@@ -23,6 +23,8 @@ import {
 import BigNumber from "bignumber.js";
 import { CHAN_TOKEN_INFO, DEFAULT_TARGET } from "../sol-sdk/config/config";
 import { wrapSOLInstruction } from "@mercurial-finance/dynamic-amm-sdk/dist/cjs/src/amm/utils";
+import { MemeTicket } from "../sol-sdk/memeticket/MemeTicket";
+import { LP_FEE_VAULT_OWNER } from "../common";
 
 export function test() {
   describe("staking", () => {
@@ -187,7 +189,7 @@ export function test() {
 
       await staking.withdraw_fees({
         ticket: tickets[0],
-        user: users[0],
+        user: users[0].publicKey,
       });
 
       await sleep(500);
@@ -198,6 +200,28 @@ export function test() {
           .div(BigNumber(stakingInfo.stakesTotal.toString()))
           .toString()
       );
+
+      const adminTicket = await new MemeTicketWrapper(
+        staking.findAdminMemeTicket()
+      );
+
+      await staking.withdraw_fees({
+        ticket: adminTicket,
+        user: LP_FEE_VAULT_OWNER,
+      });
+
+      console.log(toString(await staking.fetch()));
+
+      console.log(toString(await adminTicket.fetch()));
     });
   });
+}
+
+function toString(obj): string {
+  let ln = "o";
+  for (const property in obj) {
+    ln += `${property}: ${obj[property]}\n`;
+  }
+
+  return ln;
 }

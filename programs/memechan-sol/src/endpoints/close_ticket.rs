@@ -1,5 +1,5 @@
 use crate::err::AmmError;
-use crate::models::staked_lp::MemeTicket;
+use crate::models::meme_ticket::MemeTicket;
 use anchor_lang::prelude::*;
 
 #[derive(Accounts)]

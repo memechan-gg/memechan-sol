@@ -1,6 +1,7 @@
+use crate::consts::LP_FEE_KEY;
 use crate::err::AmmError;
 use crate::models::fee_distribution::update_stake;
-use crate::models::staked_lp::MemeTicket;
+use crate::models::meme_ticket::MemeTicket;
 use crate::models::staking::StakingPool;
 use anchor_lang::prelude::*;
 use anchor_spl::token;
@@ -42,6 +43,9 @@ pub struct Unstake<'info> {
     pub quote_vault: Box<Account<'info, TokenAccount>>,
     #[account(mut)]
     pub chan_vault: Box<Account<'info, TokenAccount>>,
+    #[account(
+        constraint = signer.key() != LP_FEE_KEY.key()
+    )]
     pub signer: Signer<'info>,
     /// CHECK: checked by AMM
     #[account(seeds = [StakingPool::SIGNER_PDA_PREFIX, staking.key().as_ref()], bump)]

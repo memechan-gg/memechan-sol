@@ -20,6 +20,7 @@ pub struct StakingPool {
     pub fees_z_total: u64,
     pub to_airdrop: u64,
     pub is_active: bool,
+    pub admin_fee_position: u64,
 }
 
 impl StakingPool {
@@ -43,7 +44,8 @@ impl StakingPool {
         let fees_z_total = 8;
         let to_airdrop = 8;
         let is_active = 8;
-        let padding = 120;
+        let admin_stake = 8;
+        let padding = 112;
 
         discriminant
             + pool
@@ -61,6 +63,7 @@ impl StakingPool {
             + fees_z_total
             + to_airdrop
             + is_active
+            + admin_stake
             + padding
     }
 }
