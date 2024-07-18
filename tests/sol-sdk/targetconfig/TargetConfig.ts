@@ -78,7 +78,7 @@ export class TargetConfig {
       .signers([input.payer])
       .rpc({ skipPreflight: true });
 
-    console.log("newTargetConfig result", result);
+    //console.log("newTargetConfig result", result);
 
     return new TargetConfig(pda, input.client, input.mint, input.targetAmount);
   }

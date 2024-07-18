@@ -437,8 +437,9 @@ fn delta_m2_strategy(
     s_a: u128,
     s_b: u128,
 ) -> Option<u128> {
+    let decimals_s = DECIMALS_S as u128;
     let left = (beta * 2)
-        .checked_mul(DECIMALS_S)
+        .checked_mul(decimals_s)
         .checked_mul(alpha_decimals)
         .checked_mul(s_b - s_a);
 
@@ -456,7 +457,7 @@ fn delta_m2_strategy(
 
     let denom = (2 * alpha_decimals)
         .checked_mul(beta_decimals)
-        .checked_mul_(DECIMALS_S.checked_pow(2));
+        .checked_mul_(decimals_s.checked_pow(2));
 
     if let None = denom {
         return None;
@@ -473,13 +474,14 @@ fn delta_m1_strategy(
     s_a: u128,
     s_b: u128,
 ) -> Option<u128> {
+    let decimals_s = DECIMALS_S as u128;
     let left_num = s_b.checked_sub(s_a).checked_mul(beta);
 
     if let None = left_num {
         return None;
     }
 
-    let left_denom = beta_decimals.checked_mul(DECIMALS_S);
+    let left_denom = beta_decimals.checked_mul(decimals_s);
 
     if let None = left_denom {
         return None;
@@ -494,7 +496,7 @@ fn delta_m1_strategy(
         .checked_pow(2)
         .checked_sub_(s_a.checked_pow(2))
         .checked_mul(alpha_abs)
-        .checked_div_(DECIMALS_S.checked_pow(2))
+        .checked_div_(decimals_s.checked_pow(2))
         .checked_div(2 * alpha_decimals);
 
     if let None = right {
@@ -1267,8 +1269,8 @@ mod tests {
     #[test]
     pub fn check_whole_curve_buy() -> Result<()> {
         let mint_decimals = 10_u128.checked_pow(9u32).unwrap();
-        let gamma_m = DEFAULT_MAX_M;
-        let omega_m = DEFAULT_MAX_M_LP;
+        let gamma_m = DEFAULT_MAX_M as u128;
+        let omega_m = DEFAULT_MAX_M_LP as u128;
         let price_factor_num = DEFAULT_PRICE_FACTOR_NUMERATOR;
         let price_factor_denom = DEFAULT_PRICE_FACTOR_DENOMINATOR;
         let step: u64 = 10_000_000;

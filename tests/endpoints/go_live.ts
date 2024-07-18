@@ -34,5 +34,26 @@ export function test() {
 
       await pool.go_live();
     });
+
+    it("full swap then go live with airdrop", async () => {
+      const pool = await BoundPoolWrapper.new(10, true);
+
+      await sleep(500);
+
+      const addr = await getOrCreateAssociatedTokenAccount(
+        client.connection,
+        payer,
+        QUOTE_MINT,
+        payer.publicKey
+      );
+      await mintQuote(addr.address);
+
+      const ticketId = await pool.swap_y({
+        memeTokensOut: new BN(1),
+        quoteTokensIn: new BN(50000 * 1e9),
+      });
+
+      await pool.go_live();
+    });
   });
 }

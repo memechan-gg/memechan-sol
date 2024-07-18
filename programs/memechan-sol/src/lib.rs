@@ -19,8 +19,12 @@ declare_id!("chv2ogo3QopnnGctZM9Hxo2VCQ2zEcvQy6Uo6XVpiRH"); // mainnet test
 pub mod memechan_sol {
     use super::*;
 
-    pub fn new_pool(ctx: Context<NewPool>, vesting_period: u64) -> Result<()> {
-        new_pool::handle(ctx, vesting_period as i64)
+    pub fn new_pool(
+        ctx: Context<NewPool>,
+        vesting_period: u64,
+        should_airdrop: bool,
+    ) -> Result<()> {
+        new_pool::handle(ctx, vesting_period as i64, should_airdrop)
     }
 
     pub fn create_metadata(

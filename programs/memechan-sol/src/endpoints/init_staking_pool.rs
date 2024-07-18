@@ -268,7 +268,7 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, InitStakingPool<'info>>) ->
     staking.fees_x_total = 0;
     staking.fees_y_total = 0;
     staking.fees_z_total = 0;
-    staking.to_airdrop = 0;
+    staking.to_airdrop = accs.pool.airdropped_tokens;
     staking.is_active = false;
 
     staking.pool = accs.pool.key();

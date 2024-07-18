@@ -28,7 +28,7 @@ import {
   mintTo,
   transfer,
 } from "@solana/spl-token";
-import { DUMMY_TOKEN_METADATA, client } from "./common";
+import { BE_AUTH, DUMMY_TOKEN_METADATA, client } from "./common";
 import { BoundPoolClient } from "./sol-sdk/bound-pool/BoundPool";
 import { MemeTicketWrapper } from "./ticket";
 import { AmmPool } from "./pool";
@@ -81,7 +81,7 @@ export class BoundPoolWrapper {
   }
 
   public async go_live(): Promise<[AmmPool, AmmPool, StakingWrapper]> {
-    console.debug("go_live");
+    //console.debug("go_live");
     const res = await this.bpClient.initStakingPool({
       boundPoolInfo: this.bpClient.poolInfo,
       payer,
@@ -92,6 +92,21 @@ export class BoundPoolWrapper {
     const stakingFetched = await memechan.account.stakingPool.fetch(
       res.staking
     );
+
+    if (!stakingFetched.toAirdrop.eq(new BN(0))) {
+      console.log("airdrop");
+      const stakingPoolInstance = await StakingPool.fromStakingPoolId({
+        client: this.bpClient.client,
+        poolAccountAddressId: res.staking,
+      });
+      const airdropRes = await stakingPoolInstance.sendAirdropFunds({
+        backendAuth: BE_AUTH,
+        memeMint: this.bpClient.memeTokenMint,
+        staking: res.staking,
+        signerPK: payer.publicKey,
+        signer: payer,
+      });
+    }
 
     const tokenInfoA: TokenInfo = {
       chainId: 0,
@@ -233,23 +248,22 @@ export class BoundPoolWrapper {
     //
   }
 
-  public static async new(): Promise<BoundPoolWrapper> {
+  public static async new(
+    vestingLength: number = 10,
+    airdrop: boolean = false
+  ): Promise<BoundPoolWrapper> {
     const bpClient = await BoundPoolClient.new({
       admin: admin,
       client,
       payer,
-      quoteToken: {
-        programId: TOKEN_PROGRAM_ID,
-        mint: QUOTE_MINT,
-        decimals: 9,
-      },
+      quoteTokenMint: QUOTE_MINT,
       tokenMetadata: DUMMY_TOKEN_METADATA,
       lutAddr: getLUTPDA({
         authority: admin,
         recentSlot: LUTSLOT,
       }),
-      tokens_airdropped: 10_000_000 * 10 ** 6,
-      vesting_linear_length: 10,
+      vestingLinearLength: vestingLength,
+      needsAidrop: airdrop,
     });
     return new BoundPoolWrapper(bpClient);
   }

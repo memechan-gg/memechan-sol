@@ -80,11 +80,24 @@ export function test() {
     });
 
     it("creates bound pool", async () => {
-      await sleep(3000);
+      await sleep(2000);
       const user = Keypair.generate();
       await airdrop(user.publicKey);
 
       const boundPool = await BoundPoolWrapper.new();
+      await sleep(100);
+      // console.log(
+      //   await memechan.account.boundPool.fetch(boundPool.bpClient.id)
+      // );
+      const info = await boundPool.fetch();
+      //console.log(info);
+    });
+
+    it("creates bound pool with airdrop", async () => {
+      const user = Keypair.generate();
+      await airdrop(user.publicKey);
+
+      const boundPool = await BoundPoolWrapper.new(100, true);
       await sleep(100);
       // console.log(
       //   await memechan.account.boundPool.fetch(boundPool.bpClient.id)

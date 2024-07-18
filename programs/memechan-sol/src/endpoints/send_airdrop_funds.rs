@@ -64,8 +64,6 @@ pub fn handle(ctx: Context<SendAirdropFunds>) -> Result<()> {
 
     let staking_signer_seeds = &[&staking_seeds[..]];
 
-    accs.staking.to_airdrop = 0;
-
     token::transfer(
         accs.transfer_airdrop_meme_ctx()
             .with_signer(staking_signer_seeds),
@@ -73,5 +71,6 @@ pub fn handle(ctx: Context<SendAirdropFunds>) -> Result<()> {
     )
     .unwrap();
 
+    accs.staking.to_airdrop = 0;
     Ok(())
 }

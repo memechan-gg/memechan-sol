@@ -1,9 +1,22 @@
 import { Program } from "@coral-xyz/anchor";
-import { AccountMeta, PublicKey } from "@solana/web3.js";
+import {
+  AccountMeta,
+  PublicKey,
+  SystemProgram,
+  Transaction,
+} from "@solana/web3.js";
 import { MemechanClient } from "../MemechanClient";
 import { BoundPoolClient } from "../bound-pool/BoundPool";
 import { MemeTicket, MemeTicketFields } from "../memeticket/MemeTicket";
 import { MemechanSol } from "../../../target/types/memechan_sol";
+import { GetSendAirdropFundsArgs, SendAirdropFundsArgs } from "./types";
+import { getSendAndConfirmTransactionMethod } from "../../helpers";
+import {
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+  getAssociatedTokenAddressSync,
+  TOKEN_PROGRAM_ID,
+} from "@solana/spl-token";
+import { retry } from "../util/retry";
 
 export class StakingPool {
   constructor(
@@ -51,6 +64,52 @@ export class StakingPool {
       [Buffer.from("staking"), publicKey.toBytes()],
       memechanProgramId
     )[0];
+  }
+
+  public async sendAirdropFunds(input: SendAirdropFundsArgs) {
+    const transaction = await this.getSendAirdropFundsTransaction({
+      ...input,
+    });
+
+    const signAndConfirmSendAirdropFundsTransaction =
+      getSendAndConfirmTransactionMethod({
+        connection: this.client.connection,
+        transaction,
+        signers: [input.signer],
+      });
+
+    await retry({
+      fn: signAndConfirmSendAirdropFundsTransaction,
+      functionName: "sendAirdropFunds",
+    });
+  }
+
+  public async getSendAirdropFundsTransaction(input: GetSendAirdropFundsArgs) {
+    const transaction = input.transaction ?? new Transaction();
+
+    const vault = getAssociatedTokenAddressSync(
+      input.memeMint,
+      input.backendAuth,
+      false
+    );
+
+    const ix = await this.client.memechanProgram.methods
+      .sendAirdropFunds()
+      .accounts({
+        airdropOwner: input.backendAuth,
+        airdropTokenVault: vault,
+        memeMint: input.memeMint,
+        sender: input.signerPK,
+        staking: this.id,
+        stakingMemeVault: this.memeVault,
+        stakingPoolSignerPda: this.findSignerPda(),
+
+        systemProgram: SystemProgram.programId,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .instruction();
+    return transaction.add(ix);
   }
 
   public async getHoldersCount() {

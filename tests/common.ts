@@ -16,6 +16,10 @@ export const LP_FEE_VAULT_OWNER = new PublicKey(
   "HQ1wVLaBcnuoUozegyX7r45yn6ogHvQjdPNj53iweC5V"
 );
 
+export const BE_AUTH = new PublicKey(
+  "8JvLLwD7oBvPfg3NL1dAL7GbQJuJznP4MhsYnfNkKjAR"
+);
+
 export const DUMMY_TOKEN_METADATA = {
   name: "Best Token Ever",
   symbol: "BTE",

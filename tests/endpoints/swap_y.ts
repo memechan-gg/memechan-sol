@@ -98,7 +98,6 @@ export function test() {
           })
         );
       }
-      console.log("POOL!!", pool.bpClient.id);
 
       sleep(1000);
 

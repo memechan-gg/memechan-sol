@@ -4,6 +4,7 @@ use crate::consts::{
 };
 use crate::err;
 use crate::err::AmmError;
+use crate::libraries::MulDiv;
 use crate::models::bound::{compute_alpha_abs, compute_beta, BoundPool, Config, Decimals};
 use crate::models::fees::FEE;
 use crate::models::fees::{Fees, MEME_FEE};
@@ -92,7 +93,7 @@ impl<'info> NewPool<'info> {
     }
 }
 
-pub fn handle(ctx: Context<NewPool>, vesting_period: i64) -> Result<()> {
+pub fn handle(ctx: Context<NewPool>, vesting_period: i64, should_airdrop: bool) -> Result<()> {
     let accs = ctx.accounts;
 
     if accs.meme_mint.supply != 0 {
@@ -113,7 +114,7 @@ pub fn handle(ctx: Context<NewPool>, vesting_period: i64) -> Result<()> {
 
     token::mint_to(
         accs.mint_meme_tokens().with_signer(signer_seeds),
-        MAX_MEME_TOKENS as u64,
+        MAX_MEME_TOKENS,
     )
     .unwrap();
 
@@ -129,12 +130,29 @@ pub fn handle(ctx: Context<NewPool>, vesting_period: i64) -> Result<()> {
         fee_quote_percent: FEE,
     };
 
+    let (bp_meme_tokens, lp_meme_tokens) = if should_airdrop {
+        pool.airdropped_tokens = MAX_AIRDROPPED_TOKENS;
+        let bp_airdrop_part = MAX_AIRDROPPED_TOKENS
+            .mul_div_floor(DEFAULT_MAX_M, MAX_MEME_TOKENS)
+            .unwrap();
+        let lp_airdrop_part = MAX_AIRDROPPED_TOKENS
+            .mul_div_floor(DEFAULT_MAX_M_LP, MAX_MEME_TOKENS)
+            .unwrap();
+
+        (
+            DEFAULT_MAX_M - bp_airdrop_part,
+            DEFAULT_MAX_M_LP - lp_airdrop_part,
+        )
+    } else {
+        (DEFAULT_MAX_M, DEFAULT_MAX_M_LP)
+    };
+
     let mint_decimals = 10_u128
         .checked_pow(accs.quote_mint.decimals as u32)
         .unwrap();
     let gamma_s = accs.target_config.token_target_amount as u128;
-    let gamma_m = DEFAULT_MAX_M;
-    let omega_m = DEFAULT_MAX_M_LP;
+    let gamma_m = bp_meme_tokens as u128;
+    let omega_m = lp_meme_tokens as u128;
     let price_factor_num = DEFAULT_PRICE_FACTOR_NUMERATOR;
     let price_factor_denom = DEFAULT_PRICE_FACTOR_DENOMINATOR;
 
@@ -170,12 +188,11 @@ pub fn handle(ctx: Context<NewPool>, vesting_period: i64) -> Result<()> {
         },
     };
 
-    pool.meme_reserve.tokens = DEFAULT_MAX_M as u64;
+    pool.meme_reserve.tokens = bp_meme_tokens;
     pool.meme_reserve.mint = accs.meme_mint.key();
     pool.meme_reserve.vault = accs.meme_vault.key();
     pool.locked = false;
     pool.creator_addr = accs.sender.key();
-    pool.airdropped_tokens = MAX_AIRDROPPED_TOKENS;
     pool.vesting_period = vesting_period;
 
     Ok(())
