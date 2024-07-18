@@ -6,12 +6,12 @@ pub const WSOL_DECIMALS: u64 = 1_000_000_000;
 pub const DEFAULT_PRICE_FACTOR_NUMERATOR: u64 = 1;
 pub const DEFAULT_PRICE_FACTOR_DENOMINATOR: u64 = 1;
 
-pub const DEFAULT_MAX_M_LP: u128 = 310_000_000_000_000;
-pub const DEFAULT_MAX_M: u128 = 690_000_000_000_000;
+pub const DEFAULT_MAX_M_LP: u64 = 310_000_000_000_000;
+pub const DEFAULT_MAX_M: u64 = 690_000_000_000_000;
 
-pub const MAX_MEME_TOKENS: u128 = DEFAULT_MAX_M_LP + DEFAULT_MAX_M;
+pub const MAX_MEME_TOKENS: u64 = DEFAULT_MAX_M_LP + DEFAULT_MAX_M;
 
-pub const DECIMALS_S: u128 = 1_000_000_000;
+pub const DECIMALS_S: u64 = 1_000_000_000;
 
 pub const MAX_AIRDROPPED_TOKENS: u64 = 100_000_000_000_000;
 
@@ -42,16 +42,19 @@ pub const INSTANT_TOKEN_PERCENTAGE_DENOM: u64 = 100;
 
 #[cfg(feature = "testing")]
 pub const ADMIN_KEY: Pubkey =
-    solana_program::pubkey!("8SvkUtJZCyJwSQGkiszwcRcPv7c8pPSr8GVEppGNN7DV");
+    solana_program::pubkey!("8JvLLwD7oBvPfg3NL1dAL7GbQJuJznP4MhsYnfNkKjAR");
 #[cfg(feature = "mainnet")]
 pub const ADMIN_KEY: Pubkey =
     solana_program::pubkey!("KZbAoMgCcb2gDEn2Ucea86ux84y25y3ybbWQGQpd9D6");
 
-#[cfg(feature = "testing")]
-pub const SWAP_AUTH_KEY: Pubkey =
-    solana_program::pubkey!("8SvkUtJZCyJwSQGkiszwcRcPv7c8pPSr8GVEppGNN7DV");
+#[cfg(feature = "localnet-testing")]
+pub const BE_AUTH_KEY: Pubkey =
+    solana_program::pubkey!("8JvLLwD7oBvPfg3NL1dAL7GbQJuJznP4MhsYnfNkKjAR");
+#[cfg(feature = "mainnet-testing")]
+pub const BE_AUTH_KEY: Pubkey =
+    solana_program::pubkey!("7WHMeJyxgcL8Do3vAfCsRfCa52ujV7kt8s1qaKqM4xcv");
 #[cfg(feature = "mainnet")]
-pub const SWAP_AUTH_KEY: Pubkey =
+pub const BE_AUTH_KEY: Pubkey =
     solana_program::pubkey!("389y4YsTxFKpz2HxVHpvDk13FSXan48LZQtGv8pD4vQA");
 
 pub const SWAP_FEE_KEY: Pubkey =
@@ -63,10 +66,10 @@ pub const BP_FEE_KEY: Pubkey =
 
 #[cfg(feature = "localnet-testing")]
 pub const CHAN_MINT: Pubkey =
-    solana_program::pubkey!("59uVEJ3baADZ7Pg79MtV1erDrqGXYQK7qqJg3JwjGgm3");
+    solana_program::pubkey!("7wKaJ2mCthngM4RKsxCJYnyv9ZxWsw4TzEv8ZCkKaNnz");
 #[cfg(feature = "mainnet-testing")]
 pub const CHAN_MINT: Pubkey =
-    solana_program::pubkey!("9pECN2xxLQo22bFYpsNr3T3eW1UdEDtSqPQopFrGv7n4");
+    solana_program::pubkey!("7wKaJ2mCthngM4RKsxCJYnyv9ZxWsw4TzEv8ZCkKaNnz");
 #[cfg(feature = "mainnet")]
 pub const CHAN_MINT: Pubkey =
     solana_program::pubkey!("ChanGGuDHboPswpTmKDfsTVGQL96VHhmvpwrE4UjWssd");

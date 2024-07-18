@@ -1,4 +1,3 @@
-import { assert, expect } from "chai";
 import { MemeTicketWrapper } from "../ticket";
 import { BoundPoolWrapper } from "../bound_pool";
 import { BN } from "@coral-xyz/anchor";
@@ -11,7 +10,7 @@ import {
   provider,
   sleep,
 } from "../helpers";
-import { Keypair, Transaction } from "@solana/web3.js";
+import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
 import {
   createWrappedNativeAccount,
   createAssociatedTokenAccount,
@@ -22,9 +21,10 @@ import {
   NATIVE_MINT,
 } from "@solana/spl-token";
 import BigNumber from "bignumber.js";
-import { wrapSOLInstruction } from "@mercurial-finance/vault-sdk/dist/cjs/src/vault/utils";
 import { CHAN_TOKEN_INFO, DEFAULT_TARGET } from "../sol-sdk/config/config";
-import { PublicKey } from "@saberhq/solana-contrib";
+import { wrapSOLInstruction } from "@mercurial-finance/dynamic-amm-sdk/dist/cjs/src/amm/utils";
+import { MemeTicket } from "../sol-sdk/memeticket/MemeTicket";
+import { LP_FEE_VAULT_OWNER } from "../common";
 
 export function test() {
   describe("staking", () => {
@@ -86,9 +86,11 @@ export function test() {
 
       await sleep(1000);
 
-      await amm.swap(user, 20e9, 1);
+      await amm.swap(user, 10e9, 1);
 
-      staking.unstake({
+      await sleep(18000);
+
+      await staking.unstake({
         ticket: tickets[0],
         user: user,
         amount: (await tickets[0].fetch()).amount,
@@ -117,7 +119,7 @@ export function test() {
           ...wrapSOLInstruction(
             payer.publicKey,
             addr.address,
-            new BN(100_000_000_000)
+            BigInt(100_000_000_000)
           )
         );
         await provider.connection.sendTransaction(tx, [payer], {
@@ -152,7 +154,6 @@ export function test() {
           quoteTokensIn: new BN(0.75 * DEFAULT_TARGET),
         })
       );
-
       sleep(500);
       const [amm, amm2, staking] = await pool.go_live();
       sleep(500);
@@ -166,9 +167,7 @@ export function test() {
         user.publicKey,
         memeWalletId
       );
-
       await sleep(200);
-
       const inputTokenAccount = await getOrCreateAssociatedTokenAccount(
         provider.connection,
         payer,
@@ -182,7 +181,7 @@ export function test() {
         new PublicKey(CHAN_TOKEN_INFO.address),
         payer.publicKey
       );
-
+      console.log(6);
       await mintChan(chanTokenAccount.address);
       await amm.swap(payer, 20e9, 1);
       await amm2.swap(payer, 5e9, 1);
@@ -190,7 +189,7 @@ export function test() {
 
       await staking.withdraw_fees({
         ticket: tickets[0],
-        user: users[0],
+        user: users[0].publicKey,
       });
 
       await sleep(500);
@@ -201,6 +200,28 @@ export function test() {
           .div(BigNumber(stakingInfo.stakesTotal.toString()))
           .toString()
       );
+
+      const adminTicket = await new MemeTicketWrapper(
+        staking.findAdminMemeTicket()
+      );
+
+      await staking.withdraw_fees({
+        ticket: adminTicket,
+        user: LP_FEE_VAULT_OWNER,
+      });
+
+      console.log(toString(await staking.fetch()));
+
+      console.log(toString(await adminTicket.fetch()));
     });
   });
+}
+
+function toString(obj): string {
+  let ln = "o";
+  for (const property in obj) {
+    ln += `${property}: ${obj[property]}\n`;
+  }
+
+  return ln;
 }

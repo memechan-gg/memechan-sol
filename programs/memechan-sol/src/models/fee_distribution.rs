@@ -4,7 +4,7 @@ use anchor_lang::prelude::*;
 use spl_math::uint::U256;
 use std::ops::{Div, Mul};
 
-use super::staked_lp::MemeTicket;
+use super::meme_ticket::MemeTicket;
 
 const PRECISION: u128 = 1_000_000_000_000_000;
 

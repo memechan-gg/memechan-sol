@@ -6,9 +6,11 @@ skip-lint = false
 
 [programs.localnet]
 memechan_sol = "CaR9ciDnNnE6WX35tZWrjeGdKUPaft7r4oQGF4JhwVxZ"
+meme_custodian = "AiTSMBoBUHfnGybUHUCMQyu9y4gwmznnrTXz5Dr97LtW"
 
 [programs.devnet]
 memechan_sol = "CaR9ciDnNnE6WX35tZWrjeGdKUPaft7r4oQGF4JhwVxZ"
+meme_custodian = "AiTSMBoBUHfnGybUHUCMQyu9y4gwmznnrTXz5Dr97LtW"
 
 [registry]
 url = "https://api.apr.dev"
@@ -19,7 +21,7 @@ cluster = "localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
-test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+test = "yarn run jest --detectOpenHandles --forceExit"
 
 [test]
 startup_wait = 10000
@@ -38,13 +40,4 @@ program = "tests/programs/mainnet/meteora-vault.so"
 [[test.genesis]]
 address = "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
 program = "tests/programs/mainnet/mpl_metadata.so"
-
-[[test.validator.clone]]
-address = "59uVEJ3baADZ7Pg79MtV1erDrqGXYQK7qqJg3JwjGgm3"
-[[test.validator.clone]]
-address = "CYjqBp55ZEm2HRoMmjm2NgQxxYMz2rYAVcdaaUXCyQHW"
-[[test.validator.clone]]
-address = "DDD9b1Exy75uLzKTshTWftWa8Z96tvXhcMiuu8zBsRU4"
-[[test.validator.clone]]
-address = "HiUyuwe4Uezuqq4mhGqugdzVQT3mA3ZzBQsUW2x1H3Ri"
 

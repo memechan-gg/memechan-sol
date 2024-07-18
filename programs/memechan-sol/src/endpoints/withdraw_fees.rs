@@ -1,6 +1,6 @@
 use crate::err::AmmError;
 use crate::models::fee_distribution::calc_withdraw;
-use crate::models::staked_lp::MemeTicket;
+use crate::models::meme_ticket::MemeTicket;
 use crate::models::staking::StakingPool;
 use anchor_lang::prelude::*;
 use anchor_spl::token;
@@ -8,6 +8,8 @@ use anchor_spl::token::{Token, TokenAccount, Transfer};
 
 #[derive(Accounts)]
 pub struct WithdrawFees<'info> {
+    /// CHECK: checked by comparing to ticket's field
+    pub owner: AccountInfo<'info>,
     #[account(
         has_one = meme_vault,
         has_one = quote_vault,
@@ -16,23 +18,23 @@ pub struct WithdrawFees<'info> {
     pub staking: Box<Account<'info, StakingPool>>,
     #[account(
         mut,
+        has_one = owner,
         constraint = meme_ticket.pool == staking.pool,
-        constraint = meme_ticket.owner == signer.key()
     )]
     pub meme_ticket: Box<Account<'info, MemeTicket>>,
     #[account(
         mut,
-        constraint = user_meme.owner == signer.key()
+        constraint = user_meme.owner == owner.key()
     )]
     pub user_meme: Box<Account<'info, TokenAccount>>,
     #[account(
         mut,
-        constraint = user_quote.owner == signer.key()
+        constraint = user_quote.owner == owner.key()
     )]
     pub user_quote: Box<Account<'info, TokenAccount>>,
     #[account(
         mut,
-        constraint = user_chan.owner == signer.key()
+        constraint = user_chan.owner == owner.key()
     )]
     pub user_chan: Box<Account<'info, TokenAccount>>,
     #[account(mut)]
@@ -44,7 +46,6 @@ pub struct WithdrawFees<'info> {
     /// CHECK: pda signer
     #[account(seeds = [StakingPool::SIGNER_PDA_PREFIX, staking.key().as_ref()], bump)]
     pub staking_signer_pda: AccountInfo<'info>,
-    pub signer: Signer<'info>,
     pub token_program: Program<'info, Token>,
 }
 

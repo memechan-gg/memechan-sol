@@ -1,4 +1,3 @@
-import { assert, expect } from "chai";
 import { BoundPoolWrapper } from "../bound_pool";
 import { AccountMeta, Keypair, PublicKey } from "@solana/web3.js";
 import {
@@ -13,6 +12,7 @@ import { client } from "../common";
 import { DEFAULT_MAX_M, DEFAULT_TARGET } from "../sol-sdk/config/config";
 import { TargetConfig } from "../sol-sdk/targetconfig/TargetConfig";
 import { MemeTicketWrapper } from "../ticket";
+import assert from "assert";
 
 export function test() {
   describe("swap_x", () => {

@@ -28,8 +28,7 @@ import {
   mintTo,
   transfer,
 } from "@solana/spl-token";
-import { DUMMY_TOKEN_METADATA, client } from "./common";
-import { Token, publicKey } from "@raydium-io/raydium-sdk";
+import { BE_AUTH, DUMMY_TOKEN_METADATA, client } from "./common";
 import { BoundPoolClient } from "./sol-sdk/bound-pool/BoundPool";
 import { MemeTicketWrapper } from "./ticket";
 import { AmmPool } from "./pool";
@@ -43,23 +42,16 @@ import {
 } from "./sol-sdk/util/getCreateAccountInstruction";
 import {
   CHAN_TOKEN_INFO,
-  MEMECHAN_QUOTE_TOKEN,
   MEMECHAN_QUOTE_TOKEN_INFO,
   memechan,
 } from "./sol-sdk/config/config";
-import { associatedAddress } from "@coral-xyz/anchor/dist/cjs/utils/token";
 import { TokenInfo } from "@solana/spl-token-registry";
 import AmmImpl from "@mercurial-finance/dynamic-amm-sdk";
 import { ChanSwapWrapper } from "./chan_swap";
 import { createWrappedNativeAccount } from "@solana/spl-token";
 import { MemeTicket } from "./sol-sdk/memeticket/MemeTicket";
+import { associatedAddress } from "@coral-xyz/anchor/dist/cjs/utils/token";
 
-export const RAYDIUM_PROGRAM_ID = new PublicKey(
-  "HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8"
-);
-export const OPENBOOK_ID = new PublicKey(
-  "EoTcMgcDRTJVZDMZWBoU6rhYHZfkNTVEAfz3uUJRcYGj"
-);
 export const MEMECHAN_MEME_TOKEN_DECIMALS = 6;
 export const FEE_DESTINATION_ID = new PublicKey(
   "G11FKBRaAkHAKuLCgLM6K6NUc9rTjPAznRCjZifrTQe2"
@@ -89,7 +81,7 @@ export class BoundPoolWrapper {
   }
 
   public async go_live(): Promise<[AmmPool, AmmPool, StakingWrapper]> {
-    console.debug("go_live");
+    //console.debug("go_live");
     const res = await this.bpClient.initStakingPool({
       boundPoolInfo: this.bpClient.poolInfo,
       payer,
@@ -100,6 +92,21 @@ export class BoundPoolWrapper {
     const stakingFetched = await memechan.account.stakingPool.fetch(
       res.staking
     );
+
+    if (!stakingFetched.toAirdrop.eq(new BN(0))) {
+      console.log("airdrop");
+      const stakingPoolInstance = await StakingPool.fromStakingPoolId({
+        client: this.bpClient.client,
+        poolAccountAddressId: res.staking,
+      });
+      const airdropRes = await stakingPoolInstance.sendAirdropFunds({
+        backendAuth: BE_AUTH,
+        memeMint: this.bpClient.memeTokenMint,
+        staking: res.staking,
+        signerPK: payer.publicKey,
+        signer: payer,
+      });
+    }
 
     const tokenInfoA: TokenInfo = {
       chainId: 0,
@@ -241,26 +248,22 @@ export class BoundPoolWrapper {
     //
   }
 
-  public static async new(): Promise<BoundPoolWrapper> {
+  public static async new(
+    vestingLength: number = 10,
+    airdrop: boolean = false
+  ): Promise<BoundPoolWrapper> {
     const bpClient = await BoundPoolClient.new({
       admin: admin,
       client,
       payer,
-      quoteToken: {
-        programId: TOKEN_PROGRAM_ID,
-        mint: QUOTE_MINT,
-        equals: function (other: Token): boolean {
-          throw new Error("Function not implemented.");
-        },
-        decimals: 9,
-      },
+      quoteTokenMint: QUOTE_MINT,
       tokenMetadata: DUMMY_TOKEN_METADATA,
       lutAddr: getLUTPDA({
         authority: admin,
         recentSlot: LUTSLOT,
       }),
-      tokens_airdropped: 10_000_000 * 10 ** 6,
-      vesting_linear_length: 1800,
+      vestingLinearLength: vestingLength,
+      needsAidrop: airdrop,
     });
     return new BoundPoolWrapper(bpClient);
   }

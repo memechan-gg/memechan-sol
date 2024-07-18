@@ -1,7 +1,12 @@
 import { PublicKey, Signer } from "@solana/web3.js";
 import { z, ZodRawShape } from "zod";
 import { SolanaToken, solanaTokenSchema } from "./schemas/token-schemas";
-import { solanaLivePool, SolanaSeedPool, solanaSeedPool, solanaStakingPool } from "./schemas/pools-schema";
+import {
+  solanaLivePool,
+  SolanaSeedPool,
+  solanaSeedPool,
+  solanaStakingPool,
+} from "./schemas/pools-schema";
 
 export interface TokenMetadata {
   name: string;
@@ -28,17 +33,29 @@ const paginatedResultSchema = <T extends ZodRawShape>(result: z.ZodObject<T>) =>
     result: z.array(result),
   });
 
-export const paginatedTokenResultSchema = () => paginatedResultSchema(solanaTokenSchema);
-export type QueryTokensResponse = z.infer<ReturnType<typeof paginatedTokenResultSchema>>;
+export const paginatedTokenResultSchema = () =>
+  paginatedResultSchema(solanaTokenSchema);
+export type QueryTokensResponse = z.infer<
+  ReturnType<typeof paginatedTokenResultSchema>
+>;
 
-export const paginatedSeedPoolsResultSchema = () => paginatedResultSchema(solanaSeedPool);
-export type QueryAllSeedPoolsResponse = z.infer<ReturnType<typeof paginatedSeedPoolsResultSchema>>;
+export const paginatedSeedPoolsResultSchema = () =>
+  paginatedResultSchema(solanaSeedPool);
+export type QueryAllSeedPoolsResponse = z.infer<
+  ReturnType<typeof paginatedSeedPoolsResultSchema>
+>;
 
-export const paginatedLivePoolsResultSchema = () => paginatedResultSchema(solanaLivePool);
-export type QueryAllLivePoolsResponse = z.infer<ReturnType<typeof paginatedLivePoolsResultSchema>>;
+export const paginatedLivePoolsResultSchema = () =>
+  paginatedResultSchema(solanaLivePool);
+export type QueryAllLivePoolsResponse = z.infer<
+  ReturnType<typeof paginatedLivePoolsResultSchema>
+>;
 
-export const paginatedStakingPoolsResultSchema = () => paginatedResultSchema(solanaStakingPool);
-export type QueryAllStakingPoolsResponse = z.infer<ReturnType<typeof paginatedStakingPoolsResultSchema>>;
+export const paginatedStakingPoolsResultSchema = () =>
+  paginatedResultSchema(solanaStakingPool);
+export type QueryAllStakingPoolsResponse = z.infer<
+  ReturnType<typeof paginatedStakingPoolsResultSchema>
+>;
 
 export type GetTokenResponse = SolanaToken;
 

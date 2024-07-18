@@ -26,3 +26,10 @@ impl Fees {
 pub fn get_fee_amount(x: u64, percent: u64) -> Result<u64> {
     Ok(x.mul_div_ceil(percent, FEE_PRECISION).unwrap())
 }
+
+pub fn get_admin_fee_position_size(sold_meme_tokens: u64) -> Result<u64> {
+    let staking_total = sold_meme_tokens
+        .mul_div_floor(FEE_PRECISION, FEE_PRECISION - COMMS_FEE)
+        .unwrap();
+    Ok(staking_total - sold_meme_tokens)
+}

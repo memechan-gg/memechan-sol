@@ -1,6 +1,6 @@
 use crate::err::AmmError;
 use crate::models::bound::BoundPool;
-use crate::models::staked_lp::MemeTicket;
+use crate::models::meme_ticket::MemeTicket;
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 

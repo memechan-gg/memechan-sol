@@ -1,5 +1,4 @@
 import { BN } from "@coral-xyz/anchor";
-import { Token } from "@raydium-io/raydium-sdk";
 import { Keypair, PublicKey, Signer, Transaction } from "@solana/web3.js";
 import { MemechanClient } from "../MemechanClient";
 import { MemeTicket } from "../memeticket/MemeTicket";
@@ -100,11 +99,11 @@ export interface BoundPoolArgs {
   admin: PublicKey;
   payer: Signer;
   client: MemechanClient;
-  quoteToken: Token;
+  quoteTokenMint: PublicKey;
   tokenMetadata: TokenMetadata;
   lutAddr?: PublicKey;
-  tokens_airdropped: number;
-  vesting_linear_length: number;
+  vestingLinearLength: number;
+  needsAidrop: boolean;
 }
 
 export type GetCreateNewBondingPoolAndTokenTransactionArgs = Omit<

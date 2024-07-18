@@ -1,27 +1,10 @@
-import { Wallet } from "@coral-xyz/anchor";
-import { Keypair, PublicKey } from "@solana/web3.js";
-import {
-  IS_TEST_ENV,
-  RPC_API_CLUSTER,
-  TEST_USER_SECRET_KEY,
-  WSS_API_CLUSTER,
-} from "./env";
+import { PublicKey } from "@solana/web3.js";
 import { MemechanClient } from "./sol-sdk/MemechanClient";
 import { ADMIN_PUB_KEY } from "./sol-sdk/config/config";
 
 //export const connection = new Connection(RPC_API_CLUSTER);
 export const admin = ADMIN_PUB_KEY;
-export const payer = Keypair.fromSecretKey(
-  Buffer.from(JSON.parse(TEST_USER_SECRET_KEY))
-);
-export const wallet = new Wallet(payer);
-export const client = new MemechanClient({
-  wallet,
-  heliusApiUrl: "HELIUS_API_URL",
-  rpcApiUrl: RPC_API_CLUSTER,
-  wssApiUrl: WSS_API_CLUSTER,
-  isTest: IS_TEST_ENV,
-});
+export const client = new MemechanClient({});
 
 export const BP_FEE_VAULT_OWNER = new PublicKey(
   "6YNJG9KDex3eNAmh1i64KUDbfKBiESkew3AWmnf6FiCy"
@@ -31,6 +14,10 @@ export const SWAP_FEE_VAULT_OWNER = new PublicKey(
 );
 export const LP_FEE_VAULT_OWNER = new PublicKey(
   "HQ1wVLaBcnuoUozegyX7r45yn6ogHvQjdPNj53iweC5V"
+);
+
+export const BE_AUTH = new PublicKey(
+  "8JvLLwD7oBvPfg3NL1dAL7GbQJuJznP4MhsYnfNkKjAR"
 );
 
 export const DUMMY_TOKEN_METADATA = {

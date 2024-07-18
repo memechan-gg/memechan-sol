@@ -40,7 +40,7 @@ export async function getCreateMintWithPriorityTransaction(
   //   microLamports: 6000000,
   // });
 
-  console.log("mintAuthority: " + mintAuthority.toBase58());
+  // console.log("mintAuthority: " + mintAuthority.toBase58());
 
   const createMintAccountInstruction = SystemProgram.createAccount({
     fromPubkey: payer,

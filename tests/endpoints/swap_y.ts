@@ -1,4 +1,3 @@
-import { assert, expect } from "chai";
 import { BoundPoolWrapper } from "../bound_pool";
 import { AccountMeta, Keypair, PublicKey } from "@solana/web3.js";
 import {
@@ -14,6 +13,7 @@ import {
   DEFAULT_MAX_M_LP,
   DEFAULT_TARGET,
 } from "../sol-sdk/config/config";
+import assert from "assert";
 
 export function test() {
   describe("swap_y", () => {
@@ -98,7 +98,6 @@ export function test() {
           })
         );
       }
-      console.log("POOL!!", pool.bpClient.id);
 
       sleep(1000);
 
@@ -161,18 +160,19 @@ export function test() {
       await mintQuote(payer.publicKey);
       await sleep(1000);
 
-      const ticketsNo = 2000;
-      const step: number = 0.1;
+      const ticketsNo: number = 10;
+      const step: number = DEFAULT_TARGET / ticketsNo;
+      // console.log(step);
 
       for (let i = 0; i < ticketsNo; i++) {
         const ticketId = await pool.swap_y({
           memeTokensOut: new BN(1),
-          quoteTokensIn: new BN(step * 10 ** 9),
+          quoteTokensIn: new BN(step),
           ticketNumber: i + 1,
         });
         await sleep(100);
         const ticket = await ticketId.fetch();
-        console.log(ticket.amount.toString(), (i + 1) * step);
+        // console.log(ticket.amount.toString(), (i + 1) * step);
       }
     });
   });

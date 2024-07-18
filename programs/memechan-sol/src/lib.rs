@@ -21,10 +21,10 @@ pub mod memechan_sol {
 
     pub fn new_pool(
         ctx: Context<NewPool>,
-        airdropped_tokens: u64,
         vesting_period: u64,
+        should_airdrop: bool,
     ) -> Result<()> {
-        new_pool::handle(ctx, airdropped_tokens, vesting_period as i64)
+        new_pool::handle(ctx, vesting_period as i64, should_airdrop)
     }
 
     pub fn create_metadata(

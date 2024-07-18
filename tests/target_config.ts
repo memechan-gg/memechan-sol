@@ -1,8 +1,8 @@
 import BN from "bn.js";
-import { QUOTE_MINT, adminSigner, airdrop, mintQuote, payer } from "./helpers";
+import { QUOTE_MINT, adminSigner, airdrop } from "./helpers";
 import { TargetConfig } from "./sol-sdk/targetconfig/TargetConfig";
 import { client } from "./common";
-import { MEMECHAN_QUOTE_TOKEN, memechan } from "./sol-sdk/config/config";
+import { memechan } from "./sol-sdk/config/config";
 
 export class TargetConfigWrapper {
   static async new(target_amt: number = 90_000_000_000) {

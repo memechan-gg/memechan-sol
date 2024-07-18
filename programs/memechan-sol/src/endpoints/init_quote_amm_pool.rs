@@ -226,7 +226,7 @@ pub fn handle(ctx: Context<InitQuoteAmmPool>) -> Result<()> {
 
     // 2. Split MEME balance amounts into predefined proportion
     let meme_supply = accs.staking_meme_vault.amount;
-    let meme_supply_staking = accs.staking.stakes_total;
+    let meme_supply_staking = accs.staking.stakes_total - accs.staking.admin_fee_position;
 
     let amm_meme_balance = get_meme_pool_part(meme_supply - meme_supply_staking);
 

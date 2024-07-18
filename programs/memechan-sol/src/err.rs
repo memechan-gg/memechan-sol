@@ -56,6 +56,7 @@ pub enum AmmError {
     NonZeroInitialMemeSupply,
     AirdroppedTokensOvercap,
     InvalidVestingPeriod,
+    AdminShouldNotUnstake,
 }
 
 #[allow(dead_code)]

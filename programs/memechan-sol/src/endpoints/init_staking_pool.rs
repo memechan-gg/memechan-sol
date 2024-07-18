@@ -3,8 +3,8 @@ use crate::err;
 use crate::err::AmmError;
 use crate::libraries::MulDiv;
 use crate::models::bound::BoundPool;
-use crate::models::fees::{FEE_PRECISION, LAUNCH_FEE};
-use crate::models::staked_lp::MemeTicket;
+use crate::models::fees::{get_admin_fee_position_size, FEE_PRECISION, LAUNCH_FEE};
+use crate::models::meme_ticket::MemeTicket;
 use crate::models::staking::StakingPool;
 use crate::vesting;
 use anchor_lang::prelude::*;
@@ -187,7 +187,13 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, InitStakingPool<'info>>) ->
     msg!("0");
     let meme_ticket = &mut accs.meme_ticket;
 
-    meme_ticket.setup(accs.pool.key(), LP_FEE_KEY.key(), accs.pool.admin_fees_meme);
+    let admin_fee_position = get_admin_fee_position_size(accs.pool.config.gamma_m)?;
+
+    meme_ticket.setup(
+        accs.pool.key(),
+        LP_FEE_KEY.key(),
+        accs.pool.admin_fees_meme + admin_fee_position,
+    );
 
     if accs.pool.admin_fees_quote != 0 {
         token::transfer(
@@ -263,13 +269,14 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, InitStakingPool<'info>>) ->
     staking.quote_vault = accs.staking_quote_vault.key();
     staking.quote_mint = accs.quote_mint.key();
     staking.chan_vault = accs.staking_chan_vault.key();
-    staking.stakes_total = accs.pool.config.gamma_m;
+    staking.stakes_total = accs.pool.config.gamma_m + admin_fee_position;
     staking.vesting_config = vesting::default_config(accs.pool.vesting_period);
     staking.fees_x_total = 0;
     staking.fees_y_total = 0;
     staking.fees_z_total = 0;
-    staking.to_airdrop = 0;
+    staking.to_airdrop = accs.pool.airdropped_tokens;
     staking.is_active = false;
+    staking.admin_fee_position = admin_fee_position;
 
     staking.pool = accs.pool.key();
 

@@ -1,9 +1,4 @@
 import {
-  ApiPoolInfoV4,
-  METADATA_PROGRAM_ID,
-  Token,
-} from "@raydium-io/raydium-sdk";
-import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
   createAccount,
@@ -13,9 +8,8 @@ import {
   getAssociatedTokenAddressSync,
   getOrCreateAssociatedTokenAccount,
   mintTo,
-  transfer,
+  createAssociatedTokenAccountIdempotentInstruction,
 } from "@solana/spl-token";
-import { TokenInfo } from "@solana/spl-token-registry";
 import {
   ComputeBudgetProgram,
   Connection,
@@ -63,22 +57,17 @@ import {
   DEFAULT_MAX_M,
   DEFAULT_MAX_M_LP,
   MEMECHAN_MEME_TOKEN_DECIMALS,
-  MEMECHAN_QUOTE_TOKEN,
   MEMECHAN_QUOTE_TOKEN_DECIMALS,
   memechan,
   ADMIN_PUB_KEY,
 } from "../config/config";
-import { formatAmmKeysById } from "../raydium/formatAmmKeysById";
-
 import {
   createMetadata,
   getCreateMetadataTransaction,
 } from "../token/createMetadata";
 import { createMintWithPriority } from "../token/createMintWithPriority";
 import { getCreateMintWithPriorityTransaction } from "../token/getCreateMintWithPriorityTransaction";
-import { NewBPInstructionParsed } from "../tx-parsing/parsers/bonding-pool-creation-parser";
-import { ParseTx } from "../tx-parsing/parsing";
-import { sendTx } from "../util";
+
 import { getTxSize } from "../util/get-tx-size";
 import {
   getCreateAssociatedTokenAccountInstructions,
@@ -101,38 +90,26 @@ import {
 } from "../../helpers";
 import { MemechanSol } from "../../../target/types/memechan_sol";
 import { BoundPoolType } from "../../bound_pool";
+import { BP_FEE_VAULT_OWNER, SWAP_FEE_VAULT_OWNER } from "../../common";
 import {
-  BP_FEE_VAULT_OWNER,
-  LP_FEE_VAULT_OWNER,
-  SWAP_FEE_VAULT_OWNER,
-} from "../../common";
-import { ASSOCIATED_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
-import AmmImpl, {
   LockEscrow,
-  VaultIdl,
   derivePoolAddress,
 } from "@mercurial-finance/dynamic-amm-sdk";
+import VaultImpl, { getVaultPdas } from "@mercurial-finance/vault-sdk";
+import { ChanSwapWrapper } from "../../chan_swap";
 import {
   calculateUnclaimedLockEscrowFee,
   createProgram,
   deriveLockEscrowPda,
   deriveMintMetadata,
-  generateCurveType,
   getAssociatedTokenAccount,
-  getOrCreateATAInstruction,
-  wrapSOLInstruction,
 } from "@mercurial-finance/dynamic-amm-sdk/dist/cjs/src/amm/utils";
-import VaultImpl, { getVaultPdas } from "@mercurial-finance/vault-sdk";
+import { LockEscrowAccount } from "@mercurial-finance/dynamic-amm-sdk/dist/cjs/src/amm/types";
 import {
   FEE_OWNER,
+  METAPLEX_PROGRAM,
   SEEDS,
 } from "@mercurial-finance/dynamic-amm-sdk/dist/cjs/src/amm/constants";
-import { ATA_PROGRAM_ID } from "../raydium/config";
-import { LockEscrowAccount } from "@mercurial-finance/dynamic-amm-sdk/dist/cjs/src/amm/types";
-import { ChanSwapWrapper } from "../../chan_swap";
-import { createAssociatedTokenAccount } from "@solana/spl-token";
-import { createAssociatedTokenAccountIdempotent } from "@solana/spl-token";
-import { createAssociatedTokenAccountIdempotentInstruction } from "@solana/spl-token";
 
 export class BoundPoolClient {
   private constructor(
@@ -142,7 +119,7 @@ export class BoundPoolClient {
     public quoteVault: PublicKey,
     public memeTokenMint: PublicKey,
     public quoteTokenMint: PublicKey,
-    public memeToken: Token,
+    // public memeToken: TokenInfo,
     public poolInfo: BoundPoolType
   ) {
     //
@@ -167,56 +144,6 @@ export class BoundPoolClient {
       poolObjectData.quoteReserve.vault,
       poolObjectData.memeReserve.mint,
       poolObjectData.quoteReserve.mint,
-      new Token(
-        TOKEN_PROGRAM_ID,
-        poolObjectData.memeReserve.mint,
-        MEMECHAN_MEME_TOKEN_DECIMALS
-      ),
-      poolObjectData
-    );
-
-    return boundClientInstance;
-  }
-
-  public static async fromPoolCreationTransaction({
-    client,
-    poolCreationSignature,
-  }: {
-    client: MemechanClient;
-    poolCreationSignature: string;
-  }) {
-    const parsedData = await ParseTx(poolCreationSignature, client);
-    console.debug("parsedData: ", parsedData);
-
-    if (!parsedData) {
-      throw new Error(
-        `No such pool found for such signature ${poolCreationSignature}`
-      );
-    }
-
-    const newPoolInstructionData = parsedData.find(
-      (el): el is NewBPInstructionParsed => el.type === "new_pool"
-    );
-
-    if (!newPoolInstructionData) {
-      throw new Error(
-        `No such pool found in instruction data for signature ${poolCreationSignature}`
-      );
-    }
-
-    const poolObjectData = await BoundPoolClient.fetch2(
-      client.connection,
-      newPoolInstructionData.poolAddr
-    );
-
-    const boundClientInstance = new BoundPoolClient(
-      newPoolInstructionData.poolAddr,
-      client,
-      poolObjectData.memeReserve.vault,
-      poolObjectData.quoteReserve.vault,
-      poolObjectData.memeReserve.mint,
-      poolObjectData.quoteReserve.mint,
-      new Token(TOKEN_PROGRAM_ID, poolObjectData.memeReserve.mint, 6), // TODO fix 6 decimals
       poolObjectData
     );
 
@@ -275,12 +202,12 @@ export class BoundPoolClient {
       admin,
       payer,
       client,
-      quoteToken,
+      quoteTokenMint,
       transaction = new Transaction(),
       adminSolPublicKey,
       tokenMetadata,
-      tokens_airdropped,
-      vesting_linear_length,
+      vestingLinearLength,
+      needsAidrop,
     } = args;
     const { connection, memechanProgram } = client;
 
@@ -288,7 +215,7 @@ export class BoundPoolClient {
     const memeMint = memeMintKeypair.publicKey;
     const id = this.findBoundPoolPda(
       memeMintKeypair.publicKey,
-      quoteToken.mint,
+      quoteTokenMint,
       args.client.memechanProgram.programId
     );
     const poolSigner = BoundPoolClient.findSignerPda(
@@ -369,7 +296,7 @@ export class BoundPoolClient {
     transaction.add(...createLaunchVaultInstructions);
 
     const createPoolInstruction = await memechanProgram.methods
-      .newPool(new BN(tokens_airdropped), new BN(vesting_linear_length))
+      .newPool(new BN(vestingLinearLength), needsAidrop)
       .accounts({
         feeQuoteVault: adminQuoteVault,
         memeVault: launchVault,
@@ -378,11 +305,11 @@ export class BoundPoolClient {
         pool: id,
         poolSigner: poolSigner,
         sender: payer,
-        quoteMint: quoteToken.mint,
+        quoteMint: quoteTokenMint,
         tokenProgram: TOKEN_PROGRAM_ID,
         systemProgram: SystemProgram.programId,
         targetConfig: TargetConfig.findTargetConfigPda(
-          quoteToken.mint,
+          quoteTokenMint,
           memechan.programId
         ),
       })
@@ -409,7 +336,7 @@ export class BoundPoolClient {
   }
 
   public static async new(args: BoundPoolArgs): Promise<BoundPoolClient> {
-    const { payer, client, quoteToken } = args;
+    const { payer, client, quoteTokenMint } = args;
     const { connection, memechanProgram } = client;
 
     const { transaction, memeMintKeypair } =
@@ -421,8 +348,8 @@ export class BoundPoolClient {
     const memeMint = memeMintKeypair.publicKey;
 
     const size = getTxSize(transaction, payer.publicKey);
-    console.debug("createPoolAndTokenSignature size: ", size);
-    console.debug(payer.publicKey.toBase58());
+    // console.debug("createPoolAndTokenSignature size: ", size);
+    // console.debug(payer.publicKey.toBase58());
 
     const lookupTableAccount = (
       await connection.getAddressLookupTable(args.lutAddr!)
@@ -445,14 +372,14 @@ export class BoundPoolClient {
     const luttxId = await client.connection.sendTransaction(transactionV0, {
       skipPreflight: true,
     });
-    console.log(luttxId);
+    //console.log(luttxId);
 
-    console.debug(
-      "LUT createPoolAndTokenSignature size: ",
-      transactionV0.serialize().length,
-      "\nlegacy tx size: ",
-      transaction.serialize().length
-    );
+    // console.debug(
+    //   "LUT createPoolAndTokenSignature size: ",
+    //   transactionV0.serialize().length,
+    //   "\nlegacy tx size: ",
+    //   transaction.serialize().length
+    // );
 
     // const createPoolAndTokenSignature = await provider.sendAndConfirm(
     //   transaction,
@@ -463,7 +390,7 @@ export class BoundPoolClient {
 
     const id = this.findBoundPoolPda(
       memeMint,
-      quoteToken.mint,
+      quoteTokenMint,
       memechanProgram.programId
     );
     await sleep(1000);
@@ -475,131 +402,7 @@ export class BoundPoolClient {
       poolObjectData.memeReserve.vault,
       poolObjectData.quoteReserve.vault,
       memeMint,
-      quoteToken.mint,
-      new Token(TOKEN_PROGRAM_ID, memeMint, MEMECHAN_MEME_TOKEN_DECIMALS),
-      poolObjectData
-    );
-  }
-
-  public static async slowNew(args: BoundPoolArgs): Promise<BoundPoolClient> {
-    const { admin, payer, client, quoteToken } = args;
-    const { connection, memechanProgram } = client;
-
-    const memeMintKeypair = Keypair.generate();
-    const id = this.findBoundPoolPda(
-      memeMintKeypair.publicKey,
-      quoteToken.mint,
-      args.client.memechanProgram.programId
-    );
-    const poolSigner = BoundPoolClient.findSignerPda(
-      id,
-      args.client.memechanProgram.programId
-    );
-
-    const memeMint = await createMintWithPriority(
-      connection,
-      payer,
-      poolSigner,
-      null,
-      MEMECHAN_MEME_TOKEN_DECIMALS,
-      memeMintKeypair,
-      {
-        skipPreflight: true,
-        commitment: "confirmed",
-      }
-    );
-
-    const adminSolVault = (
-      await getOrCreateAssociatedTokenAccount(
-        connection,
-        payer,
-        quoteToken.mint,
-        admin,
-        true,
-        "confirmed",
-        {
-          skipPreflight: true,
-        }
-      )
-    ).address;
-    const poolQuoteVaultid = Keypair.generate();
-    const poolQuoteVault = await createAccount(
-      connection,
-      payer,
-      quoteToken.mint,
-      poolSigner,
-      poolQuoteVaultid,
-      {
-        skipPreflight: true,
-        commitment: "confirmed",
-      }
-    );
-
-    const launchVaultid = Keypair.generate();
-    const launchVault = await createAccount(
-      connection,
-      payer,
-      memeMint,
-      poolSigner,
-      launchVaultid,
-      {
-        skipPreflight: true,
-        commitment: "confirmed",
-      }
-    );
-
-    console.log(
-      `pool id: ${id.toBase58()} memeMint: ${memeMint.toBase58()}, adminSolVault: ${adminSolVault.toBase58()}, poolQuoteVault: ${poolQuoteVault.toBase58()}, launchVault: ${launchVault.toBase58()}`
-    );
-
-    const newPoolTxDigest = await memechanProgram.methods
-      .newPool()
-      .accounts({
-        feeQuoteVault: adminSolVault,
-        memeVault: launchVault,
-        quoteVault: poolQuoteVault,
-        memeMint: memeMint,
-        pool: id,
-        poolSigner: poolSigner,
-        sender: payer.publicKey,
-        quoteMint: quoteToken.mint,
-        tokenProgram: TOKEN_PROGRAM_ID,
-        systemProgram: SystemProgram.programId,
-        targetConfig: TargetConfig.findTargetConfigPda(
-          quoteToken.mint,
-          memechan.programId
-        ),
-      })
-      .signers([payer])
-      .rpc({ skipPreflight: true });
-
-    console.log("new pool tx result: " + newPoolTxDigest);
-
-    await createMetadata(client, {
-      payer,
-      mint: memeMint,
-      poolSigner,
-      poolId: id,
-      metadata: args.tokenMetadata,
-    });
-
-    // const coinApi = new CoinAPI();
-    // const createCoinResponse = coinApi.({
-    //   txDigest: newPoolTxDigest,
-    // });
-
-    // console.log("createCoinResponse: " + JSON.stringify(createCoinResponse));
-
-    const poolObjectData = await BoundPoolClient.fetch2(client.connection, id);
-
-    return new BoundPoolClient(
-      id,
-      client,
-      launchVault,
-      poolQuoteVault,
-      memeMint,
-      quoteToken.mint,
-      new Token(TOKEN_PROGRAM_ID, memeMint, MEMECHAN_MEME_TOKEN_DECIMALS),
+      quoteTokenMint,
       poolObjectData
     );
   }
@@ -1261,10 +1064,10 @@ export class BoundPoolClient {
         signer: user.publicKey,
 
         rent: SYSVAR_RENT_PUBKEY,
-        ataProgram: ATA_PROGRAM_ID,
+        ataProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
         tokenProgram: TOKEN_PROGRAM_ID,
         systemProgram: SystemProgram.programId,
-        metadataProgram: METADATA_PROGRAM_ID,
+        metadataProgram: METAPLEX_PROGRAM,
         ammProgram: ammProgram.programId,
         vaultProgram: vaultProgram.programId,
       })
@@ -1286,7 +1089,7 @@ export class BoundPoolClient {
         admin,
         SystemProgram.programId,
         TOKEN_PROGRAM_ID,
-        ASSOCIATED_PROGRAM_ID,
+        ASSOCIATED_TOKEN_PROGRAM_ID,
         memechan.programId,
         TargetConfig.findTargetConfigPda(QUOTE_MINT, memechan.programId),
         poolPubkey,
@@ -1527,10 +1330,10 @@ export class BoundPoolClient {
         signer: user.publicKey,
 
         rent: SYSVAR_RENT_PUBKEY,
-        ataProgram: ATA_PROGRAM_ID,
+        ataProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
         tokenProgram: TOKEN_PROGRAM_ID,
         systemProgram: SystemProgram.programId,
-        metadataProgram: METADATA_PROGRAM_ID,
+        metadataProgram: METAPLEX_PROGRAM,
         ammProgram: ammProgram.programId,
         vaultProgram: vaultProgram.programId,
       })
@@ -1563,7 +1366,7 @@ export class BoundPoolClient {
         admin,
         SystemProgram.programId,
         TOKEN_PROGRAM_ID,
-        ASSOCIATED_PROGRAM_ID,
+        ASSOCIATED_TOKEN_PROGRAM_ID,
         memechan.programId,
         TargetConfig.findTargetConfigPda(QUOTE_MINT, memechan.programId),
         poolPubkey,
@@ -1805,7 +1608,7 @@ export class BoundPoolClient {
   ) {
     return findProgramAddress(
       [owner.toBuffer(), programId.toBuffer(), mint.toBuffer()],
-      new PublicKey(ATA_PROGRAM_ID)
+      new PublicKey(ASSOCIATED_TOKEN_PROGRAM_ID)
     );
   }
 

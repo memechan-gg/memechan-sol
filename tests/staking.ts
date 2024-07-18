@@ -17,7 +17,6 @@ import { QUOTE_MINT, payer, provider } from "./helpers";
 import { AmmPool } from "./pool";
 import { Address, BN, IdlAccounts } from "@coral-xyz/anchor";
 import { MemeTicketWrapper } from "./ticket";
-import { MEMO_PROGRAM_ID } from "@raydium-io/raydium-sdk";
 import { StakingPool } from "./sol-sdk/staking-pool/StakingPool";
 import {
   createProgram,
@@ -32,11 +31,12 @@ import { TokenInfo } from "@solana/spl-token-registry";
 import { MEMECHAN_MEME_TOKEN_DECIMALS } from "./bound_pool";
 import {
   CHAN_TOKEN_INFO,
-  MEMECHAN_QUOTE_TOKEN,
   memechan,
+  MEMECHAN_QUOTE_TOKEN_INFO,
 } from "./sol-sdk/config/config";
 import { MemechanSol } from "../target/types/memechan_sol";
 import { LP_FEE_VAULT_OWNER } from "./common";
+import { MEMO_PROGRAM_ID } from "@solana/spl-memo";
 
 export type Staking = IdlAccounts<MemechanSol>["stakingPool"];
 
@@ -48,7 +48,7 @@ export interface UnstakeArgs {
 
 export interface WithdrawFeesArgs {
   ticket: MemeTicketWrapper;
-  user: Keypair;
+  user: PublicKey;
 }
 
 export class StakingWrapper {
@@ -77,6 +77,13 @@ export class StakingWrapper {
     )[0];
   }
 
+  public findAdminMemeTicket(): PublicKey {
+    return PublicKey.findProgramAddressSync(
+      [Buffer.from("admin_ticket"), this.id.toBytes()],
+      memechan.programId
+    )[0];
+  }
+
   public async add_fees(quoteAmmPool: AmmPool, chanAmmPool: AmmPool) {
     const staking = await memechan.account.stakingPool.fetch(this.id);
 
@@ -87,13 +94,7 @@ export class StakingWrapper {
       decimals: MEMECHAN_MEME_TOKEN_DECIMALS,
       symbol: "",
     };
-    const quoteInfo: TokenInfo = {
-      chainId: 0,
-      address: MEMECHAN_QUOTE_TOKEN.mint.toBase58(),
-      name: MEMECHAN_QUOTE_TOKEN.name,
-      decimals: MEMECHAN_QUOTE_TOKEN.decimals,
-      symbol: MEMECHAN_QUOTE_TOKEN.symbol,
-    };
+    const quoteInfo = MEMECHAN_QUOTE_TOKEN_INFO;
     const chanInfo = CHAN_TOKEN_INFO;
 
     await this.add_fees_one_pool(quoteAmmPool, staking, memeInfo, quoteInfo);
@@ -289,6 +290,12 @@ export class StakingWrapper {
       QUOTE_MINT,
       user.publicKey
     );
+    const chanAcc = await getOrCreateAssociatedTokenAccount(
+      provider.connection,
+      user,
+      new PublicKey(CHAN_TOKEN_INFO.address),
+      user.publicKey
+    );
 
     await memechan.methods
       .unstake(input.amount)
@@ -298,9 +305,11 @@ export class StakingWrapper {
         stakingSignerPda: this.signer(),
         memeVault: stakingInfo.memeVault,
         quoteVault: stakingInfo.quoteVault,
+        chanVault: stakingInfo.chanVault,
         staking: this.id,
         userMeme: memeAcc,
         userQuote: quoteAcc.address,
+        userChan: chanAcc.address,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
       .signers([user])
@@ -319,24 +328,26 @@ export class StakingWrapper {
     const memeAccKey = Keypair.generate();
     const memeAcc = await createAccount(
       provider.connection,
-      user,
+      payer,
       stakingInfo.memeMint,
-      user.publicKey,
+      user,
       memeAccKey
     );
 
     const wsolAccKey = Keypair.generate();
     const quoteAcc = await getOrCreateAssociatedTokenAccount(
       provider.connection,
-      user,
+      payer,
       QUOTE_MINT,
-      user.publicKey
+      user,
+      true
     );
     const chanAcc = await getOrCreateAssociatedTokenAccount(
       provider.connection,
-      user,
+      payer,
       new PublicKey(CHAN_TOKEN_INFO.address),
-      user.publicKey
+      user,
+      true
     );
 
     await memechan.methods
@@ -351,10 +362,9 @@ export class StakingWrapper {
         userMeme: memeAcc,
         userQuote: quoteAcc.address,
         userChan: chanAcc.address,
-        signer: user.publicKey,
+        owner: user,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
-      .signers([user])
       .rpc();
 
     return [memeAcc, quoteAcc.address];

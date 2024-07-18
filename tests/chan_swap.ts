@@ -9,20 +9,17 @@ import {
 } from "./helpers";
 import { TargetConfig } from "./sol-sdk/targetconfig/TargetConfig";
 import { client } from "./common";
-import {
-  CHAN_TOKEN_INFO,
-  MEMECHAN_QUOTE_TOKEN,
-  memechan,
-} from "./sol-sdk/config/config";
-import { PublicKey } from "@saberhq/solana-contrib";
-import { SystemProgram } from "@solana/web3.js";
-import {} from "@solana/spl-token";
+import { CHAN_TOKEN_INFO, memechan } from "./sol-sdk/config/config";
+import { PublicKey, SystemProgram } from "@solana/web3.js";
 import { getOrCreateAssociatedTokenAccount } from "@solana/spl-token";
 
 export class ChanSwapWrapper {
   static chanSwapId(): PublicKey {
     return PublicKey.findProgramAddressSync(
-      [Buffer.from("chan_swap")],
+      [
+        Buffer.from("chan_swap"),
+        new PublicKey(CHAN_TOKEN_INFO.address).toBuffer(),
+      ],
       memechan.programId
     )[0];
   }
