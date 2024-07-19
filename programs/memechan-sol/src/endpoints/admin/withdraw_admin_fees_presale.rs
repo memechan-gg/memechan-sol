@@ -5,7 +5,7 @@ use anchor_spl::token;
 use anchor_spl::token::{Token, TokenAccount, Transfer};
 
 #[derive(Accounts)]
-pub struct WithdrawAdminFee<'info> {
+pub struct WithdrawAdminFeePresale<'info> {
     #[account(
         mut,
         constraint = sender.key() == ADMIN_KEY.key()
@@ -34,7 +34,7 @@ pub struct WithdrawAdminFee<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-impl<'info> WithdrawAdminFee<'info> {
+impl<'info> WithdrawAdminFeePresale<'info> {
     fn send_admin_fee_sol(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
             from: self.pool_quote_vault.to_account_info(),
@@ -47,7 +47,7 @@ impl<'info> WithdrawAdminFee<'info> {
     }
 }
 
-pub fn handle<'info>(ctx: Context<WithdrawAdminFee<'info>>) -> Result<()> {
+pub fn handle<'info>(ctx: Context<WithdrawAdminFeePresale<'info>>) -> Result<()> {
     let accs = ctx.accounts;
 
     let bp_seeds = &[

@@ -1,3 +1,4 @@
+use crate::consts::{BE_AUTH_KEY, LP_FEE_KEY};
 use crate::err::AmmError;
 use crate::models::fee_distribution::calc_withdraw;
 use crate::models::meme_ticket::MemeTicket;
@@ -43,6 +44,11 @@ pub struct WithdrawFees<'info> {
     pub quote_vault: Box<Account<'info, TokenAccount>>,
     #[account(mut)]
     pub chan_vault: Box<Account<'info, TokenAccount>>,
+    #[account(
+        mut,
+        constraint = be_meme.owner == BE_AUTH_KEY.key(),
+    )]
+    pub be_meme: Option<Box<Account<'info, TokenAccount>>>,
     /// CHECK: pda signer
     #[account(seeds = [StakingPool::SIGNER_PDA_PREFIX, staking.key().as_ref()], bump)]
     pub staking_signer_pda: AccountInfo<'info>,
@@ -75,6 +81,20 @@ impl<'info> WithdrawFees<'info> {
         let cpi_accounts = Transfer {
             from: self.meme_vault.to_account_info(),
             to: self.user_meme.to_account_info(),
+            authority: self.staking_signer_pda.to_account_info(),
+        };
+
+        let cpi_program = self.token_program.to_account_info();
+        CpiContext::new(cpi_program, cpi_accounts)
+    }
+
+    fn send_meme_fees_to_backend(
+        &self,
+        be_meme: AccountInfo<'info>,
+    ) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+        let cpi_accounts = Transfer {
+            from: self.meme_vault.to_account_info(),
+            to: be_meme,
             authority: self.staking_signer_pda.to_account_info(),
         };
 
@@ -117,11 +137,23 @@ pub fn handle(ctx: Context<WithdrawFees>) -> Result<()> {
     );
 
     if withdrawal.max_withdrawal_meme > 0 {
-        token::transfer(
-            accs.send_meme_fees_to_user()
-                .with_signer(staking_signer_seeds),
-            withdrawal.max_withdrawal_meme,
-        )?;
+        if accs.owner.key().eq(&LP_FEE_KEY.key()) {
+            if let Some(optional_account) = &accs.be_meme {
+                token::transfer(
+                    accs.send_meme_fees_to_backend(optional_account.to_account_info())
+                        .with_signer(staking_signer_seeds),
+                    withdrawal.max_withdrawal_meme,
+                )?;
+            } else {
+                return Err(error!(AmmError::ShouldProvideBackendVault));
+            }
+        } else {
+            token::transfer(
+                accs.send_meme_fees_to_user()
+                    .with_signer(staking_signer_seeds),
+                withdrawal.max_withdrawal_meme,
+            )?;
+        }
     }
 
     if withdrawal.max_withdrawal_quote > 0 {

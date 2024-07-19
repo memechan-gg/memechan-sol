@@ -24,7 +24,8 @@ import BigNumber from "bignumber.js";
 import { CHAN_TOKEN_INFO, DEFAULT_TARGET } from "../sol-sdk/config/config";
 import { wrapSOLInstruction } from "@mercurial-finance/dynamic-amm-sdk/dist/cjs/src/amm/utils";
 import { MemeTicket } from "../sol-sdk/memeticket/MemeTicket";
-import { LP_FEE_VAULT_OWNER } from "../common";
+import { BE_AUTH, LP_FEE_VAULT_OWNER } from "../common";
+import assert from "assert";
 
 export function test() {
   describe("staking", () => {
@@ -187,6 +188,7 @@ export function test() {
       await amm2.swap(payer, 5e9, 1);
       await staking.add_fees(amm, amm2);
 
+      console.log("withdrawing user fees");
       await staking.withdraw_fees({
         ticket: tickets[0],
         user: users[0].publicKey,
@@ -205,9 +207,38 @@ export function test() {
         staking.findAdminMemeTicket()
       );
 
+      const beMeme = await getOrCreateAssociatedTokenAccount(
+        provider.connection,
+        payer,
+        stakingInfo.memeMint,
+        BE_AUTH
+      );
+
+      console.log("trying to withdrawing admin fees with wrong be");
+      try {
+        await staking.withdraw_fees({
+          ticket: adminTicket,
+          user: LP_FEE_VAULT_OWNER,
+          beMeme: inputTokenAccount.address,
+        });
+        assert(false, "rpc should have failed");
+      } catch (e) {}
+
+      console.log("trying to withdrawing admin fees without be");
+      try {
+        inputTokenAccount;
+        await staking.withdraw_fees({
+          ticket: adminTicket,
+          user: LP_FEE_VAULT_OWNER,
+        });
+        assert(false, "rpc should have failed");
+      } catch (e) {}
+
+      console.log("withdrawing admin fees");
       await staking.withdraw_fees({
         ticket: adminTicket,
         user: LP_FEE_VAULT_OWNER,
+        beMeme: beMeme.address,
       });
 
       console.log(toString(await staking.fetch()));
