@@ -1,23 +1,13 @@
 import {
-  NATIVE_MINT,
-  TOKEN_2022_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
   createAccount,
-  getAccount,
   getOrCreateAssociatedTokenAccount,
 } from "@solana/spl-token";
-import {
-  PublicKey,
-  Keypair,
-  Transaction,
-  sendAndConfirmTransaction,
-  TransactionInstruction,
-} from "@solana/web3.js";
+import { PublicKey, Keypair, TransactionInstruction } from "@solana/web3.js";
 import { QUOTE_MINT, payer, provider } from "./helpers";
 import { AmmPool } from "./pool";
-import { Address, BN, IdlAccounts } from "@coral-xyz/anchor";
+import { BN, IdlAccounts } from "@coral-xyz/anchor";
 import { MemeTicketWrapper } from "./ticket";
-import { StakingPool } from "./sol-sdk/staking-pool/StakingPool";
 import {
   createProgram,
   deriveLockEscrowPda,

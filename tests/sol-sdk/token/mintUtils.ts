@@ -18,7 +18,9 @@ export class MintUtils {
     this.authority = authority;
   }
 
-  async createMint(nb_decimals = MEMECHAN_MEME_TOKEN_DECIMALS): Promise<PublicKey> {
+  async createMint(
+    nb_decimals = MEMECHAN_MEME_TOKEN_DECIMALS
+  ): Promise<PublicKey> {
     const kp = Keypair.generate();
     return await splToken.createMint(
       this.conn,
@@ -39,7 +41,10 @@ export class MintUtils {
     );
   }
 
-  public async createNewToken(nbDecimals = MEMECHAN_MEME_TOKEN_DECIMALS, startingPrice = 1_000_000) {
+  public async createNewToken(
+    nbDecimals = MEMECHAN_MEME_TOKEN_DECIMALS,
+    startingPrice = 1_000_000
+  ) {
     const mint = await this.createMint(nbDecimals);
     const tokenData: TokenData = {
       mint: mint,
@@ -73,7 +78,11 @@ export class MintUtils {
     );
   }
 
-  public async mintTo(mint: PublicKey, tokenAccount: PublicKey, amount: number = 1000000000000) {
+  public async mintTo(
+    mint: PublicKey,
+    tokenAccount: PublicKey,
+    amount: number = 1000000000000
+  ) {
     await splToken.mintTo(
       this.conn,
       this.authority,

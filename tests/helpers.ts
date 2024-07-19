@@ -1,10 +1,4 @@
-import {
-  Program,
-  workspace,
-  AnchorProvider,
-  setProvider,
-  BN,
-} from "@coral-xyz/anchor";
+import { AnchorProvider, setProvider } from "@coral-xyz/anchor";
 import {
   PublicKey,
   Keypair,
@@ -16,7 +10,6 @@ import {
   AddressLookupTableProgram,
 } from "@solana/web3.js";
 import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
-import { MemechanSol } from "../target/types/memechan_sol";
 import { NATIVE_MINT, mintTo } from "@solana/spl-token";
 import { config } from "dotenv";
 

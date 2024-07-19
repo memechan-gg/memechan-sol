@@ -7,4 +7,4 @@ export type CreateTargetConfigArgs = {
   payer: Keypair;
   mint: PublicKey;
   targetAmount: BN;
-}
+};

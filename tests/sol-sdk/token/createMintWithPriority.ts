@@ -1,4 +1,9 @@
-import type { ConfirmOptions, Connection, PublicKey, Signer } from "@solana/web3.js";
+import type {
+  ConfirmOptions,
+  Connection,
+  PublicKey,
+  Signer,
+} from "@solana/web3.js";
 import { Keypair, sendAndConfirmTransaction } from "@solana/web3.js";
 import { getCreateMintWithPriorityTransaction } from "./getCreateMintWithPriorityTransaction";
 
@@ -22,7 +27,7 @@ export async function createMintWithPriority(
   freezeAuthority: PublicKey | null,
   decimals: number,
   keypair = Keypair.generate(),
-  confirmOptions?: ConfirmOptions,
+  confirmOptions?: ConfirmOptions
 ): Promise<PublicKey> {
   const transaction = await getCreateMintWithPriorityTransaction(
     connection,
@@ -30,10 +35,15 @@ export async function createMintWithPriority(
     mintAuthority,
     freezeAuthority,
     decimals,
-    keypair,
+    keypair
   );
 
-  const result = await sendAndConfirmTransaction(connection, transaction, [payer, keypair], confirmOptions);
+  const result = await sendAndConfirmTransaction(
+    connection,
+    transaction,
+    [payer, keypair],
+    confirmOptions
+  );
   console.log("create mint result: " + result);
 
   return keypair.publicKey;

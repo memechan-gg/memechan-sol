@@ -1,13 +1,5 @@
 import BN from "bn.js";
-import {
-  QUOTE_MINT,
-  adminSigner,
-  airdrop,
-  mintChan,
-  mintQuote,
-  payer,
-} from "./helpers";
-import { TargetConfig } from "./sol-sdk/targetconfig/TargetConfig";
+import { adminSigner, airdrop, mintChan, payer } from "./helpers";
 import { client } from "./common";
 import { CHAN_TOKEN_INFO, memechan } from "./sol-sdk/config/config";
 import { PublicKey, SystemProgram } from "@solana/web3.js";

@@ -1,7 +1,7 @@
 import { PublicKey, Keypair, sendAndConfirmTransaction } from "@solana/web3.js";
 
 import BN from "bn.js";
-import { payer, provider } from "./helpers";
+import { provider } from "./helpers";
 import AmmImpl from "@mercurial-finance/dynamic-amm-sdk";
 
 export class AmmPool {

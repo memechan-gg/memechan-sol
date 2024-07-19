@@ -52,7 +52,8 @@ const HIGH_VALUE = 16383; // 0x3fff
  * @param n elements in the compact array
  * @returns size in bytes of array header
  */
-const compactHeader = (n: number) => (n <= LOW_VALUE ? 1 : n <= HIGH_VALUE ? 2 : 3);
+const compactHeader = (n: number) =>
+  n <= LOW_VALUE ? 1 : n <= HIGH_VALUE ? 2 : 3;
 
 /**
  * Compact u16 array size
@@ -60,4 +61,5 @@ const compactHeader = (n: number) => (n <= LOW_VALUE ? 1 : n <= HIGH_VALUE ? 2 :
  * @param size bytes per each element
  * @returns size in bytes of array
  */
-const compactArraySize = (n: number, size: number) => compactHeader(n) + n * size;
+const compactArraySize = (n: number, size: number) =>
+  compactHeader(n) + n * size;

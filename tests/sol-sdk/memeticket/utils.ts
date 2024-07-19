@@ -1,4 +1,8 @@
-import { PublicKey, Transaction, TransactionInstruction } from "@solana/web3.js";
+import {
+  PublicKey,
+  Transaction,
+  TransactionInstruction,
+} from "@solana/web3.js";
 import { MAX_TRANSACTION_SIZE } from "../config/config";
 import { getTxSize } from "../util/get-tx-size";
 
@@ -15,7 +19,10 @@ import { getTxSize } from "../util/get-tx-size";
  * @param {PublicKey} feePayer - The account that will pay fees.
  * @returns {Transaction[]} An array of transactions, each with a size less than or equal to the maximum allowed size.
  */
-export function getOptimizedTransactions(instructions: TransactionInstruction[], feePayer: PublicKey): Transaction[] {
+export function getOptimizedTransactions(
+  instructions: TransactionInstruction[],
+  feePayer: PublicKey
+): Transaction[] {
   /**
    * Recursively splits the instructions array into valid transactions.
    *

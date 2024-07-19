@@ -1,15 +1,8 @@
-import {
-  Keypair,
-  PublicKey,
-  SystemProgram,
-  Transaction,
-} from "@solana/web3.js";
+import { Keypair, PublicKey } from "@solana/web3.js";
 import {
   LUTSLOT,
   QUOTE_MINT,
   admin,
-  adminSigner,
-  airdrop,
   findProgramAddress,
   getLUTPDA,
   payer,
@@ -20,12 +13,7 @@ import BN from "bn.js";
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   NATIVE_MINT,
-  TOKEN_PROGRAM_ID,
-  createAssociatedTokenAccount,
-  createMint,
-  getAssociatedTokenAddressSync,
   getOrCreateAssociatedTokenAccount,
-  mintTo,
   transfer,
 } from "@solana/spl-token";
 import { BE_AUTH, DUMMY_TOKEN_METADATA, client } from "./common";
@@ -37,10 +25,6 @@ import { IdlAccounts } from "@coral-xyz/anchor";
 import { MemechanSol } from "../target/types/memechan_sol";
 import { StakingPool } from "./sol-sdk/staking-pool/StakingPool";
 import {
-  getCreateAssociatedTokenAccountInstructions,
-  getCreateTokenAccountInstructions,
-} from "./sol-sdk/util/getCreateAccountInstruction";
-import {
   CHAN_TOKEN_INFO,
   MEMECHAN_QUOTE_TOKEN_INFO,
   memechan,
@@ -49,7 +33,6 @@ import { TokenInfo } from "@solana/spl-token-registry";
 import AmmImpl from "@mercurial-finance/dynamic-amm-sdk";
 import { ChanSwapWrapper } from "./chan_swap";
 import { createWrappedNativeAccount } from "@solana/spl-token";
-import { MemeTicket } from "./sol-sdk/memeticket/MemeTicket";
 import { associatedAddress } from "@coral-xyz/anchor/dist/cjs/utils/token";
 
 export const MEMECHAN_MEME_TOKEN_DECIMALS = 6;

@@ -14,11 +14,9 @@ import {
   GetBoundMergeTransactionArgs,
   GetCloseTransactionArgs,
   GetStakingMergeTransactionArgs,
-  ParsedMemeTicket,
   StakingMerge,
 } from "./types";
 import { getOptimizedTransactions } from "./utils";
-import { IdlAccount } from "@coral-xyz/anchor/dist/cjs/idl";
 import { MemechanSol } from "../../../target/types/memechan_sol";
 import { memechan } from "../config/config";
 
@@ -214,65 +212,5 @@ export class MemeTicket {
     const fetchedTickets = await program.account.memeTicket.all(filters);
     const tickets = fetchedTickets.map((ticket) => ticket.account);
     return tickets;
-  }
-
-  public static async fetchTicketsByUser(
-    pool: PublicKey,
-    client: MemechanClient,
-    user: PublicKey
-  ): Promise<ParsedMemeTicket[]> {
-    const program = client.memechanProgram;
-    const filters: GetProgramAccountsFilter[] = [
-      {
-        memcmp: {
-          bytes: pool.toBase58(),
-          offset: 40,
-        },
-      },
-      {
-        memcmp: {
-          bytes: user.toBase58(),
-          offset: 8,
-        },
-      },
-    ];
-
-    const fetchedTickets = await program.account.memeTicket.all(filters);
-
-    const parsedTickets = fetchedTickets.map((ticket) => {
-      const jsonTicket = ticket.toString();
-
-      return {
-        id: ticket.publicKey,
-        jsonFields: jsonTicket,
-        fields: ticket.account,
-      };
-    });
-
-    return parsedTickets;
-  }
-
-  public static async fetchAvailableTicketsByUser(
-    pool: PublicKey,
-    client: MemechanClient,
-    user: PublicKey
-  ) {
-    const tickets = await MemeTicket.fetchTicketsByUser(pool, client, user);
-    const currentTimestamp = Date.now();
-
-    const availableTickets = tickets.filter((ticket) => {
-      const unlockTicketTimestamp = +ticket.jsonFields.untilTimestamp;
-
-      return currentTimestamp >= unlockTicketTimestamp;
-    });
-
-    const availableAmount = availableTickets
-      .reduce((amount: BigNumber, ticket) => {
-        amount = amount.plus(ticket.jsonFields.amount);
-        return amount;
-      }, new BigNumber(0))
-      .toString();
-
-    return { tickets: availableTickets, availableAmount };
   }
 }

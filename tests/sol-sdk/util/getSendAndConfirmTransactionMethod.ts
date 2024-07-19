@@ -1,4 +1,10 @@
-import { ConfirmOptions, Connection, Signer, Transaction, sendAndConfirmTransaction } from "@solana/web3.js";
+import {
+  ConfirmOptions,
+  Connection,
+  Signer,
+  Transaction,
+  sendAndConfirmTransaction,
+} from "@solana/web3.js";
 
 export function getSendAndConfirmTransactionMethod({
   connection,

@@ -1,11 +1,7 @@
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
-  createAccount,
-  createAssociatedTokenAccountInstruction,
-  getAccount,
   getAssociatedTokenAddress,
-  getAssociatedTokenAddressSync,
   getOrCreateAssociatedTokenAccount,
   mintTo,
   createAssociatedTokenAccountIdempotentInstruction,
@@ -15,14 +11,12 @@ import {
   Connection,
   Keypair,
   PublicKey,
-  SYSVAR_CLOCK_PUBKEY,
   SYSVAR_RENT_PUBKEY,
   Signer,
   SystemProgram,
   Transaction,
   TransactionMessage,
   VersionedTransaction,
-  sendAndConfirmRawTransaction,
   sendAndConfirmTransaction,
 } from "@solana/web3.js";
 import * as solana from "@solana/web3.js";
@@ -34,14 +28,10 @@ import { MemeTicket, MemeTicketFields } from "../memeticket/MemeTicket";
 import { StakingPool } from "../staking-pool/StakingPool";
 import {
   BoundPoolArgs,
-  BuyMemeArgs,
-  GetBuyMemeTransactionArgs,
-  GetBuyMemeTransactionOutput,
   GetCreateNewBondingPoolAndTokenTransactionArgs,
   GetGoLiveTransactionArgs,
   GetInitChanPoolTransactionArgs,
   GetInitStakingPoolTransactionArgs,
-  GetOutputAmountForBuyMeme,
   GetSellMemeTransactionArgs,
   GoLiveArgs,
   InitChanAmmPool,
@@ -61,26 +51,16 @@ import {
   memechan,
   ADMIN_PUB_KEY,
 } from "../config/config";
-import {
-  createMetadata,
-  getCreateMetadataTransaction,
-} from "../token/createMetadata";
-import { createMintWithPriority } from "../token/createMintWithPriority";
+import { getCreateMetadataTransaction } from "../token/createMetadata";
 import { getCreateMintWithPriorityTransaction } from "../token/getCreateMintWithPriorityTransaction";
 
 import { getTxSize } from "../util/get-tx-size";
-import {
-  getCreateAssociatedTokenAccountInstructions,
-  getCreateTokenAccountInstructions,
-} from "../util/getCreateAccountInstruction";
+import { getCreateAssociatedTokenAccountInstructions } from "../util/getCreateAccountInstruction";
 import { getSendAndConfirmTransactionMethod } from "../util/getSendAndConfirmTransactionMethod";
 import { retry } from "../util/retry";
-import { deductSlippage } from "../util/trading/deductSlippage";
-import { normalizeInputCoinAmount } from "../util/trading/normalizeInputCoinAmount";
 import { TargetConfig } from "../targetconfig/TargetConfig";
 import {
   LUT2SLOT,
-  LUTSLOT,
   QUOTE_MINT,
   admin,
   adminSigner,
@@ -519,27 +499,6 @@ export class BoundPoolClient {
         )
       ).address;
 
-    // const balance = await this.client.connection.getBalance(payer.publicKey);
-    // console.log(`${balance / LAMPORTS_PER_SOL} SOL`);
-
-    // const transferTx = new Transaction().add(
-    //   //  modifyComputeUnits,
-    //   // addPriorityFee,
-    //   SystemProgram.transfer({
-    //     fromPubkey: payer.publicKey,
-    //     toPubkey: userSolAcc,
-    //     lamports: BigInt(sol_in.toString()),
-    //   }),
-    //   createSyncNativeInstruction(userSolAcc),
-    // );
-
-    // const transferResult = await sendAndConfirmTransaction(this.client.connection, transferTx, [payer], {
-    //   skipPreflight: true,
-    //   commitment: "confirmed",
-    // });
-
-    //console.log("3 transferResult: " + transferResult);
-
     await this.client.memechanProgram.methods
       .swapY(new BN(sol_in), new BN(meme_out), new BN(ticketNumber))
       .accounts({
@@ -556,160 +515,6 @@ export class BoundPoolClient {
       .rpc({ skipPreflight: true, commitment: "confirmed" });
 
     return new MemeTicket(id, this.client);
-  }
-
-  /**
-   * Swaps a Y token (expecting `SLERF` token) for another asset by executing a buy meme transaction.
-   * @param {SwapYArgs} input - The input arguments required for the swap.
-   * @returns {Promise<string>} A promise that resolves to the transaction ID of the swap.
-   * @throws {Error} Throws an error if the transaction creation or confirmation fails.
-   * @untested This method is untested and may contain bugs.
-   */
-  public async buyMeme(input: BuyMemeArgs): Promise<string> {
-    // TODO: Check whether user has enough amount of quoute token
-    const { tx, memeTicketKeypair } = await this.getBuyMemeTransaction(input);
-
-    const txId = await sendAndConfirmTransaction(
-      this.client.connection,
-      tx,
-      [input.signer, memeTicketKeypair],
-      {
-        skipPreflight: true,
-        commitment: "confirmed",
-      }
-    );
-
-    return txId;
-  }
-
-  /**
-   * Generates a transaction to buy a meme.
-   *
-   * @param {GetBuyMemeTransactionArgs} input - The input arguments required for the transaction.
-   * @returns {Promise<GetBuyMemeTransactionOutput>} A promise that resolves to the transaction object.
-   *
-   * @work-in-progress This method is a work in progress and not yet ready for production use.
-   * @untested This method is untested and may contain bugs.
-   */
-  public async getBuyMemeTransaction(
-    input: GetBuyMemeTransactionArgs
-  ): Promise<GetBuyMemeTransactionOutput> {
-    const {
-      inputAmount,
-      minOutputAmount,
-      slippagePercentage,
-      user,
-      ticketNumber,
-      transaction = new Transaction(),
-    } = input;
-    let { inputTokenAccount } = input;
-
-    const pool = this.id;
-    const poolSignerPda = this.findSignerPda();
-    const memeTicketKeypair = Keypair.generate();
-    const connection = this.client.connection;
-
-    // input
-    const inputAmountWithDecimals = normalizeInputCoinAmount(
-      inputAmount,
-      MEMECHAN_QUOTE_TOKEN_DECIMALS
-    );
-    const inputAmountBN = new BN(inputAmountWithDecimals.toString());
-
-    // output
-    // Note: Be aware, we relay on the fact that `MEMECOIN_DECIMALS` would be always set same for all memecoins
-    // As well as the fact that memecoins and tickets decimals are always the same
-    const minOutputWithSlippage = deductSlippage(
-      new BigNumber(minOutputAmount),
-      slippagePercentage
-    );
-    const minOutputNormalized = normalizeInputCoinAmount(
-      minOutputWithSlippage.toString(),
-      MEMECHAN_MEME_TOKEN_DECIMALS
-    );
-    const minOutputBN = new BN(minOutputNormalized.toString());
-
-    // If `inputTokenAccount` is not passed in args, we need to find out, whether a quote account for an admin
-    // already exists
-    if (!inputTokenAccount) {
-      const associatedToken = getAssociatedTokenAddressSync(
-        this.quoteTokenMint,
-        user,
-        true,
-        TOKEN_PROGRAM_ID,
-        ASSOCIATED_TOKEN_PROGRAM_ID
-      );
-
-      const account = await getAccount(connection, associatedToken);
-      inputTokenAccount = account.address;
-
-      // If the quote account for the admin doesn't exist, add an instruction to create it
-      if (!inputTokenAccount) {
-        const associatedTransactionInstruction =
-          createAssociatedTokenAccountInstruction(
-            user,
-            associatedToken,
-            user,
-            this.quoteTokenMint,
-            TOKEN_PROGRAM_ID,
-            ASSOCIATED_TOKEN_PROGRAM_ID
-          );
-
-        transaction.add(associatedTransactionInstruction);
-
-        inputTokenAccount = associatedToken;
-      }
-    }
-
-    const buyMemeInstruction = await this.client.memechanProgram.methods
-      .swapY(inputAmountBN, minOutputBN, new BN(ticketNumber))
-      .accounts({
-        memeTicket: memeTicketKeypair.publicKey,
-        owner: user,
-        pool: pool,
-        poolSignerPda: poolSignerPda,
-        quoteVault: this.quoteVault,
-        userSol: inputTokenAccount,
-        systemProgram: SystemProgram.programId,
-        tokenProgram: TOKEN_PROGRAM_ID,
-      })
-      .instruction();
-
-    transaction.add(buyMemeInstruction);
-
-    console.debug(
-      "memeTicketPublicKey: ",
-      memeTicketKeypair.publicKey.toString()
-    );
-    console.debug("inputTokenAccount: ", inputTokenAccount.toString());
-
-    return { tx: transaction, memeTicketKeypair, inputTokenAccount };
-  }
-
-  public async getOutputAmountForBuyMeme(input: GetOutputAmountForBuyMeme) {
-    const { tx, memeTicketKeypair } = await this.getBuyMemeTransaction({
-      ...input,
-      minOutputAmount: "0",
-    });
-
-    const result = await this.client.connection.simulateTransaction(
-      tx,
-      [input.signer, memeTicketKeypair],
-      true
-    );
-
-    // If error happened (e.g. pool is locked)
-    if (result.value.err) {
-      return {
-        outputAmount: 0,
-        error: result.value.err,
-        logs: result.value.logs,
-      };
-    }
-
-    // TODO: Decode the result of swap simulation
-
-    return result;
   }
 
   public async isMemeCoinReadyToLivePhase() {

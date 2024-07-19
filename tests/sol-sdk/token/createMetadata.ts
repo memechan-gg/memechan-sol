@@ -8,7 +8,6 @@ import {
 import { MemechanClient } from "../MemechanClient";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { CreateMetadataInfo } from "./types";
-import { uploadMetadataToIpfs } from "./uploadMetadataToIpfs";
 
 //  https://github.com/metaplex-foundation/metaplex-program-library/blob/caeab0f7/token-metadata/js/src/generated/index.ts#L13
 const TOKEN_METADATA_PROGRAM_ID = new PublicKey(
@@ -43,7 +42,7 @@ export async function getCreateMetadataTransaction(
   input: Omit<CreateMetadataInfo, "payer"> & { payer: PublicKey }
 ): Promise<Transaction> {
   const metadata = input.metadata;
-  const metadataUri = await uploadMetadataToIpfs(metadata);
+  const metadataUri = "uri-goes-here";
   const pda = findMetadataPDA(input.mint);
 
   // Prepare the transaction to initialize the counter

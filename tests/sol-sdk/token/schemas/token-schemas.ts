@@ -1,6 +1,8 @@
 import { z, ZodRawShape } from "zod";
 
-export const paginatedResultSchema = <T extends ZodRawShape>(result: z.ZodObject<T>) =>
+export const paginatedResultSchema = <T extends ZodRawShape>(
+  result: z.ZodObject<T>
+) =>
   z.object({
     paginationToken: z.string().nullish(),
     result: z.array(result),
@@ -71,7 +73,11 @@ export const createTokenRequestBodySchema = z.object({
 export type SolanaTokenMetadata = z.infer<typeof solanaTokenMetadata>;
 export type SolanaToken = z.infer<typeof solanaTokenSchema>;
 export type SortableColumn = z.infer<typeof solanaTokensSortableColumns>;
-export type QueryTokensRequestParams = z.infer<typeof querySolanaTokensRequestParamsSchema>;
-export type CreateTokenRequestBody = z.infer<typeof createTokenRequestBodySchema>;
+export type QueryTokensRequestParams = z.infer<
+  typeof querySolanaTokensRequestParamsSchema
+>;
+export type CreateTokenRequestBody = z.infer<
+  typeof createTokenRequestBodySchema
+>;
 export type SolanaSocialLinks = z.infer<typeof solanaSocialLinks>;
 export type TokenStatus = z.infer<typeof tokenStatus>;
