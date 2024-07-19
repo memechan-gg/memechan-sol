@@ -138,8 +138,8 @@ pub mod memechan_sol {
         close_ticket::handle(ctx)
     }
 
-    pub fn withdraw_admin_fee(ctx: Context<WithdrawAdminFee>) -> Result<()> {
-        withdraw_admin_fees::handle(ctx)
+    pub fn withdraw_admin_fee(ctx: Context<WithdrawAdminFeePresale>) -> Result<()> {
+        withdraw_admin_fees_presale::handle(ctx)
     }
 
     pub fn increase_vesting(

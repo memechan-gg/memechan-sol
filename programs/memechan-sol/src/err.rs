@@ -57,6 +57,7 @@ pub enum AmmError {
     AirdroppedTokensOvercap,
     InvalidVestingPeriod,
     AdminShouldNotUnstake,
+    ShouldProvideBackendVault,
 }
 
 #[allow(dead_code)]

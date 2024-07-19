@@ -39,6 +39,7 @@ export interface UnstakeArgs {
 export interface WithdrawFeesArgs {
   ticket: MemeTicketWrapper;
   user: PublicKey;
+  beMeme?: PublicKey;
 }
 
 export class StakingWrapper {
@@ -340,6 +341,8 @@ export class StakingWrapper {
       true
     );
 
+    const beMeme = input.beMeme ?? null;
+
     await memechan.methods
       .withdrawFees()
       .accounts({
@@ -353,6 +356,7 @@ export class StakingWrapper {
         userQuote: quoteAcc.address,
         userChan: chanAcc.address,
         owner: user,
+        beMeme: beMeme,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
       .rpc();
