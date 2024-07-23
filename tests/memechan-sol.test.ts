@@ -11,10 +11,10 @@ import { provider } from "./helpers";
 describe("memechan-sol", () => {
   provider.opts.skipPreflight = true;
   newPool.test();
-  // swapY.test();
-  // swapX.test();
-  // goLive.test();
-  // tickets.test();
-  // fees.test();
+  swapY.test();
+  swapX.test();
+  goLive.test();
+  tickets.test();
+  fees.test();
   staking.test();
 });

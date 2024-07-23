@@ -148,4 +148,8 @@ pub mod memechan_sol {
     ) -> Result<()> {
         increase_vesting_time::handle(ctx, vesting_ts_increase)
     }
+
+    pub fn fix_admin_ticket(ctx: Context<FixAdminTicket>) -> Result<()> {
+        fix_admin_ticket::handle(ctx)
+    }
 }
