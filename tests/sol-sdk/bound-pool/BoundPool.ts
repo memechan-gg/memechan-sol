@@ -90,6 +90,7 @@ import {
   METAPLEX_PROGRAM,
   SEEDS,
 } from "@mercurial-finance/dynamic-amm-sdk/dist/cjs/src/amm/constants";
+import { UserStats } from "../UserStats";
 
 export class BoundPoolClient {
   private constructor(
@@ -499,6 +500,10 @@ export class BoundPoolClient {
         )
       ).address;
 
+    await UserStats.CheckCreateStats(user);
+
+    const userStats = UserStats.GetUserStatsPDA(user.publicKey);
+
     await this.client.memechanProgram.methods
       .swapY(new BN(sol_in), new BN(meme_out), new BN(ticketNumber))
       .accounts({
@@ -508,6 +513,7 @@ export class BoundPoolClient {
         poolSignerPda: poolSignerPda,
         quoteVault: this.quoteVault,
         userSol: userQuoteAcc,
+        userStats,
         systemProgram: SystemProgram.programId,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
@@ -674,12 +680,15 @@ export class BoundPoolClient {
     const memeTicket = input.userMemeTicket;
     const userSolAcc = input.userQuoteAcc;
 
+    const userStats = UserStats.GetUserStatsPDA(user.publicKey);
+
     const sellMemeTransactionInstruction =
       await this.client.memechanProgram.methods
         .swapX(new BN(meme_in), new BN(minQuoteAmountOut))
         .accounts({
           pool: pool,
           memeTicket: memeTicket.id,
+          userStats,
           userSol: userSolAcc,
           quoteVault: this.quoteVault,
           owner: user.publicKey,

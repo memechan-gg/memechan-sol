@@ -26,6 +26,7 @@ import { wrapSOLInstruction } from "@mercurial-finance/dynamic-amm-sdk/dist/cjs/
 import { MemeTicket } from "../sol-sdk/memeticket/MemeTicket";
 import { BE_AUTH, LP_FEE_VAULT_OWNER } from "../common";
 import assert from "assert";
+import { UserStats } from "../sol-sdk/UserStats";
 
 export function test() {
   describe("staking", () => {

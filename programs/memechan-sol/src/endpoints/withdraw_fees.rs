@@ -3,6 +3,7 @@ use crate::err::AmmError;
 use crate::models::fee_distribution::calc_withdraw;
 use crate::models::meme_ticket::MemeTicket;
 use crate::models::staking::StakingPool;
+use crate::models::user_stats::UserStats;
 use anchor_lang::prelude::*;
 use anchor_spl::token;
 use anchor_spl::token::{Token, TokenAccount, Transfer};
@@ -23,6 +24,8 @@ pub struct WithdrawFees<'info> {
         constraint = meme_ticket.pool == staking.pool,
     )]
     pub meme_ticket: Box<Account<'info, MemeTicket>>,
+    #[account(mut)]
+    pub user_stats: Option<Box<Account<'info, UserStats>>>,
     #[account(
         mut,
         constraint = user_meme.owner == owner.key()
@@ -135,6 +138,14 @@ pub fn handle(ctx: Context<WithdrawFees>) -> Result<()> {
         withdrawal.max_withdrawal_quote,
         withdrawal.max_withdrawal_chan,
     );
+
+    if let Some(user_stats) = &mut accs.user_stats {
+        user_stats.meme_received += withdrawal.max_withdrawal_meme;
+        user_stats.quote_received += withdrawal.max_withdrawal_quote;
+        user_stats.chan_received += withdrawal.max_withdrawal_chan;
+    } else if accs.owner.key() != LP_FEE_KEY {
+        return Err(error!(AmmError::ShouldProvideUserStats));
+    }
 
     if withdrawal.max_withdrawal_meme > 0 {
         if accs.owner.key().eq(&LP_FEE_KEY.key()) {

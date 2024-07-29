@@ -1,3 +1,7 @@
+extern crate std;
+
+use anchor_lang::prelude::*;
+
 pub mod bound;
 pub mod chan_swap;
 pub mod fee_distribution;
@@ -5,10 +9,7 @@ pub mod fees;
 pub mod meme_ticket;
 pub mod staking;
 pub mod target_config;
-
-use anchor_lang::prelude::*;
-
-extern crate std;
+pub mod user_stats;
 
 #[derive(AnchorDeserialize, AnchorSerialize, Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct TokenLimit {

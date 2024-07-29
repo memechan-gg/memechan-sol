@@ -1,3 +1,11 @@
+#![allow(unused_imports)]
+
+use anchor_lang::prelude::*;
+
+use endpoints::*;
+
+use core as core_;
+
 pub mod consts;
 pub mod endpoints;
 pub mod err;
@@ -5,10 +13,6 @@ pub mod libraries;
 pub mod math;
 pub mod models;
 pub mod vesting;
-
-use anchor_lang::prelude::*;
-use core as core_;
-use endpoints::*;
 
 #[cfg(feature = "testing")]
 declare_id!("CaR9ciDnNnE6WX35tZWrjeGdKUPaft7r4oQGF4JhwVxZ"); // localnet
@@ -151,5 +155,9 @@ pub mod memechan_sol {
 
     pub fn fix_admin_ticket(ctx: Context<FixAdminTicket>) -> Result<()> {
         fix_admin_ticket::handle(ctx)
+    }
+
+    pub fn new_user_stats_idempotent(ctx: Context<NewUserStatsIdempotent>) -> Result<()> {
+        new_user_stats_idempotent::handle(ctx)
     }
 }

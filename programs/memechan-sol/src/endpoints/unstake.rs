@@ -3,6 +3,7 @@ use crate::err::AmmError;
 use crate::models::fee_distribution::update_stake;
 use crate::models::meme_ticket::MemeTicket;
 use crate::models::staking::StakingPool;
+use crate::models::user_stats::UserStats;
 use anchor_lang::prelude::*;
 use anchor_spl::token;
 use anchor_spl::token::{Token, TokenAccount, Transfer};
@@ -22,6 +23,8 @@ pub struct Unstake<'info> {
         constraint = meme_ticket.owner == signer.key()
     )]
     pub meme_ticket: Box<Account<'info, MemeTicket>>,
+    #[account(mut)]
+    pub user_stats: Box<Account<'info, UserStats>>,
     #[account(
         mut,
         constraint = user_meme.owner == signer.key()
@@ -127,6 +130,12 @@ pub fn handle(ctx: Context<Unstake>, release_amount: u64) -> Result<()> {
         withdrawal.max_withdrawal_quote,
         withdrawal.max_withdrawal_chan,
     );
+
+    let user_stats = &mut accs.user_stats;
+
+    user_stats.meme_received += withdrawal.max_withdrawal_meme;
+    user_stats.quote_received += withdrawal.max_withdrawal_quote;
+    user_stats.chan_received += withdrawal.max_withdrawal_chan;
 
     if withdrawal.max_withdrawal_meme + release_amount == 0
         && withdrawal.max_withdrawal_quote == 0

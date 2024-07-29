@@ -1,6 +1,7 @@
 use crate::err::AmmError;
 use crate::models::bound::BoundPool;
 use crate::models::meme_ticket::MemeTicket;
+use crate::models::user_stats::UserStats;
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 
@@ -14,6 +15,8 @@ pub struct SwapCoinX<'info> {
         has_one = owner
     )]
     pub meme_ticket: Account<'info, MemeTicket>,
+    #[account(mut)]
+    pub user_stats: Account<'info, UserStats>,
     #[account(mut)]
     pub user_sol: Account<'info, TokenAccount>,
     #[account(
@@ -74,6 +77,11 @@ pub fn handle(ctx: Context<SwapCoinX>, coin_in_amount: u64, coin_y_min_value: u6
 
     user_ticket.amount -= coin_in_amount;
     user_ticket.vesting.notional -= coin_in_amount;
+
+    let user_stats = &mut accs.user_stats;
+
+    user_stats.quote_fees += swap_amount.admin_fee_out;
+    user_stats.meme_fees += swap_amount.admin_fee_in;
 
     let seeds = &[
         BoundPool::SIGNER_PDA_PREFIX,

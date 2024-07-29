@@ -1,6 +1,7 @@
 use crate::err::AmmError;
 use crate::models::bound::BoundPool;
 use crate::models::meme_ticket::MemeTicket;
+use crate::models::user_stats::UserStats;
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 
@@ -8,14 +9,14 @@ use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 #[instruction(coin_in_amount: u64, coin_x_min_value: u64, _ticket_number: u64)]
 pub struct SwapCoinY<'info> {
     #[account(mut)]
-    pool: Account<'info, BoundPool>,
+    pub pool: Account<'info, BoundPool>,
     #[account(
         mut,
         constraint = pool.quote_reserve.vault == quote_vault.key()
     )]
-    quote_vault: Account<'info, TokenAccount>,
+    pub quote_vault: Account<'info, TokenAccount>,
     #[account(mut)]
-    user_sol: Account<'info, TokenAccount>,
+    pub user_sol: Account<'info, TokenAccount>,
     #[account(
         init,
         payer = owner,
@@ -23,14 +24,16 @@ pub struct SwapCoinY<'info> {
         seeds = [pool.key().as_ref(), owner.key().as_ref(), _ticket_number.to_le_bytes().as_ref()],
         bump,
     )]
-    meme_ticket: Account<'info, MemeTicket>,
+    pub meme_ticket: Account<'info, MemeTicket>,
     #[account(mut)]
-    owner: Signer<'info>,
+    pub user_stats: Account<'info, UserStats>,
+    #[account(mut)]
+    pub owner: Signer<'info>,
     /// CHECK: pda signer
     #[account(seeds = [BoundPool::SIGNER_PDA_PREFIX, pool.key().as_ref()], bump)]
-    pool_signer_pda: AccountInfo<'info>,
-    token_program: Program<'info, Token>,
-    system_program: Program<'info, System>,
+    pub pool_signer_pda: AccountInfo<'info>,
+    pub token_program: Program<'info, Token>,
+    pub system_program: Program<'info, System>,
 }
 
 impl<'info> SwapCoinY<'info> {
@@ -79,6 +82,11 @@ pub fn handle(
 
     pool.quote_reserve.tokens += swap_amount.amount_in;
     pool.meme_reserve.tokens -= swap_amount.amount_out + swap_amount.admin_fee_out;
+
+    let user_stats = &mut accs.user_stats;
+
+    user_stats.quote_fees += swap_amount.admin_fee_in;
+    user_stats.meme_fees += swap_amount.admin_fee_out;
 
     if pool.meme_reserve.tokens == 0 {
         pool.locked = true;

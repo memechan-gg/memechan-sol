@@ -27,6 +27,7 @@ import {
 import { MemechanSol } from "../target/types/memechan_sol";
 import { LP_FEE_VAULT_OWNER } from "./common";
 import { MEMO_PROGRAM_ID } from "@solana/spl-memo";
+import { UserStats } from "./sol-sdk/UserStats";
 
 export type Staking = IdlAccounts<MemechanSol>["stakingPool"];
 
@@ -288,6 +289,8 @@ export class StakingWrapper {
       user.publicKey
     );
 
+    const userStats = UserStats.GetUserStatsPDA(user.publicKey);
+
     await memechan.methods
       .unstake(input.amount)
       .accounts({
@@ -298,6 +301,7 @@ export class StakingWrapper {
         quoteVault: stakingInfo.quoteVault,
         chanVault: stakingInfo.chanVault,
         staking: this.id,
+        userStats,
         userMeme: memeAcc,
         userQuote: quoteAcc.address,
         userChan: chanAcc.address,
@@ -343,6 +347,10 @@ export class StakingWrapper {
 
     const beMeme = input.beMeme ?? null;
 
+    const userStats = user.equals(LP_FEE_VAULT_OWNER)
+      ? null
+      : UserStats.GetUserStatsPDA(user);
+
     await memechan.methods
       .withdrawFees()
       .accounts({
@@ -352,6 +360,7 @@ export class StakingWrapper {
         quoteVault: stakingInfo.quoteVault,
         chanVault: stakingInfo.chanVault,
         staking: this.id,
+        userStats,
         userMeme: memeAcc,
         userQuote: quoteAcc.address,
         userChan: chanAcc.address,
