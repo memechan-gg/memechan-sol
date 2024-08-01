@@ -23,7 +23,11 @@ pub struct Unstake<'info> {
         constraint = meme_ticket.owner == signer.key()
     )]
     pub meme_ticket: Box<Account<'info, MemeTicket>>,
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [UserStats::STATS_PREFIX, signer.key().as_ref()],
+        bump
+    )]
     pub user_stats: Box<Account<'info, UserStats>>,
     #[account(
         mut,

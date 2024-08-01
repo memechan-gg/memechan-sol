@@ -15,7 +15,11 @@ pub struct SwapCoinX<'info> {
         has_one = owner
     )]
     pub meme_ticket: Account<'info, MemeTicket>,
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [UserStats::STATS_PREFIX, owner.key().as_ref()],
+        bump
+    )]
     pub user_stats: Account<'info, UserStats>,
     #[account(mut)]
     pub user_sol: Account<'info, TokenAccount>,

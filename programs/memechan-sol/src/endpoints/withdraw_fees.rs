@@ -24,7 +24,11 @@ pub struct WithdrawFees<'info> {
         constraint = meme_ticket.pool == staking.pool,
     )]
     pub meme_ticket: Box<Account<'info, MemeTicket>>,
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [UserStats::STATS_PREFIX, owner.key().as_ref()],
+        bump
+    )]
     pub user_stats: Option<Box<Account<'info, UserStats>>>,
     #[account(
         mut,

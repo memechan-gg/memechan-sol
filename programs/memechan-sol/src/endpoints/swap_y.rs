@@ -25,7 +25,11 @@ pub struct SwapCoinY<'info> {
         bump,
     )]
     pub meme_ticket: Account<'info, MemeTicket>,
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [UserStats::STATS_PREFIX, owner.key().as_ref()],
+        bump
+    )]
     pub user_stats: Account<'info, UserStats>,
     #[account(mut)]
     pub owner: Signer<'info>,
