@@ -58,7 +58,6 @@ pub enum AmmError {
     InvalidVestingPeriod,
     AdminShouldNotUnstake,
     ShouldProvideBackendVault,
-    ShouldProvideUserStats,
 }
 
 #[allow(dead_code)]

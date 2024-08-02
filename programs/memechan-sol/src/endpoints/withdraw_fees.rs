@@ -26,8 +26,7 @@ pub struct WithdrawFees<'info> {
     pub meme_ticket: Box<Account<'info, MemeTicket>>,
     #[account(
         mut,
-        seeds = [UserStats::STATS_PREFIX, owner.key().as_ref()],
-        bump
+        constraint = user_stats.pool == staking.pool
     )]
     pub user_stats: Option<Box<Account<'info, UserStats>>>,
     #[account(
@@ -147,8 +146,6 @@ pub fn handle(ctx: Context<WithdrawFees>) -> Result<()> {
         user_stats.meme_received += withdrawal.max_withdrawal_meme;
         user_stats.quote_received += withdrawal.max_withdrawal_quote;
         user_stats.chan_received += withdrawal.max_withdrawal_chan;
-    } else if accs.owner.key() != LP_FEE_KEY {
-        return Err(error!(AmmError::ShouldProvideUserStats));
     }
 
     if withdrawal.max_withdrawal_meme > 0 {

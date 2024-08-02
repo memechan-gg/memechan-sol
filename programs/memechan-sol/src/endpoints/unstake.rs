@@ -25,10 +25,9 @@ pub struct Unstake<'info> {
     pub meme_ticket: Box<Account<'info, MemeTicket>>,
     #[account(
         mut,
-        seeds = [UserStats::STATS_PREFIX, signer.key().as_ref()],
-        bump
+        constraint = user_stats.pool == staking.pool
     )]
-    pub user_stats: Box<Account<'info, UserStats>>,
+    pub user_stats: Option<Box<Account<'info, UserStats>>>,
     #[account(
         mut,
         constraint = user_meme.owner == signer.key()
@@ -135,11 +134,11 @@ pub fn handle(ctx: Context<Unstake>, release_amount: u64) -> Result<()> {
         withdrawal.max_withdrawal_chan,
     );
 
-    let user_stats = &mut accs.user_stats;
-
-    user_stats.meme_received += withdrawal.max_withdrawal_meme;
-    user_stats.quote_received += withdrawal.max_withdrawal_quote;
-    user_stats.chan_received += withdrawal.max_withdrawal_chan;
+    if let Some(user_stats) = &mut accs.user_stats {
+        user_stats.meme_received += withdrawal.max_withdrawal_meme;
+        user_stats.quote_received += withdrawal.max_withdrawal_quote;
+        user_stats.chan_received += withdrawal.max_withdrawal_chan;
+    }
 
     if withdrawal.max_withdrawal_meme + release_amount == 0
         && withdrawal.max_withdrawal_quote == 0

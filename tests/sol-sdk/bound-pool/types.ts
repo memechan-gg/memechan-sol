@@ -16,6 +16,7 @@ export interface SwapYArgs {
   quoteMint: PublicKey;
   memeTokensOut: BN;
   ticketNumber?: number;
+  referral?: PublicKey;
 }
 
 export type GetBuyMemeTransactionArgs = {
@@ -54,6 +55,7 @@ export type GetSellMemeTransactionArgs = Omit<
   "user" | "pool" | "poolSignerPda"
 > & {
   user: { publicKey: PublicKey };
+  userStats?: PublicKey;
   transaction?: Transaction;
 };
 

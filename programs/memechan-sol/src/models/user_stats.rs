@@ -4,13 +4,14 @@ use anchor_lang::prelude::*;
 #[derive(Default)]
 pub struct UserStats {
     pub is_initialized: bool,
+    pub pool: Pubkey,
     pub referral: Pubkey,
     pub meme_fees: u64,
     pub quote_fees: u64,
     pub meme_received: u64,
     pub quote_received: u64,
     pub chan_received: u64,
-    padding: [u8; 16],
+    padding: [u8; 8],
 }
 
 impl UserStats {
@@ -20,6 +21,7 @@ impl UserStats {
         let discriminant = 8;
 
         let is_initialized = 1;
+        let pool = 32;
         let referral = 32;
         let base_spent = 8;
         let quote_spent = 8;
@@ -27,10 +29,11 @@ impl UserStats {
         let quote_received = 8;
         let chan_received = 8;
 
-        let padding = 128;
+        let padding = 64;
 
         discriminant
             + is_initialized
+            + pool
             + referral
             + base_spent
             + quote_spent

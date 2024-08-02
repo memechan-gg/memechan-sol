@@ -27,10 +27,9 @@ pub struct SwapCoinY<'info> {
     pub meme_ticket: Account<'info, MemeTicket>,
     #[account(
         mut,
-        seeds = [UserStats::STATS_PREFIX, owner.key().as_ref()],
-        bump
+        has_one = pool
     )]
-    pub user_stats: Account<'info, UserStats>,
+    pub user_stats: Option<Account<'info, UserStats>>,
     #[account(mut)]
     pub owner: Signer<'info>,
     /// CHECK: pda signer
@@ -87,10 +86,10 @@ pub fn handle(
     pool.quote_reserve.tokens += swap_amount.amount_in;
     pool.meme_reserve.tokens -= swap_amount.amount_out + swap_amount.admin_fee_out;
 
-    let user_stats = &mut accs.user_stats;
-
-    user_stats.quote_fees += swap_amount.admin_fee_in;
-    user_stats.meme_fees += swap_amount.admin_fee_out;
+    if let Some(user_stats) = &mut accs.user_stats {
+        user_stats.quote_fees += swap_amount.admin_fee_in;
+        user_stats.meme_fees += swap_amount.admin_fee_out;
+    }
 
     if pool.meme_reserve.tokens == 0 {
         pool.locked = true;

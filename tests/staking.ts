@@ -289,7 +289,8 @@ export class StakingWrapper {
       user.publicKey
     );
 
-    const userStats = UserStats.GetUserStatsPDA(user.publicKey);
+    const userStats = null;
+    //UserStats.GetUserStatsPDA(user.publicKey);
 
     await memechan.methods
       .unstake(input.amount)
@@ -347,9 +348,8 @@ export class StakingWrapper {
 
     const beMeme = input.beMeme ?? null;
 
-    const userStats = user.equals(LP_FEE_VAULT_OWNER)
-      ? null
-      : UserStats.GetUserStatsPDA(user);
+    const userStats = null;
+    // : UserStats.GetUserStatsPDA(user);
 
     await memechan.methods
       .withdrawFees()
