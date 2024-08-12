@@ -17,7 +17,6 @@ import { QUOTE_MINT, payer, provider } from "./helpers";
 import { AmmPool } from "./pool";
 import { Address, BN, IdlAccounts } from "@coral-xyz/anchor";
 import { MemeTicketWrapper } from "./ticket";
-import { MEMO_PROGRAM_ID } from "@raydium-io/raydium-sdk";
 import { StakingPool } from "./sol-sdk/staking-pool/StakingPool";
 import {
   createProgram,

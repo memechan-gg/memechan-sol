@@ -175,7 +175,6 @@ export class BoundPoolWrapper {
     const user = args.user ?? payer;
     const { memeTokensOut, quoteTokensIn } = args;
     const ticketNumber = args.ticketNumber ?? 1;
-
     const userQuoteAcc = args.userQuoteAcc
       ? args.userQuoteAcc!
       : QUOTE_MINT.equals(NATIVE_MINT)

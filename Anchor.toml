@@ -40,7 +40,7 @@ address = "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
 program = "tests/programs/mainnet/mpl_metadata.so"
 
 [[test.validator.clone]]
-address = "59uVEJ3baADZ7Pg79MtV1erDrqGXYQK7qqJg3JwjGgm3"
+address = "ptsVM2dwpBVhu6uR3D1zzoRSjm1TC8gdmBEk8jpTP1P"
 [[test.validator.clone]]
 address = "CYjqBp55ZEm2HRoMmjm2NgQxxYMz2rYAVcdaaUXCyQHW"
 [[test.validator.clone]]

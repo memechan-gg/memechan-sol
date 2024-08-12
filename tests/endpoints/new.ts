@@ -6,6 +6,9 @@ import {
   adminSigner,
   airdrop,
   getLUTPDA,
+  mintChan,
+  mintKeypair,
+  payer,
   provider,
   sleep,
 } from "../helpers";
@@ -25,16 +28,41 @@ import { before, beforeEach } from "mocha";
 import { ASSOCIATED_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
 import { MPL_TOKEN_METADATA_PROGRAM_ID } from "@metaplex-foundation/mpl-token-metadata";
 import { ChanSwapWrapper } from "../chan_swap";
-import { DEFAULT_TARGET, memechan } from "../sol-sdk/config/config";
+import {
+  CHAN_TOKEN_INFO,
+  DEFAULT_TARGET,
+  memechan,
+} from "../sol-sdk/config/config";
 import {
   BP_FEE_VAULT_OWNER,
   LP_FEE_VAULT_OWNER,
+  pointsMint,
+  pointsPda,
   SWAP_FEE_VAULT_OWNER,
 } from "../common";
-
+import { createMint, setAuthority } from "@solana/spl-token";
+import { createAssociatedTokenAccount } from "@solana/spl-token";
 export function test() {
   describe("create_bound_pool", () => {
     it("creates target config", async () => {
+      await createMint(provider.connection, payer, admin, null, 9, mintKeypair);
+      await setAuthority(
+        provider.connection,
+        payer,
+        pointsMint,
+        payer.publicKey,
+        "MintTokens",
+        pointsPda
+      );
+      await airdrop(admin);
+      const adminChanAta = await createAssociatedTokenAccount(
+        provider.connection,
+        payer,
+        new PublicKey(CHAN_TOKEN_INFO.address),
+        admin
+      );
+      await sleep(100);
+      await mintChan(adminChanAta);
       await TargetConfigWrapper.new(DEFAULT_TARGET);
       await airdrop(BP_FEE_VAULT_OWNER);
       await airdrop(LP_FEE_VAULT_OWNER);

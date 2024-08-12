@@ -46,7 +46,7 @@ export const MEMECHAN_QUOTE_TOKEN_INFO: TokenInfo = {
 
 export const CHAN_TOKEN_INFO: TokenInfo = {
   chainId: 0,
-  address: "59uVEJ3baADZ7Pg79MtV1erDrqGXYQK7qqJg3JwjGgm3",
+  address: "7wKaJ2mCthngM4RKsxCJYnyv9ZxWsw4TzEv8ZCkKaNnz",
   name: "memechan",
   decimals: 9,
   symbol: "CHAN",

@@ -12,7 +12,7 @@ describe("memechan-sol", () => {
   provider.opts.skipPreflight = true;
   newPool.test();
   swapY.test();
-  // swapX.test();
+  swapX.test();
   // goLive.test();
   // fees.test();
   // tickets.test();

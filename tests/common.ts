@@ -7,7 +7,7 @@ import {
   WSS_API_CLUSTER,
 } from "./env";
 import { MemechanClient } from "./sol-sdk/MemechanClient";
-import { ADMIN_PUB_KEY } from "./sol-sdk/config/config";
+import { ADMIN_PUB_KEY, memechan } from "./sol-sdk/config/config";
 
 //export const connection = new Connection(RPC_API_CLUSTER);
 export const admin = ADMIN_PUB_KEY;
@@ -22,6 +22,14 @@ export const client = new MemechanClient({
   wssApiUrl: WSS_API_CLUSTER,
   isTest: IS_TEST_ENV,
 });
+
+export const pointsMint = new PublicKey(
+  "ptsVM2dwpBVhu6uR3D1zzoRSjm1TC8gdmBEk8jpTP1P"
+);
+export const pointsPda = PublicKey.findProgramAddressSync(
+  [Buffer.from("points_pda")],
+  memechan.programId
+)[0];
 
 export const BP_FEE_VAULT_OWNER = new PublicKey(
   "6YNJG9KDex3eNAmh1i64KUDbfKBiESkew3AWmnf6FiCy"

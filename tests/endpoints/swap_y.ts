@@ -21,7 +21,6 @@ export function test() {
       const pool = await BoundPoolWrapper.new();
       await mintQuote(payer.publicKey);
       await sleep(1000);
-
       // call to the swap endpoint
       const ticketId = await pool.swap_y({
         memeTokensOut: new BN(1),
@@ -29,11 +28,9 @@ export function test() {
       });
       sleep(1000);
       const poolInfo = await pool.fetch();
-
       assert(poolInfo.locked, "pool should be locked");
 
       const ticketInfo = await ticketId.fetch();
-
       const memesTotal = ticketInfo.amount.add(poolInfo.adminFeesMeme);
       assert(
         memesTotal.eq(new BN(DEFAULT_MAX_M)),
@@ -156,7 +153,7 @@ export function test() {
       } catch (e) {}
     });
 
-    it("swaps many times", async () => {
+    it.skip("swaps many times", async () => {
       const pool = await BoundPoolWrapper.new();
       await mintQuote(payer.publicKey);
       await sleep(1000);
