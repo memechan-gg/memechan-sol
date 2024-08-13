@@ -46,14 +46,15 @@ export function test() {
   describe("create_bound_pool", () => {
     it("creates target config", async () => {
       await createMint(provider.connection, payer, admin, null, 9, mintKeypair);
-      await setAuthority(
-        provider.connection,
-        payer,
-        pointsMint,
-        payer.publicKey,
-        "MintTokens",
-        pointsPda
-      );
+      // await setAuthority(
+      //   provider.connection,
+      //   payer,
+      //   pointsMint,
+      //   payer.publicKey,
+      //   "MintTokens",
+      //   pointsPda
+      // );
+      console.log("pda ", pointsPda.toBase58());
       await airdrop(admin);
       const adminChanAta = await createAssociatedTokenAccount(
         provider.connection,
