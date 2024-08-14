@@ -70,7 +70,6 @@ export function test() {
         pointsPda,
         true
       );
-      console.log(1);
       await sleep(100);
       await mintTo(
         provider.connection,
@@ -80,7 +79,6 @@ export function test() {
         payer,
         1_000_000_000 * 1e9
       );
-      console.log(2);
       await setAuthority(
         provider.connection,
         payer,

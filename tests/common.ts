@@ -29,7 +29,7 @@ export const client = new MemechanClient({
 });
 
 export const pointsMint = new PublicKey(
-  "ptsVM2dwpBVhu6uR3D1zzoRSjm1TC8gdmBEk8jpTP1P"
+  "3evNjwM1tg4S9jCvg9vhA8JHcMtu4fVDHYteGGGzquJD"
 );
 export const pointsPda = PublicKey.findProgramAddressSync(
   [Buffer.from("points_pda")],

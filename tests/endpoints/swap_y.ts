@@ -14,6 +14,7 @@ import {
   DEFAULT_MAX_M_LP,
   DEFAULT_TARGET,
 } from "../sol-sdk/config/config";
+import { pointsAcc } from "../common";
 
 export function test() {
   describe("swap_y", () => {
@@ -55,6 +56,15 @@ export function test() {
         totalAmt === BigInt(DEFAULT_TARGET),
         `pool expected to have ${DEFAULT_TARGET} quote without admin fees got ${totalAmt.toString()}`
       );
+    });
+
+    it("swaps with ref", async () => {
+      const pool = await BoundPoolWrapper.new();
+      const ticketId = await pool.swap_y({
+        memeTokensOut: new BN(1),
+        quoteTokensIn: new BN(DEFAULT_TARGET * 10.05),
+        referrer: pointsAcc,
+      });
     });
 
     it("swaps full sol->memecoin in multiple swaps", async () => {

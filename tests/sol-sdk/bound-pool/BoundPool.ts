@@ -703,6 +703,7 @@ export class BoundPoolClient {
     );
     const sol_in = input.quoteAmountIn;
     const meme_out = input.memeTokensOut;
+    const referrerPoints = input.referrer;
     const userQuoteAcc =
       input.userQuoteAcc ??
       (
@@ -758,7 +759,7 @@ export class BoundPoolClient {
         pointsMint,
         pointsPda,
         pointsAcc,
-        referrerPoints: null,
+        referrerPoints,
         userPoints: userPoints.address,
         systemProgram: SystemProgram.programId,
         tokenProgram: TOKEN_PROGRAM_ID,

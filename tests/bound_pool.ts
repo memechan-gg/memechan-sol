@@ -73,6 +73,7 @@ export interface SwapYArgs {
   quoteTokensIn: BN;
   userQuoteAcc?: PublicKey;
   ticketNumber?: number;
+  referrer?: PublicKey;
 }
 
 export interface SwapXArgs {
@@ -175,6 +176,7 @@ export class BoundPoolWrapper {
     const user = args.user ?? payer;
     const { memeTokensOut, quoteTokensIn } = args;
     const ticketNumber = args.ticketNumber ?? 1;
+    const referrer = args.referrer ?? null;
     const userQuoteAcc = args.userQuoteAcc
       ? args.userQuoteAcc!
       : QUOTE_MINT.equals(NATIVE_MINT)
@@ -213,6 +215,7 @@ export class BoundPoolWrapper {
       user,
       userQuoteAcc,
       ticketNumber,
+      referrer,
     });
 
     return new MemeTicketWrapper(ticket.id);
