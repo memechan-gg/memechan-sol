@@ -65,7 +65,7 @@ pub const BP_FEE_KEY: Pubkey =
 
 #[cfg(feature = "testing")]
 pub const POINTS_MINT: Pubkey =
-    solana_program::pubkey!("2MbYWYgf3rENFcU2odqJeWrHHJedw4ArpWFDhcrjbzmx");
+    solana_program::pubkey!("ptsVM2dwpBVhu6uR3D1zzoRSjm1TC8gdmBEk8jpTP1P");
 #[cfg(feature = "mainnet")]
 pub const POINTS_MINT: Pubkey =
     solana_program::pubkey!("ptsVM2dwpBVhu6uR3D1zzoRSjm1TC8gdmBEk8jpTP1P");

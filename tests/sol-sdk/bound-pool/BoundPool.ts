@@ -106,6 +106,7 @@ import {
   LP_FEE_VAULT_OWNER,
   pointsMint,
   pointsPda,
+  pointsAcc,
   SWAP_FEE_VAULT_OWNER,
 } from "../../common";
 import { ASSOCIATED_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
@@ -756,6 +757,8 @@ export class BoundPoolClient {
         userSol: userQuoteAcc,
         pointsMint,
         pointsPda,
+        pointsAcc,
+        referrerPoints: null,
         userPoints: userPoints.address,
         systemProgram: SystemProgram.programId,
         tokenProgram: TOKEN_PROGRAM_ID,

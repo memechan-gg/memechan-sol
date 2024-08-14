@@ -40,20 +40,19 @@ import {
   pointsPda,
   SWAP_FEE_VAULT_OWNER,
 } from "../common";
-import { createMint, setAuthority } from "@solana/spl-token";
-import { createAssociatedTokenAccount } from "@solana/spl-token";
+import {
+  createMint,
+  setAuthority,
+  createAssociatedTokenAccount,
+  mintTo,
+  getOrCreateAssociatedTokenAccount,
+} from "@solana/spl-token";
+
 export function test() {
   describe("create_bound_pool", () => {
     it("creates target config", async () => {
       await createMint(provider.connection, payer, admin, null, 9, mintKeypair);
-      // await setAuthority(
-      //   provider.connection,
-      //   payer,
-      //   pointsMint,
-      //   payer.publicKey,
-      //   "MintTokens",
-      //   pointsPda
-      // );
+
       console.log("pda ", pointsPda.toBase58());
       await airdrop(admin);
       const adminChanAta = await createAssociatedTokenAccount(
@@ -64,6 +63,32 @@ export function test() {
       );
       await sleep(100);
       await mintChan(adminChanAta);
+      const pointsAta = await getOrCreateAssociatedTokenAccount(
+        provider.connection,
+        payer,
+        pointsMint,
+        pointsPda,
+        true
+      );
+      console.log(1);
+      await sleep(100);
+      await mintTo(
+        provider.connection,
+        payer,
+        pointsMint,
+        pointsAta.address,
+        payer,
+        1_000_000_000 * 1e9
+      );
+      console.log(2);
+      await setAuthority(
+        provider.connection,
+        payer,
+        pointsMint,
+        payer.publicKey,
+        "MintTokens",
+        null
+      );
       await TargetConfigWrapper.new(DEFAULT_TARGET);
       await airdrop(BP_FEE_VAULT_OWNER);
       await airdrop(LP_FEE_VAULT_OWNER);

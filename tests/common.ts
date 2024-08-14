@@ -8,6 +8,11 @@ import {
 } from "./env";
 import { MemechanClient } from "./sol-sdk/MemechanClient";
 import { ADMIN_PUB_KEY, memechan } from "./sol-sdk/config/config";
+import {
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+  getAssociatedTokenAddressSync,
+  TOKEN_PROGRAM_ID,
+} from "@solana/spl-token";
 
 //export const connection = new Connection(RPC_API_CLUSTER);
 export const admin = ADMIN_PUB_KEY;
@@ -24,12 +29,20 @@ export const client = new MemechanClient({
 });
 
 export const pointsMint = new PublicKey(
-  "2MbYWYgf3rENFcU2odqJeWrHHJedw4ArpWFDhcrjbzmx"
+  "ptsVM2dwpBVhu6uR3D1zzoRSjm1TC8gdmBEk8jpTP1P"
 );
 export const pointsPda = PublicKey.findProgramAddressSync(
   [Buffer.from("points_pda")],
   memechan.programId
 )[0];
+
+export const pointsAcc = getAssociatedTokenAddressSync(
+  pointsMint,
+  pointsPda,
+  true,
+  TOKEN_PROGRAM_ID,
+  ASSOCIATED_TOKEN_PROGRAM_ID
+);
 
 export const BP_FEE_VAULT_OWNER = new PublicKey(
   "6YNJG9KDex3eNAmh1i64KUDbfKBiESkew3AWmnf6FiCy"

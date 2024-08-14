@@ -36,6 +36,7 @@ import {
 } from "./sol-sdk/config/config";
 import { MemechanSol } from "../target/types/memechan_sol";
 import { LP_FEE_VAULT_OWNER } from "./common";
+import { MEMO_PROGRAM_ID } from "@raydium-io/raydium-sdk";
 
 export type Staking = IdlAccounts<MemechanSol>["stakingPool"];
 
