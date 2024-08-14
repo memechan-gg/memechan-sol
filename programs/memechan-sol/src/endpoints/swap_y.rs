@@ -1,4 +1,6 @@
-use crate::consts::{POINTS_MINT, POINTS_PDA};
+use crate::consts::{
+    BOOSTED_POINTS_AMOUNT, BOOSTED_SOL_AMOUNT, MAX_POINTS_AVAILABLE, POINTS_MINT, POINTS_PDA,
+};
 use crate::err::AmmError;
 use crate::libraries::MulDiv;
 use crate::models::bound::BoundPool;
@@ -115,7 +117,10 @@ pub fn handle(
 
     let available_points_amt = accs.points_acc.amount;
 
-    let points = swap_amount.amount_in + swap_amount.admin_fee_in;
+    let points = get_swap_points(
+        available_points_amt,
+        swap_amount.amount_in + swap_amount.admin_fee_in,
+    );
     let clamped_points = min(available_points_amt, points);
     if clamped_points > 0 {
         token::transfer(
@@ -176,4 +181,42 @@ pub fn handle(
     );
 
     return Ok(());
+}
+
+fn get_swap_points(current_available: u64, buy_amount: u64) -> u64 {
+    let current_points = MAX_POINTS_AVAILABLE - current_available;
+    let current_sol = get_sol_for_points(current_points);
+    let next_points = get_points_for_sol(current_sol + buy_amount);
+
+    msg!(
+        "curp {} curs {} nexp {}",
+        current_points,
+        current_sol,
+        next_points
+    );
+
+    if next_points > current_points {
+        return next_points - current_points;
+    }
+    return 0;
+}
+
+fn get_points_for_sol(sol_amount: u64) -> u64 {
+    if sol_amount < BOOSTED_SOL_AMOUNT {
+        return sol_amount
+            .mul_div_floor(BOOSTED_POINTS_AMOUNT, BOOSTED_SOL_AMOUNT)
+            .unwrap();
+    }
+
+    return BOOSTED_POINTS_AMOUNT + (sol_amount - BOOSTED_SOL_AMOUNT);
+}
+
+fn get_sol_for_points(points_amount: u64) -> u64 {
+    if points_amount < BOOSTED_POINTS_AMOUNT {
+        return points_amount
+            .mul_div_floor(BOOSTED_SOL_AMOUNT, BOOSTED_POINTS_AMOUNT)
+            .unwrap();
+    }
+
+    return BOOSTED_SOL_AMOUNT + (points_amount - BOOSTED_POINTS_AMOUNT);
 }
