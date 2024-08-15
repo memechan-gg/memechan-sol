@@ -510,8 +510,8 @@ mod tests {
     use std::fs::File;
 
     use crate::consts::{
-        DEFAULT_MAX_M, DEFAULT_MAX_M_LP, DEFAULT_PRICE_FACTOR_DENOMINATOR,
-        DEFAULT_PRICE_FACTOR_NUMERATOR,
+        BOOSTED_SOL_AMOUNT, DEFAULT_MAX_M, DEFAULT_MAX_M_LP, DEFAULT_PRICE_FACTOR_DENOMINATOR,
+        DEFAULT_PRICE_FACTOR_NUMERATOR, POINTS_DECIMALS, WSOL_DECIMALS,
     };
     use crate::models::fees::{FEE, MEME_FEE};
     use csv::ReaderBuilder;
@@ -1319,7 +1319,7 @@ mod tests {
                 };
                 pool.meme_reserve.tokens = DEFAULT_MAX_M as u64;
 
-                for i in 0..gamma_s as u64 / step_i {
+                for _i in 0..gamma_s as u64 / step_i {
                     let swap = pool.buy_meme_swap_amounts(step_i, 1).unwrap();
 
                     pool.admin_fees_quote += swap.admin_fee_in;
@@ -1330,6 +1330,27 @@ mod tests {
                 }
             }
         }
+        Ok(())
+    }
+
+    #[test]
+    pub fn check_boosted_points() -> Result<()> {
+        let gamma_s = 6900 * WSOL_DECIMALS;
+        let full_curve = (gamma_s * 1_050) / 1_000;
+        let pools_number = BOOSTED_SOL_AMOUNT / full_curve;
+
+        let mut available_points_amt = 1_000_000_000 * POINTS_DECIMALS;
+        let mut points_acc = 0u64;
+
+        for _i in 0..pools_number + 2 {
+            let points =
+                crate::endpoints::swap_y::get_swap_points(available_points_amt, full_curve);
+            msg!("{}", points as f64 / POINTS_DECIMALS as f64);
+            points_acc += points;
+            available_points_amt -= points;
+        }
+        msg!("total {}", points_acc);
+
         Ok(())
     }
 

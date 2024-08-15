@@ -1,5 +1,6 @@
 use crate::consts::{
-    BOOSTED_POINTS_AMOUNT, BOOSTED_SOL_AMOUNT, MAX_POINTS_AVAILABLE, POINTS_MINT, POINTS_PDA,
+    BOOSTED_POINTS_AMOUNT, BOOSTED_SOL_AMOUNT, MAX_POINTS_AVAILABLE, POINTS_DECIMALS, POINTS_MINT,
+    POINTS_PDA,
 };
 use crate::err::AmmError;
 use crate::libraries::MulDiv;
@@ -7,7 +8,9 @@ use crate::models::bound::BoundPool;
 use crate::models::staked_lp::MemeTicket;
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
+use num_integer::Roots;
 use std::cmp::min;
+use std::ops::Div;
 
 #[derive(Accounts)]
 #[instruction(coin_in_amount: u64, coin_x_min_value: u64, _ticket_number: u64)]
@@ -183,29 +186,32 @@ pub fn handle(
     return Ok(());
 }
 
-fn get_swap_points(current_available: u64, buy_amount: u64) -> u64 {
+pub fn get_swap_points(current_available: u64, buy_amount: u64) -> u64 {
     let current_points = MAX_POINTS_AVAILABLE - current_available;
     let current_sol = get_sol_for_points(current_points);
     let next_points = get_points_for_sol(current_sol + buy_amount);
 
-    msg!(
-        "curp {} curs {} nexp {}",
-        current_points,
-        current_sol,
-        next_points
-    );
-
+    // msg!(
+    //     "curp {} curs {} nexp {}",
+    //     current_points,
+    //     current_sol,
+    //     next_points
+    // );
+    // if current_sol + buy_amount >= BOOSTED_SOL_AMOUNT {
+    //     return buy_amount;
+    // }
     if next_points > current_points {
         return next_points - current_points;
     }
     return 0;
 }
 
+const P: u128 = (BOOSTED_POINTS_AMOUNT as u128).pow(2) / (BOOSTED_SOL_AMOUNT as u128);
+
 fn get_points_for_sol(sol_amount: u64) -> u64 {
     if sol_amount < BOOSTED_SOL_AMOUNT {
-        return sol_amount
-            .mul_div_floor(BOOSTED_POINTS_AMOUNT, BOOSTED_SOL_AMOUNT)
-            .unwrap();
+        let amt = sol_amount as u128 * P;
+        return amt.sqrt() as u64;
     }
 
     return BOOSTED_POINTS_AMOUNT + (sol_amount - BOOSTED_SOL_AMOUNT);
@@ -213,9 +219,9 @@ fn get_points_for_sol(sol_amount: u64) -> u64 {
 
 fn get_sol_for_points(points_amount: u64) -> u64 {
     if points_amount < BOOSTED_POINTS_AMOUNT {
-        return points_amount
-            .mul_div_floor(BOOSTED_SOL_AMOUNT, BOOSTED_POINTS_AMOUNT)
-            .unwrap();
+        let points_amount = points_amount + 1_000 * POINTS_DECIMALS;
+        let points_squared = (points_amount as u128).pow(2);
+        return points_squared.div(P) as u64;
     }
 
     return BOOSTED_SOL_AMOUNT + (points_amount - BOOSTED_POINTS_AMOUNT);

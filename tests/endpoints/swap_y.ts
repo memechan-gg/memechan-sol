@@ -67,6 +67,16 @@ export function test() {
       });
     });
 
+    it("swaps multiple pools for points", async () => {
+      for (let i = 0; i < 15; i++) {
+        const pool = await BoundPoolWrapper.new();
+        const ticketId = await pool.swap_y({
+          memeTokensOut: new BN(1),
+          quoteTokensIn: new BN(DEFAULT_TARGET * 10.05),
+        });
+      }
+    });
+
     it("swaps full sol->memecoin in multiple swaps", async () => {
       const pool = await BoundPoolWrapper.new();
 
