@@ -17,7 +17,6 @@ mainnet = []
 testing = []
 mainnet-testing = ["testing"]
 localnet-testing = ["testing"]
-default = ["mainnet"]
 
 [dependencies]
 num-integer = "0.1.46"

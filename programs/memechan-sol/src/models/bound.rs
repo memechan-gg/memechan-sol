@@ -1335,7 +1335,7 @@ mod tests {
 
     #[test]
     pub fn check_boosted_points() -> Result<()> {
-        let gamma_s = 6900 * WSOL_DECIMALS;
+        let gamma_s = 69 * WSOL_DECIMALS / 100_000;
         let full_curve = (gamma_s * 1_050) / 1_000;
         let pools_number = BOOSTED_SOL_AMOUNT / full_curve;
 
@@ -1345,7 +1345,7 @@ mod tests {
         for _i in 0..pools_number + 2 {
             let points =
                 crate::endpoints::swap_y::get_swap_points(available_points_amt, full_curve);
-            msg!("{}", points as f64 / POINTS_DECIMALS as f64);
+            // msg!("{}", points as f64 / POINTS_DECIMALS as f64);
             points_acc += points;
             available_points_amt -= points;
         }
