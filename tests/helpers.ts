@@ -30,14 +30,16 @@ export const provider = AnchorProvider.local();
 setProvider(provider);
 export const payer = (provider.wallet as NodeWallet).payer;
 
-export const admin = new PublicKey(
-  "8SvkUtJZCyJwSQGkiszwcRcPv7c8pPSr8GVEppGNN7DV"
+export const mintKeypair = Keypair.fromSecretKey(
+  Uint8Array.from(JSON.parse(process.env.TEST_MINT_PRIV_KEY ?? ""))
 );
 
 const payerSecretKey = JSON.parse(process.env.ADMIN_PRIV_KEY ?? "");
 export const adminSigner = Keypair.fromSecretKey(
   Uint8Array.from(payerSecretKey)
 );
+
+export const admin = adminSigner.publicKey;
 
 export const QUOTE_MINT = new PublicKey(
   "So11111111111111111111111111111111111111112"

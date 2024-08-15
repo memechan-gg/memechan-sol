@@ -6,6 +6,9 @@ import {
   adminSigner,
   airdrop,
   getLUTPDA,
+  mintChan,
+  mintKeypair,
+  payer,
   provider,
   sleep,
 } from "../helpers";
@@ -25,16 +28,65 @@ import { before, beforeEach } from "mocha";
 import { ASSOCIATED_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
 import { MPL_TOKEN_METADATA_PROGRAM_ID } from "@metaplex-foundation/mpl-token-metadata";
 import { ChanSwapWrapper } from "../chan_swap";
-import { DEFAULT_TARGET, memechan } from "../sol-sdk/config/config";
+import {
+  CHAN_TOKEN_INFO,
+  DEFAULT_TARGET,
+  memechan,
+} from "../sol-sdk/config/config";
 import {
   BP_FEE_VAULT_OWNER,
   LP_FEE_VAULT_OWNER,
+  pointsMint,
+  pointsPda,
   SWAP_FEE_VAULT_OWNER,
 } from "../common";
+import {
+  createMint,
+  setAuthority,
+  createAssociatedTokenAccount,
+  mintTo,
+  getOrCreateAssociatedTokenAccount,
+} from "@solana/spl-token";
 
 export function test() {
   describe("create_bound_pool", () => {
     it("creates target config", async () => {
+      await createMint(provider.connection, payer, admin, null, 9, mintKeypair);
+
+      console.log("pda ", pointsPda.toBase58());
+      await airdrop(admin);
+      const adminChanAta = await createAssociatedTokenAccount(
+        provider.connection,
+        payer,
+        new PublicKey(CHAN_TOKEN_INFO.address),
+        admin
+      );
+      await sleep(100);
+      await mintChan(adminChanAta);
+      const pointsAta = await getOrCreateAssociatedTokenAccount(
+        provider.connection,
+        payer,
+        pointsMint,
+        pointsPda,
+        true
+      );
+      await sleep(100);
+      await mintTo(
+        provider.connection,
+        payer,
+        pointsMint,
+        pointsAta.address,
+        payer,
+        1_000_000_000 * 1e9
+      );
+      await setAuthority(
+        provider.connection,
+        payer,
+        pointsMint,
+        payer.publicKey,
+        "MintTokens",
+        null
+      );
       await TargetConfigWrapper.new(DEFAULT_TARGET);
       await airdrop(BP_FEE_VAULT_OWNER);
       await airdrop(LP_FEE_VAULT_OWNER);

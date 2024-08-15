@@ -52,7 +52,6 @@ export class ChanSwapWrapper {
       ChanSwapWrapper.chanSwapSigner(),
       true
     );
-
     await mintChan(chanVault.address, 10_000_000 * 10 ** 9);
 
     await memechan.methods

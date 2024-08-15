@@ -17,6 +17,7 @@ export interface SwapYArgs {
   quoteMint: PublicKey;
   memeTokensOut: BN;
   ticketNumber?: number;
+  referrer: PublicKey;
 }
 
 export type GetBuyMemeTransactionArgs = {

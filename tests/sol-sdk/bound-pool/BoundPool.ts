@@ -104,6 +104,9 @@ import { BoundPoolType } from "../../bound_pool";
 import {
   BP_FEE_VAULT_OWNER,
   LP_FEE_VAULT_OWNER,
+  pointsMint,
+  pointsPda,
+  pointsAcc,
   SWAP_FEE_VAULT_OWNER,
 } from "../../common";
 import { ASSOCIATED_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/utils/token";
@@ -687,7 +690,6 @@ export class BoundPoolClient {
   public async swapY(input: SwapYArgs): Promise<MemeTicket> {
     const user = input.user!;
     const payer = input.payer!;
-
     const ticketNumber = input.ticketNumber ?? 1;
     const pool = input.pool ?? this.id;
     const id = MemeTicket.getMemeTicketPDA({
@@ -701,7 +703,7 @@ export class BoundPoolClient {
     );
     const sol_in = input.quoteAmountIn;
     const meme_out = input.memeTokensOut;
-
+    const referrerPoints = input.referrer;
     const userQuoteAcc =
       input.userQuoteAcc ??
       (
@@ -715,7 +717,6 @@ export class BoundPoolClient {
           { skipPreflight: true }
         )
       ).address;
-
     // const balance = await this.client.connection.getBalance(payer.publicKey);
     // console.log(`${balance / LAMPORTS_PER_SOL} SOL`);
 
@@ -737,6 +738,15 @@ export class BoundPoolClient {
 
     //console.log("3 transferResult: " + transferResult);
 
+    const userPoints = await getOrCreateAssociatedTokenAccount(
+      this.client.connection,
+      payer,
+      pointsMint,
+      user.publicKey,
+      false,
+      "processed",
+      { skipPreflight: true }
+    );
     await this.client.memechanProgram.methods
       .swapY(new BN(sol_in), new BN(meme_out), new BN(ticketNumber))
       .accounts({
@@ -746,6 +756,11 @@ export class BoundPoolClient {
         poolSignerPda: poolSignerPda,
         quoteVault: this.quoteVault,
         userSol: userQuoteAcc,
+        pointsMint,
+        pointsPda,
+        pointsAcc,
+        referrerPoints,
+        userPoints: userPoints.address,
         systemProgram: SystemProgram.programId,
         tokenProgram: TOKEN_PROGRAM_ID,
       })

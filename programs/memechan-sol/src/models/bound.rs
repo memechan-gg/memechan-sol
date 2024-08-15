@@ -138,7 +138,7 @@ impl BoundPool {
 
         let max_delta_m = p.gamma_m - m_b; // TODO: confirm
 
-        let admin_fee_in = self.fees.get_fee_meme_amount(delta_m).unwrap();
+        let admin_fee_in = self.fees.get_fee_meme_amount(delta_m).unwrap() * 2;
         let is_max = delta_m - admin_fee_in >= max_delta_m;
 
         let net_delta_m = min(delta_m - admin_fee_in, max_delta_m);
@@ -149,7 +149,7 @@ impl BoundPool {
             self.compute_delta_s(s_b, net_delta_m)?
         };
 
-        let admin_fee_out = self.fees.get_fee_quote_amount(delta_s).unwrap();
+        let admin_fee_out = self.fees.get_fee_quote_amount(delta_s).unwrap() * 2;
         let net_delta_s = delta_s - admin_fee_out;
 
         //assert!(net_delta_s >= min_delta_s, errors::slippage());
@@ -510,8 +510,8 @@ mod tests {
     use std::fs::File;
 
     use crate::consts::{
-        DEFAULT_MAX_M, DEFAULT_MAX_M_LP, DEFAULT_PRICE_FACTOR_DENOMINATOR,
-        DEFAULT_PRICE_FACTOR_NUMERATOR,
+        BOOSTED_SOL_AMOUNT, DEFAULT_MAX_M, DEFAULT_MAX_M_LP, DEFAULT_PRICE_FACTOR_DENOMINATOR,
+        DEFAULT_PRICE_FACTOR_NUMERATOR, POINTS_DECIMALS, WSOL_DECIMALS,
     };
     use crate::models::fees::{FEE, MEME_FEE};
     use csv::ReaderBuilder;
@@ -1319,7 +1319,7 @@ mod tests {
                 };
                 pool.meme_reserve.tokens = DEFAULT_MAX_M as u64;
 
-                for i in 0..gamma_s as u64 / step_i {
+                for _i in 0..gamma_s as u64 / step_i {
                     let swap = pool.buy_meme_swap_amounts(step_i, 1).unwrap();
 
                     pool.admin_fees_quote += swap.admin_fee_in;
@@ -1330,6 +1330,27 @@ mod tests {
                 }
             }
         }
+        Ok(())
+    }
+
+    #[test]
+    pub fn check_boosted_points() -> Result<()> {
+        let gamma_s = 69 * WSOL_DECIMALS / 100_000;
+        let full_curve = (gamma_s * 1_050) / 1_000;
+        let pools_number = BOOSTED_SOL_AMOUNT / full_curve;
+
+        let mut available_points_amt = 1_000_000_000 * POINTS_DECIMALS;
+        let mut points_acc = 0u64;
+
+        for _i in 0..pools_number + 2 {
+            let points =
+                crate::endpoints::swap_y::get_swap_points(available_points_amt, full_curve);
+            // msg!("{}", points as f64 / POINTS_DECIMALS as f64);
+            points_acc += points;
+            available_points_amt -= points;
+        }
+        msg!("total {}", points_acc);
+
         Ok(())
     }
 
