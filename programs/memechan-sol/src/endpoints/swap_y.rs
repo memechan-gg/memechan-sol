@@ -123,6 +123,7 @@ pub fn handle(
     let points = get_swap_points(
         available_points_amt,
         swap_amount.amount_in + swap_amount.admin_fee_in,
+        accs.points_mint.supply,
     );
     let clamped_points = min(available_points_amt, points);
     if clamped_points > 0 {
@@ -186,20 +187,20 @@ pub fn handle(
     return Ok(());
 }
 
-pub fn get_swap_points(current_available: u64, buy_amount: u64) -> u64 {
+pub fn get_swap_points(current_available: u64, buy_amount: u64, supply: u64) -> u64 {
     let current_points = MAX_POINTS_AVAILABLE - current_available;
     let current_sol = get_sol_for_points(current_points);
     let next_points = get_points_for_sol(current_sol + buy_amount);
+    let clamped_supply = if supply > MAX_POINTS_AVAILABLE {
+        0
+    } else {
+        supply
+    };
+    let burned_tokens = MAX_POINTS_AVAILABLE - clamped_supply;
 
-    // msg!(
-    //     "curp {} curs {} nexp {}",
-    //     current_points,
-    //     current_sol,
-    //     next_points
-    // );
-    // if current_sol + buy_amount >= BOOSTED_SOL_AMOUNT {
-    //     return buy_amount;
-    // }
+    if current_points + burned_tokens >= BOOSTED_POINTS_AMOUNT {
+        return buy_amount;
+    }
     if next_points > current_points {
         return next_points - current_points;
     }
