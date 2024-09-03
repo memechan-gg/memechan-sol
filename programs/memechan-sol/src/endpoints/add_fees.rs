@@ -165,6 +165,10 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<
 
     let staking_signer_seeds = &[&staking_seeds[..]];
 
+    if accs.staking_lp_wallet.amount == 0 {
+        return Ok(());
+    }
+
     let meme_vault_initial_amt = accs.meme_vault.amount;
     let quote_vault_initial_amt = accs.quote_vault.amount;
 
