@@ -14,3 +14,5 @@ test-ledger
 
 !target/idl/*
 !target/types/*
+
+.env

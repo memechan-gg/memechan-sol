@@ -5,7 +5,7 @@ seeds = false
 skip-lint = false
 
 [programs.localnet]
-memechan_sol = "BDRDLhqbfEQx2LZQ9Js7k1Dt1S9AArTw44q1rM96YrwC"
+memechan_sol = "memeVtsr1AqAjfRzW2PuzymQdP2m7SgL6FQ1xgMc9MR"
 
 [programs.devnet]
 memechan_sol = "BDRDLhqbfEQx2LZQ9Js7k1Dt1S9AArTw44q1rM96YrwC"
@@ -14,9 +14,26 @@ memechan_sol = "BDRDLhqbfEQx2LZQ9Js7k1Dt1S9AArTw44q1rM96YrwC"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "https://api.devnet.solana.com"
-# cluster = "localnet"
+#cluster = "https://api.devnet.solana.com"
+cluster = "localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+
+[test.validator]
+url = "https://api.mainnet-beta.solana.com"
+
+[[test.validator.clone]]
+address = "4HztW6sS78Eyq7wskcAkd8XXCPfwbFgR9FsK7HuTBY8W"
+[[test.validator.clone]]
+address = "4y25GAmFGZQdBFV54jZwZ9jzcYYCCkMpfTsG2T4mAoxG"
+[[test.validator.clone]]
+address = "35fN6LMYt6cKsemgbR28nFooiJtcnvaKPCeRXyuMKfoF"
+[[test.validator.clone]]
+address = "4HztW6sS78Eyq7wskcAkd8XXCPfwbFgR9FsK7HuTBY8W"
+[[test.validator.clone]]
+address = "C3fPoi6qNWsKZA1DKVh8mTv66g5P9Jwo4ciXHsJmnJ4s"
+[[test.validator.clone]]
+address = "KZbAoMgCcb2gDEn2Ucea86ux84y25y3ybbWQGQpd9D6"
+

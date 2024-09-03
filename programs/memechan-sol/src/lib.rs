@@ -59,7 +59,7 @@ pub mod memechan_sol {
         ctx: Context<SwapCoinY>,
         coin_in_amount: u64,
         coin_x_min_value: u64,
-        ticket_number: u64
+        ticket_number: u64,
     ) -> Result<()> {
         swap_y::handle(ctx, coin_in_amount, coin_x_min_value, ticket_number)
     }
@@ -113,7 +113,14 @@ pub mod memechan_sol {
         withdraw_admin_fees::handle(ctx)
     }
 
-    pub fn increase_vesting(ctx: Context<IncreaseVestingTime>, vesting_ts_increase: u64) -> Result<()> {
+    pub fn increase_vesting(
+        ctx: Context<IncreaseVestingTime>,
+        vesting_ts_increase: u64,
+    ) -> Result<()> {
         increase_vesting_time::handle(ctx, vesting_ts_increase)
+    }
+
+    pub fn recover_lp(ctx: Context<RecoverLP>) -> Result<()> {
+        recover_lp::handle(ctx)
     }
 }
