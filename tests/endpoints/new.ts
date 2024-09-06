@@ -47,6 +47,7 @@ import {
   mintTo,
   getOrCreateAssociatedTokenAccount,
 } from "@solana/spl-token";
+import { PointsEpochWrapper } from "../points_epoch";
 
 export function test() {
   describe("create_bound_pool", () => {
@@ -95,6 +96,10 @@ export function test() {
 
     it("creates chan swap", async () => {
       await ChanSwapWrapper.new();
+    });
+
+    it("creates points epoch", async () => {
+      await PointsEpochWrapper.changeCreate(1, 5, 1);
     });
 
     it("create LUT", async () => {

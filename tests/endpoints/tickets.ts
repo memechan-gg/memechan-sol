@@ -5,6 +5,7 @@ import { BN } from "@coral-xyz/anchor";
 import { airdrop, payer, provider, sleep } from "../helpers";
 import { createWrappedNativeAccount, getAccount } from "@solana/spl-token";
 import { Keypair } from "@solana/web3.js";
+import { DEFAULT_TARGET } from "../sol-sdk/config/config";
 
 export function test() {
   describe("merge tickets", () => {
@@ -28,7 +29,8 @@ export function test() {
         await pool.swap_y({
           user,
           memeTokensOut: new BN(1),
-          quoteTokensIn: new BN(50.5 * 1e9),
+          quoteTokensIn: new BN(DEFAULT_TARGET * 0.25),
+          ticketNumber: 1,
         })
       );
 
@@ -36,7 +38,8 @@ export function test() {
         await pool.swap_y({
           user,
           memeTokensOut: new BN(1),
-          quoteTokensIn: new BN(70.7 * 1e9),
+          quoteTokensIn: new BN(DEFAULT_TARGET * 0.3),
+          ticketNumber: 2,
         })
       );
 
@@ -44,7 +47,8 @@ export function test() {
         await pool.swap_y({
           user,
           memeTokensOut: new BN(1),
-          quoteTokensIn: new BN(181.8 * 1e9),
+          quoteTokensIn: new BN(DEFAULT_TARGET * 0.35),
+          ticketNumber: 3,
         })
       );
 
@@ -82,7 +86,7 @@ export function test() {
         await pool.swap_y({
           user,
           memeTokensOut: new BN(1),
-          quoteTokensIn: new BN(50.5 * 1e9),
+          quoteTokensIn: new BN(DEFAULT_TARGET * 0.35),
         })
       );
 
@@ -90,7 +94,8 @@ export function test() {
         await pool.swap_y({
           user,
           memeTokensOut: new BN(1),
-          quoteTokensIn: new BN(70.7 * 1e9),
+          quoteTokensIn: new BN(DEFAULT_TARGET * 0.4),
+          ticketNumber: 2,
         })
       );
 
@@ -98,11 +103,12 @@ export function test() {
         await pool.swap_y({
           user,
           memeTokensOut: new BN(1),
-          quoteTokensIn: new BN(181.8 * 1e9),
+          quoteTokensIn: new BN(DEFAULT_TARGET * 0.45),
+          ticketNumber: 3,
         })
       );
 
-      const [_, staking] = await pool.go_live();
+      const [_amm, _amm2, staking] = await pool.go_live();
       sleep(1000);
 
       await tickets[0].staking_merge({

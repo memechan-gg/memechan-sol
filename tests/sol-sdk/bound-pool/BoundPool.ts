@@ -136,6 +136,7 @@ import { ChanSwapWrapper } from "../../chan_swap";
 import { createAssociatedTokenAccount } from "@solana/spl-token";
 import { createAssociatedTokenAccountIdempotent } from "@solana/spl-token";
 import { createAssociatedTokenAccountIdempotentInstruction } from "@solana/spl-token";
+import { PointsEpochWrapper } from "../../points_epoch";
 
 export class BoundPoolClient {
   private constructor(
@@ -759,6 +760,7 @@ export class BoundPoolClient {
         pointsMint,
         pointsPda,
         pointsAcc,
+        pointsEpoch: PointsEpochWrapper.pointsEpochPDA(),
         referrerPoints,
         userPoints: userPoints.address,
         systemProgram: SystemProgram.programId,
