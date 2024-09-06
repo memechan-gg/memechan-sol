@@ -96,8 +96,16 @@ export class StakingWrapper {
     };
     const chanInfo = CHAN_TOKEN_INFO;
 
-    await this.add_fees_one_pool(quoteAmmPool, staking, memeInfo, quoteInfo);
-    await this.add_fees_one_pool(chanAmmPool, staking, memeInfo, chanInfo);
+    try {
+      await this.add_fees_one_pool(quoteAmmPool, staking, memeInfo, quoteInfo);
+    } catch (e) {
+      console.log(e);
+    }
+    try {
+      await this.add_fees_one_pool(chanAmmPool, staking, memeInfo, chanInfo);
+    } catch (e) {
+      console.log(e);
+    }
   }
 
   public async add_fees_one_pool(

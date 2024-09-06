@@ -136,6 +136,7 @@ import { ChanSwapWrapper } from "../../chan_swap";
 import { createAssociatedTokenAccount } from "@solana/spl-token";
 import { createAssociatedTokenAccountIdempotent } from "@solana/spl-token";
 import { createAssociatedTokenAccountIdempotentInstruction } from "@solana/spl-token";
+import { PointsEpochWrapper } from "../../points_epoch";
 
 export class BoundPoolClient {
   private constructor(
@@ -424,8 +425,8 @@ export class BoundPoolClient {
     const memeMint = memeMintKeypair.publicKey;
 
     const size = getTxSize(transaction, payer.publicKey);
-    console.debug("createPoolAndTokenSignature size: ", size);
-    console.debug(payer.publicKey.toBase58());
+    // console.debug("createPoolAndTokenSignature size: ", size);
+    // console.debug(payer.publicKey.toBase58());
 
     const lookupTableAccount = (
       await connection.getAddressLookupTable(args.lutAddr!)
@@ -448,14 +449,14 @@ export class BoundPoolClient {
     const luttxId = await client.connection.sendTransaction(transactionV0, {
       skipPreflight: true,
     });
-    console.log(luttxId);
+    console.log(`create pool tx ${luttxId}`);
 
-    console.debug(
-      "LUT createPoolAndTokenSignature size: ",
-      transactionV0.serialize().length,
-      "\nlegacy tx size: ",
-      transaction.serialize().length
-    );
+    // console.debug(
+    //   "LUT createPoolAndTokenSignature size: ",
+    //   transactionV0.serialize().length,
+    //   "\nlegacy tx size: ",
+    //   transaction.serialize().length
+    // );
 
     // const createPoolAndTokenSignature = await provider.sendAndConfirm(
     //   transaction,
@@ -747,7 +748,7 @@ export class BoundPoolClient {
       "processed",
       { skipPreflight: true }
     );
-    await this.client.memechanProgram.methods
+    const swapTxDig = await this.client.memechanProgram.methods
       .swapY(new BN(sol_in), new BN(meme_out), new BN(ticketNumber))
       .accounts({
         memeTicket: id,
@@ -759,6 +760,7 @@ export class BoundPoolClient {
         pointsMint,
         pointsPda,
         pointsAcc,
+        pointsEpoch: PointsEpochWrapper.pointsEpochPDA(),
         referrerPoints,
         userPoints: userPoints.address,
         systemProgram: SystemProgram.programId,
@@ -766,6 +768,8 @@ export class BoundPoolClient {
       })
       .signers([user])
       .rpc({ skipPreflight: true, commitment: "confirmed" });
+
+    console.log(`swap tx ${swapTxDig}`);
 
     return new MemeTicket(id, this.client);
   }

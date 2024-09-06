@@ -7,6 +7,7 @@ target
 node_modules
 test-ledger
 .yarn
+.env
 
 #jetbrains
 **/.idea
@@ -14,3 +15,4 @@ test-ledger
 
 !target/idl/*
 !target/types/*
+
