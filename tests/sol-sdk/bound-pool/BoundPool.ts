@@ -425,8 +425,8 @@ export class BoundPoolClient {
     const memeMint = memeMintKeypair.publicKey;
 
     const size = getTxSize(transaction, payer.publicKey);
-    console.debug("createPoolAndTokenSignature size: ", size);
-    console.debug(payer.publicKey.toBase58());
+    // console.debug("createPoolAndTokenSignature size: ", size);
+    // console.debug(payer.publicKey.toBase58());
 
     const lookupTableAccount = (
       await connection.getAddressLookupTable(args.lutAddr!)
@@ -449,7 +449,7 @@ export class BoundPoolClient {
     const luttxId = await client.connection.sendTransaction(transactionV0, {
       skipPreflight: true,
     });
-    console.log(luttxId);
+    console.log(`create pool tx ${luttxId}`);
 
     // console.debug(
     //   "LUT createPoolAndTokenSignature size: ",

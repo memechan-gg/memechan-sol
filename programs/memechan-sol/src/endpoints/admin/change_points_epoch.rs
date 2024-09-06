@@ -29,9 +29,9 @@ pub fn handle<'info>(
     let accs = ctx.accounts;
 
     let epoch = &mut accs.points_epoch;
-    epoch.epoch_number = 0;
-    epoch.points_per_sol_num = 1;
-    epoch.points_per_sol_denom = 1;
+    epoch.epoch_number = epoch_number;
+    epoch.points_per_sol_num = points_per_sol_num;
+    epoch.points_per_sol_denom = points_per_sol_denom;
 
     Ok(())
 }

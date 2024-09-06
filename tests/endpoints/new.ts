@@ -99,7 +99,7 @@ export function test() {
     });
 
     it("creates points epoch", async () => {
-      await PointsEpochWrapper.changeCreate(1, 5, 1);
+      await PointsEpochWrapper.changeCreate(0, 1, 1);
     });
 
     it("create LUT", async () => {
