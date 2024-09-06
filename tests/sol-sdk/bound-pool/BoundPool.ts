@@ -451,12 +451,12 @@ export class BoundPoolClient {
     });
     console.log(luttxId);
 
-    console.debug(
-      "LUT createPoolAndTokenSignature size: ",
-      transactionV0.serialize().length,
-      "\nlegacy tx size: ",
-      transaction.serialize().length
-    );
+    // console.debug(
+    //   "LUT createPoolAndTokenSignature size: ",
+    //   transactionV0.serialize().length,
+    //   "\nlegacy tx size: ",
+    //   transaction.serialize().length
+    // );
 
     // const createPoolAndTokenSignature = await provider.sendAndConfirm(
     //   transaction,
@@ -748,7 +748,7 @@ export class BoundPoolClient {
       "processed",
       { skipPreflight: true }
     );
-    await this.client.memechanProgram.methods
+    const swapTxDig = await this.client.memechanProgram.methods
       .swapY(new BN(sol_in), new BN(meme_out), new BN(ticketNumber))
       .accounts({
         memeTicket: id,
@@ -768,6 +768,8 @@ export class BoundPoolClient {
       })
       .signers([user])
       .rpc({ skipPreflight: true, commitment: "confirmed" });
+
+    console.log(`swap tx ${swapTxDig}`);
 
     return new MemeTicket(id, this.client);
   }
