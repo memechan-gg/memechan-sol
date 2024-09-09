@@ -20,6 +20,8 @@ pub struct StakingPool {
     pub fees_z_total: u64,
     pub to_airdrop: u64,
     pub is_active: bool,
+    pub top_holder_fees_bps: u64,
+    padding: [u8; 15],
 }
 
 impl StakingPool {
@@ -41,8 +43,9 @@ impl StakingPool {
         let fees_x_total = 8;
         let fees_y_total = 8;
         let fees_z_total = 8;
-        let is_active = 8;
-        let padding = 128;
+        let is_active = 8; // erroneously added bool pad
+        let top_holder_fees_bps = 8;
+        let padding = 120;
 
         discriminant
             + pool
@@ -59,6 +62,7 @@ impl StakingPool {
             + fees_y_total
             + fees_z_total
             + is_active
+            + top_holder_fees_bps
             + padding
     }
 }

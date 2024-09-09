@@ -1,14 +1,16 @@
+use std::cmp::min;
 use crate::models::staking::StakingPool;
 
 use anchor_lang::prelude::*;
 use anchor_spl::token;
 use anchor_spl::token::{Mint, Token, TokenAccount, Transfer};
 
-use crate::consts::{CHAN_MINT, LP_FEE_KEY};
+use crate::consts::{CHAN_MINT, LP_FEE_KEY, TH_FEE_KEY};
 use crate::err::{self, AmmError};
 use crate::models::fees::{get_fee_amount, COMMS_FEE};
 use dynamic_amm::program::DynamicAmm as MeteoraAmm;
 use dynamic_vault::program::DynamicVault as MeteoraVault;
+use crate::libraries::MulDiv;
 
 #[derive(Accounts)]
 pub struct AddFees<'info> {
@@ -31,6 +33,11 @@ pub struct AddFees<'info> {
     pub meme_fee_vault: Box<Account<'info, TokenAccount>>,
     #[account(mut, token::authority = LP_FEE_KEY)]
     pub quote_fee_vault: Box<Account<'info, TokenAccount>>,
+    #[account(mut, token::authority = TH_FEE_KEY)]
+    pub meme_th_fee_vault: Box<Account<'info, TokenAccount>>,
+    #[account(mut, token::authority = TH_FEE_KEY)]
+    pub quote_th_fee_vault: Box<Account<'info, TokenAccount>>,
+
     /// CHECK: pda
     #[account(mut, seeds = [StakingPool::SIGNER_PDA_PREFIX, staking.key().as_ref()], bump)]
     pub staking_signer_pda: AccountInfo<'info>,
@@ -72,7 +79,6 @@ pub struct AddFees<'info> {
     #[account(mut)]
     /// CHECK: meteora cpi account
     pub source_tokens: AccountInfo<'info>,
-
     #[account(mut)]
     pub signer: Signer<'info>,
     // Programs
@@ -133,6 +139,18 @@ impl<'info> AddFees<'info> {
         let cpi_program = self.token_program.to_account_info();
         CpiContext::new(cpi_program, cpi_accounts)
     }
+
+    fn send_with_seeds(&self, from: AccountInfo<'info>, to: AccountInfo<'info>, seeds: &[&[&[u8]]], amount: u64) -> Result<()> {
+        let cpi_accounts = Transfer {
+            from,
+            to,
+            authority: self.staking_signer_pda.to_account_info(),
+        };
+
+        let cpi_program = self.token_program.to_account_info();
+        let ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, seeds);
+        token::transfer(ctx, amount)
+    }
 }
 
 pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<()> {
@@ -175,7 +193,9 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<
         .checked_sub(meme_vault_initial_amt)
         .unwrap();
     let fees_x_comms = get_fee_amount(fees_x, COMMS_FEE).unwrap();
-    let fees_x_no_comms = fees_x.checked_sub(fees_x_comms).unwrap();
+    let th_x_comms = fees_x.mul_div_floor(accs.staking.top_holder_fees_bps, 10000).unwrap();
+    let th_x_comms = min(th_x_comms, fees_x - fees_x_comms);
+    let fees_x_no_comms = fees_x - fees_x_comms - th_x_comms;
 
     let fees_y = accs
         .quote_vault
@@ -183,7 +203,9 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<
         .checked_sub(quote_vault_initial_amt)
         .unwrap();
     let fees_y_comms = get_fee_amount(fees_y, COMMS_FEE).unwrap();
-    let fees_y_no_comms = fees_y.checked_sub(fees_y_comms).unwrap();
+    let th_y_comms = fees_y.mul_div_floor(accs.staking.top_holder_fees_bps, 10000).unwrap();
+    let th_y_comms = min(th_y_comms, fees_y - fees_y_comms);
+    let fees_y_no_comms = fees_y - fees_y_comms - th_y_comms;
 
     // Send commissions
     token::transfer(
@@ -194,6 +216,9 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, AddFees<'info>>) -> Result<
         accs.send_quote_comms().with_signer(staking_signer_seeds),
         fees_y_comms,
     )?;
+
+    accs.send_with_seeds(accs.meme_vault.to_account_info(), accs.meme_th_fee_vault.to_account_info(), staking_signer_seeds, th_x_comms)?;
+    accs.send_with_seeds(accs.quote_vault.to_account_info(), accs.quote_th_fee_vault.to_account_info(), staking_signer_seeds, th_y_comms)?;
 
     // Mutate the staking
     let state = &mut accs.staking;

@@ -106,6 +106,7 @@ export interface BoundPoolArgs {
   lutAddr?: PublicKey;
   tokens_airdropped: number;
   vesting_linear_length: number;
+  th_fee_bps: number;
 }
 
 export type GetCreateNewBondingPoolAndTokenTransactionArgs = Omit<

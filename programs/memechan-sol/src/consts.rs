@@ -20,6 +20,8 @@ pub const MAX_POINTS_AVAILABLE: u64 = 1_000_000_000 * POINTS_DECIMALS;
 pub const BOOSTED_POINTS_AMOUNT: u64 = 300_000_000 * POINTS_DECIMALS;
 pub const BOOSTED_SOL_AMOUNT: u64 = 100_000 * WSOL_DECIMALS;
 
+pub const MAX_TH_FEE_BPS: u64 = 9_500;
+
 #[cfg(feature = "localnet-testing")]
 pub const LOCK_TIME: i64 = 4; // 4 seconds
 #[cfg(feature = "mainnet-testing")]
@@ -67,6 +69,9 @@ pub const LP_FEE_KEY: Pubkey =
     solana_program::pubkey!("HQ1wVLaBcnuoUozegyX7r45yn6ogHvQjdPNj53iweC5V");
 pub const BP_FEE_KEY: Pubkey =
     solana_program::pubkey!("6YNJG9KDex3eNAmh1i64KUDbfKBiESkew3AWmnf6FiCy");
+pub const TH_FEE_KEY: Pubkey =
+    solana_program::pubkey!("feeWKz83Raq8iY6t1uASKyNCqK79bkvo8fkaD7QzAPR");
+
 
 #[cfg(feature = "testing")]
 pub const POINTS_MINT: Pubkey =
