@@ -182,6 +182,7 @@ pub fn handle(ctx: Context<NewPool>, airdropped_tokens: u64, vesting_period: i64
     pool.creator_addr = accs.sender.key();
     pool.airdropped_tokens = airdropped_tokens;
     pool.vesting_period = vesting_period;
+    pool.top_holder_fees_bps = top_holder_fees_bps;
 
     Ok(())
 }
