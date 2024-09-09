@@ -23,8 +23,9 @@ pub mod memechan_sol {
         ctx: Context<NewPool>,
         airdropped_tokens: u64,
         vesting_period: u64,
+        top_holder_fees_bps: u64
     ) -> Result<()> {
-        new_pool::handle(ctx, airdropped_tokens, vesting_period as i64)
+        new_pool::handle(ctx, airdropped_tokens, vesting_period as i64, top_holder_fees_bps)
     }
 
     pub fn create_metadata(

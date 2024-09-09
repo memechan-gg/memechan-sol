@@ -263,6 +263,7 @@ export class BoundPoolWrapper {
       }),
       tokens_airdropped: 10_000_000 * 10 ** 6,
       vesting_linear_length: 1800,
+      th_fee_bps: 1000,
     });
     return new BoundPoolWrapper(bpClient);
   }

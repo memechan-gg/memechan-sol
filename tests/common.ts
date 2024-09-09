@@ -53,6 +53,9 @@ export const SWAP_FEE_VAULT_OWNER = new PublicKey(
 export const LP_FEE_VAULT_OWNER = new PublicKey(
   "HQ1wVLaBcnuoUozegyX7r45yn6ogHvQjdPNj53iweC5V"
 );
+export const TH_FEE_VAULT_OWNER = new PublicKey(
+  "feeWKz83Raq8iY6t1uASKyNCqK79bkvo8fkaD7QzAPR"
+);
 
 export const DUMMY_TOKEN_METADATA = {
   name: "Best Token Ever",

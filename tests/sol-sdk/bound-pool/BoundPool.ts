@@ -285,6 +285,7 @@ export class BoundPoolClient {
       tokenMetadata,
       tokens_airdropped,
       vesting_linear_length,
+      th_fee_bps,
     } = args;
     const { connection, memechanProgram } = client;
 
@@ -373,7 +374,11 @@ export class BoundPoolClient {
     transaction.add(...createLaunchVaultInstructions);
 
     const createPoolInstruction = await memechanProgram.methods
-      .newPool(new BN(tokens_airdropped), new BN(vesting_linear_length))
+      .newPool(
+        new BN(tokens_airdropped),
+        new BN(vesting_linear_length),
+        new BN(th_fee_bps)
+      )
       .accounts({
         feeQuoteVault: adminQuoteVault,
         memeVault: launchVault,
