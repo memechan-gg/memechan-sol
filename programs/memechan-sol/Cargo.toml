@@ -28,6 +28,7 @@ bytemuck = "*"
 spl-math = { version = "0.2.0", features = ["no-entrypoint"] }
 dynamic-amm = { git = "https://github.com/memechan-gg/mercurial-dynamic-amm-sdk", features = ["cpi"] }
 dynamic-vault = { git = "https://github.com/memechan-gg/mercurial-dynamic-amm-sdk", features = ["cpi"] }
+aldrin-amm = { path = "../../gen/aldrin-amm" }
 
 [dev-dependencies]
 csv = "1.1"

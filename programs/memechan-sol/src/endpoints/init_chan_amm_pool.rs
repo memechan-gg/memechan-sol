@@ -2,14 +2,10 @@ use crate::consts::{CHAN_MINT, SWAP_FEE_KEY};
 use crate::libraries::MulDiv;
 use crate::models::chan_swap::ChanSwap;
 use crate::models::staking::StakingPool;
+use aldrin_amm::program::MmFarmingPool as AldrinAmm;
 use anchor_lang::prelude::*;
-use anchor_spl::associated_token::AssociatedToken;
-use anchor_spl::metadata::Metadata;
 use anchor_spl::token;
 use anchor_spl::token::{Mint, Token, TokenAccount, Transfer};
-use dynamic_amm::program::DynamicAmm as MeteoraAmm;
-use dynamic_amm::state::CurveType;
-use dynamic_vault::program::DynamicVault as MeteoraVault;
 
 #[derive(Accounts)]
 pub struct InitChanAmmPool<'info> {
@@ -67,67 +63,45 @@ pub struct InitChanAmmPool<'info> {
     pub chan_swap_vault: Box<Account<'info, TokenAccount>>,
     #[account(mut, token::authority = SWAP_FEE_KEY)]
     pub fee_quote_vault: Box<Account<'info, TokenAccount>>,
-    // Meteora Amm Program accounts
-    #[account(mut)]
-    /// CHECK: meteora cpi account
-    pub lp_mint: AccountInfo<'info>,
-    /// CHECK: meteora cpi account
-    pub fee_owner: AccountInfo<'info>,
-    #[account(mut)]
-    /// CHECK: meteora cpi account
-    pub payer_pool_lp: AccountInfo<'info>,
-    #[account(mut)]
-    /// CHECK: meteora cpi account
-    pub amm_pool: AccountInfo<'info>,
-    #[account(mut)]
-    /// CHECK: meteora cpi account
-    pub mint_metadata: AccountInfo<'info>,
-    #[account(mut)]
-    /// CHECK: meteora cpi account
-    pub a_token_vault: Box<Account<'info, TokenAccount>>,
-    #[account(mut)]
-    /// CHECK: meteora cpi account
-    pub a_vault: AccountInfo<'info>,
-    #[account(mut)]
-    /// CHECK: meteora cpi account
-    pub a_vault_lp: AccountInfo<'info>,
-    #[account(mut)]
-    /// CHECK: meteora cpi account
-    pub a_vault_lp_mint: AccountInfo<'info>,
-    #[account(mut)]
-    /// CHECK: meteora cpi account
-    pub b_token_vault: Box<Account<'info, TokenAccount>>,
-    #[account(mut)]
-    /// CHECK: meteora cpi account
-    pub b_vault: AccountInfo<'info>,
-    #[account(mut)]
-    /// CHECK: meteora cpi account
-    pub b_vault_lp: AccountInfo<'info>,
-    #[account(mut)]
-    /// CHECK: meteora cpi account
-    pub b_vault_lp_mint: AccountInfo<'info>,
-    #[account(mut)]
-    /// CHECK: meteora cpi account
-    pub admin_token_a_fee: AccountInfo<'info>,
-    #[account(mut)]
-    /// CHECK: meteora cpi account
-    pub admin_token_b_fee: AccountInfo<'info>,
 
-    // Lock
     #[account(mut)]
-    /// CHECK: meteora cpi account
-    pub lock_escrow: AccountInfo<'info>,
+    /// CHECK: aldrin pool account
+    pub amm_pool: AccountInfo<'info>,
+    // #[account(constraint = pool_mint.mint_authority == COption::Some(* pool_signer.key),
+    // constraint = pool_mint.supply == 0,
+    // constraint = pool_mint.freeze_authority == COption::None)]
+    amm_pool_mint: Account<'info, Mint>,
+    // #[account(constraint = lp_token_freeze_vault.owner == * pool_signer.key,
+    // constraint = lp_token_freeze_vault.close_authority == COption::None)]
+    lp_token_freeze_vault: Account<'info, TokenAccount>,
+    // #[account(constraint = base_token_vault.owner == * pool_signer.key,
+    // constraint = base_token_vault.delegate == COption::None,
+    // constraint = base_token_vault.close_authority == COption::None)]
+    amm_base_token_vault: Account<'info, TokenAccount>,
+    // #[account(constraint = quote_token_vault.owner == * pool_signer.key,
+    // constraint = quote_token_vault.delegate == COption::None,
+    // constraint = quote_token_vault.close_authority == COption::None)]
+    amm_quote_token_vault: Account<'info, TokenAccount>,
+    /// CHECK: aldrin
+    amm_pool_signer: AccountInfo<'info>,
+    /// CHECK: aldrin
+    //#[account(constraint = *pool_authority.key == pool_authority::ID)]
+    amm_pool_authority: AccountInfo<'info>,
+    // #[account(constraint = fee_base_account.owner == fee_owner::ID)]
+    amm_fee_base_account: Account<'info, TokenAccount>,
+    // #[account(constraint = fee_quote_account.owner == fee_owner::ID)]
+    amm_fee_quote_account: Account<'info, TokenAccount>,
+    // #[account(constraint = fee_pool_token_account.owner == fee_owner::ID,
+    // constraint = fee_pool_token_account.close_authority == COption::Some(* pool_signer.key))]
+    amm_fee_pool_token_account: Account<'info, TokenAccount>,
+    /// CHECK: aldrin
     #[account(mut)]
-    /// CHECK: meteora cpi account
-    pub escrow_vault: AccountInfo<'info>,
+    amm_curve: AccountInfo<'info>,
 
     // Sysvars
     pub rent: Sysvar<'info, Rent>,
     // Programs
-    pub metadata_program: Program<'info, Metadata>,
-    pub ata_program: Program<'info, AssociatedToken>,
-    pub amm_program: Program<'info, MeteoraAmm>,
-    pub vault_program: Program<'info, MeteoraVault>,
+    pub aldrin_amm_program: Program<'info, AldrinAmm>,
     pub token_program: Program<'info, Token>,
     pub system_program: Program<'info, System>,
 }
@@ -171,103 +145,38 @@ impl<'info> InitChanAmmPool<'info> {
         )
     }
 
-    fn create_pool(
-        &self,
-        seeds: &[&[&[u8]]],
-        trade_fee_bps: u64,
-        token_a_amount: u64,
-        token_b_amount: u64,
-    ) -> Result<()> {
-        let program = self.amm_program.to_account_info();
-        let cpi = dynamic_amm::cpi::accounts::InitializePermissionlessPoolWithFeeTier {
-            lp_mint: self.lp_mint.to_account_info(),
-            payer: self.staking_pool_signer_pda.to_account_info(),
+    fn create_pool(&self, seeds: &[&[&[u8]]], signer_nonce: u8) -> Result<()> {
+        let program = self.aldrin_amm_program.to_account_info();
+        let cpi = aldrin_amm::cpi::accounts::InitializeConstProductCurve {
+            curve: self.amm_curve.to_account_info(),
             rent: self.rent.to_account_info(),
-            fee_owner: self.fee_owner.to_account_info(),
-            pool: self.amm_pool.to_account_info(),
-            mint_metadata: self.mint_metadata.to_account_info(),
-            a_token_vault: self.a_token_vault.to_account_info(),
-            a_vault: self.a_vault.to_account_info(),
-            a_vault_lp: self.a_vault_lp.to_account_info(),
-            a_vault_lp_mint: self.a_vault_lp_mint.to_account_info(),
-            token_a_mint: self.meme_mint.to_account_info(),
-            token_b_mint: self.chan_mint.to_account_info(),
-            b_token_vault: self.b_token_vault.to_account_info(),
-            b_vault: self.b_vault.to_account_info(),
-            b_vault_lp: self.b_vault_lp.to_account_info(),
-            b_vault_lp_mint: self.b_vault_lp_mint.to_account_info(),
-            admin_token_a_fee: self.admin_token_a_fee.to_account_info(),
-            admin_token_b_fee: self.admin_token_b_fee.to_account_info(),
-            payer_token_a: self.staking_meme_vault.to_account_info(),
-            payer_token_b: self.staking_chan_vault.to_account_info(),
-            payer_pool_lp: self.payer_pool_lp.to_account_info(),
-            metadata_program: self.metadata_program.to_account_info(),
-            associated_token_program: self.ata_program.to_account_info(),
-            vault_program: self.vault_program.to_account_info(),
-            token_program: self.token_program.to_account_info(),
-            system_program: self.system_program.to_account_info(),
-        };
-        let cpi_ctx = CpiContext::new_with_signer(program, cpi, seeds);
-        dynamic_amm::cpi::initialize_permissionless_pool_with_fee_tier(
-            cpi_ctx,
-            CurveType::ConstantProduct,
-            trade_fee_bps,
-            token_a_amount,
-            token_b_amount,
-        )
-    }
-
-    fn create_lock_escrow(&self, seeds: &[&[&[u8]]]) -> Result<()> {
-        let program = self.amm_program.to_account_info();
-        let cpi = dynamic_amm::cpi::accounts::CreateLockEscrow {
-            lock_escrow: self.lock_escrow.to_account_info(),
-            pool: self.amm_pool.to_account_info(),
-            owner: self.staking_pool_signer_pda.to_account_info(),
-            lp_mint: self.lp_mint.to_account_info(),
-            payer: self.staking_pool_signer_pda.to_account_info(),
-            system_program: self.system_program.to_account_info(),
-        };
-        let cpi_ctx = CpiContext::new_with_signer(program, cpi, seeds);
-        dynamic_amm::cpi::create_lock_escrow(cpi_ctx)
-    }
-
-    fn create_escrow_vault(&self) -> Result<()> {
-        let program = self.ata_program.to_account_info();
-        let cpi = anchor_spl::associated_token::Create {
-            associated_token: self.escrow_vault.to_account_info(),
-            authority: self.lock_escrow.to_account_info(),
-            payer: self.signer.to_account_info(),
-            mint: self.lp_mint.to_account_info(),
-            token_program: self.token_program.to_account_info(),
-            system_program: self.system_program.to_account_info(),
         };
         let cpi_ctx = CpiContext::new(program, cpi);
-        anchor_spl::associated_token::create_idempotent(cpi_ctx)
-    }
+        aldrin_amm::cpi::initialize_const_product_curve(cpi_ctx)?;
 
-    fn lock(&self, lp_amount: u64, seeds: &[&[&[u8]]]) -> Result<()> {
-        let program = self.amm_program.to_account_info();
-        let cpi = dynamic_amm::cpi::accounts::Lock {
-            lock_escrow: self.lock_escrow.to_account_info(),
+        let program = self.aldrin_amm_program.to_account_info();
+        let cpi = aldrin_amm::cpi::accounts::Initialize {
             pool: self.amm_pool.to_account_info(),
-            owner: self.staking_pool_signer_pda.to_account_info(),
-            lp_mint: self.lp_mint.to_account_info(),
-            a_vault: self.a_vault.to_account_info(),
-            a_vault_lp: self.a_vault_lp.to_account_info(),
-            a_vault_lp_mint: self.a_vault_lp_mint.to_account_info(),
-            b_vault: self.b_vault.to_account_info(),
-            b_vault_lp: self.b_vault_lp.to_account_info(),
-            b_vault_lp_mint: self.b_vault_lp_mint.to_account_info(),
-            escrow_vault: self.escrow_vault.to_account_info(),
-            source_tokens: self.payer_pool_lp.to_account_info(),
+            pool_signer: self.amm_pool_signer.to_account_info(),
+            pool_authority: self.staking_pool_signer_pda.to_account_info(),
+            fee_base_account: self.amm_fee_base_account.to_account_info(),
+            fee_quote_account: self.amm_fee_quote_account.to_account_info(),
+            initializer: self.staking_pool_signer_pda.to_account_info(),
+            pool_mint: self.amm_pool_mint.to_account_info(),
+            curve: self.amm_curve.to_account_info(),
+            base_token_vault: self.amm_base_token_vault.to_account_info(),
+            quote_token_vault: self.amm_quote_token_vault.to_account_info(),
+            lp_token_freeze_vault: self.lp_token_freeze_vault.to_account_info(),
+            fee_pool_token_account: self.amm_fee_pool_token_account.to_account_info(),
             token_program: self.token_program.to_account_info(),
+            rent: self.rent.to_account_info(),
         };
         let cpi_ctx = CpiContext::new_with_signer(program, cpi, seeds);
-        dynamic_amm::cpi::lock(cpi_ctx, lp_amount)
+        aldrin_amm::cpi::initialize(cpi_ctx, signer_nonce, 0)
     }
 }
 
-pub fn handle(ctx: Context<InitChanAmmPool>) -> Result<()> {
+pub fn handle(ctx: Context<InitChanAmmPool>, signer_nonce: u8) -> Result<()> {
     let accs = ctx.accounts;
 
     let staking_seeds = &[
@@ -303,32 +212,27 @@ pub fn handle(ctx: Context<InitChanAmmPool>) -> Result<()> {
     msg!("3");
     // 3. Initialize pool & Add liquidity to the pool
     let trade_fee_bps = 100u64;
-    accs.create_pool(
-        staking_signer_seeds,
-        trade_fee_bps,
-        meme_supply,
-        chan_supply,
-    )?;
+    accs.create_pool(staking_signer_seeds, signer_nonce)?;
 
-    msg!("4");
-    // 4. Create lock
-    accs.create_lock_escrow(staking_signer_seeds)?;
+    // msg!("4");
+    // // 4. Create lock
+    // accs.create_lock_escrow(staking_signer_seeds)?;
 
-    msg!("5.1");
-    // 5.1 Create escrow ata
-    accs.create_escrow_vault()?;
+    // msg!("5.1");
+    // // 5.1 Create escrow ata
+    // accs.create_escrow_vault()?;
 
-    msg!("5.2");
-    // 5.2 Lock tokens
-
-    let lp_amount = {
-        let account_data = accs.payer_pool_lp.try_borrow_data()?;
-        let mut account_data_slice: &[u8] = &account_data;
-        let token_acc = TokenAccount::try_deserialize(&mut account_data_slice)?;
-        token_acc.amount
-    };
-    msg!("5.3");
-    accs.lock(lp_amount, staking_signer_seeds)?;
+    // msg!("5.2");
+    // // 5.2 Lock tokens
+    //
+    // let lp_amount = {
+    //     let account_data = accs.payer_pool_lp.try_borrow_data()?;
+    //     let mut account_data_slice: &[u8] = &account_data;
+    //     let token_acc = TokenAccount::try_deserialize(&mut account_data_slice)?;
+    //     token_acc.amount
+    // };
+    // msg!("5.3");
+    // accs.lock(lp_amount, staking_signer_seeds)?;
 
     msg!("6");
     // 6. Setup staking

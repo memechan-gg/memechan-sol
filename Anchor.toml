@@ -39,6 +39,11 @@ program = "tests/programs/mainnet/meteora-vault.so"
 address = "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
 program = "tests/programs/mainnet/mpl_metadata.so"
 
+
+[[test.genesis]]
+address = "CURVGoZn8zycx6FXwwevgBTB2gVvdbGTEpvMJDbgs2t4"
+program = "tests/programs/mainnet/aldrin-amm.so"
+
 [[test.validator.clone]]
 address = "3evNjwM1tg4S9jCvg9vhA8JHcMtu4fVDHYteGGGzquJD"
 [[test.validator.clone]]

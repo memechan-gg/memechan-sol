@@ -1,0 +1,18 @@
+[package]
+name = "aldrin-amm"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+default = ["cpi"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+
+[dependencies]
+anchor-lang = "=0.29.0"
+solana-program = "1.17.31"
+anchor-gen = "0.3.1"

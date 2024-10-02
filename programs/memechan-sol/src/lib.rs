@@ -83,8 +83,8 @@ pub mod memechan_sol {
         init_quote_amm_pool::handle(ctx)
     }
 
-    pub fn init_chan_amm_pool(ctx: Context<InitChanAmmPool>) -> Result<()> {
-        init_chan_amm_pool::handle(ctx)
+    pub fn init_chan_amm_pool(ctx: Context<InitChanAmmPool>, signer_nonce: u8) -> Result<()> {
+        init_chan_amm_pool::handle(ctx, signer_nonce)
     }
 
     pub fn new_target_config(ctx: Context<NewTargetConfig>, target_amount: u64) -> Result<()> {

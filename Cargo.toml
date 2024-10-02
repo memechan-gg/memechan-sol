@@ -1,5 +1,5 @@
 [workspace]
-members = [
+members = ["gen/aldrin-amm",
     "programs/*"
 ]
 resolver = "2"
