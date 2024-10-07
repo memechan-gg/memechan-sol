@@ -6,14 +6,6 @@ import {
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
-  createAccount,
-  createAssociatedTokenAccountInstruction,
-  getAccount,
-  getAssociatedTokenAddress,
-  getAssociatedTokenAddressSync,
-  getOrCreateAssociatedTokenAccount,
-  mintTo,
-  transfer,
 } from "@solana/spl-token";
 import { TokenInfo } from "@solana/spl-token-registry";
 import {
@@ -133,10 +125,24 @@ import {
 import { ATA_PROGRAM_ID } from "../raydium/config";
 import { LockEscrowAccount } from "@mercurial-finance/dynamic-amm-sdk/dist/cjs/src/amm/types";
 import { ChanSwapWrapper } from "../../chan_swap";
-import { createAssociatedTokenAccount } from "@solana/spl-token";
-import { createAssociatedTokenAccountIdempotent } from "@solana/spl-token";
-import { createAssociatedTokenAccountIdempotentInstruction } from "@solana/spl-token";
 import { PointsEpochWrapper } from "../../points_epoch";
+import { Key } from "@metaplex-foundation/mpl-token-metadata";
+import {
+  getMinimumBalanceForRentExemptAccount,
+  createAssociatedTokenAccount,
+  createAssociatedTokenAccountIdempotent,
+  createAssociatedTokenAccountIdempotentInstruction,
+  createAccount,
+  createAssociatedTokenAccountInstruction,
+  getAccount,
+  getAssociatedTokenAddress,
+  getAssociatedTokenAddressSync,
+  getOrCreateAssociatedTokenAccount,
+  mintTo,
+  transfer,
+  createInitializeMintInstruction,
+  MINT_SIZE,
+} from "../../../node_modules/@solana/spl-token";
 
 export class BoundPoolClient {
   private constructor(
@@ -557,7 +563,7 @@ export class BoundPoolClient {
     );
 
     const newPoolTxDigest = await memechanProgram.methods
-      .newPool()
+      .newPool(new BN(0), new BN(0))
       .accounts({
         feeQuoteVault: adminSolVault,
         memeVault: launchVault,
@@ -1395,107 +1401,8 @@ export class BoundPoolClient {
 
     transaction.add(addPriorityFee);
 
-    const tradeFeeBps = new BN(100);
-
-    const { vaultProgram, ammProgram } = createProgram(provider.connection);
-
     const tokenAMint = new PublicKey(tokenInfoA.address);
     const tokenBMint = new PublicKey(tokenInfoB.address);
-    const [
-      { vaultPda: aVault, tokenVaultPda: aTokenVault, lpMintPda: aLpMintPda },
-      { vaultPda: bVault, tokenVaultPda: bTokenVault, lpMintPda: bLpMintPda },
-    ] = [
-      getVaultPdas(tokenAMint, vaultProgram.programId),
-      getVaultPdas(tokenBMint, vaultProgram.programId),
-    ];
-    const [aVaultAccount, bVaultAccount] = await Promise.all([
-      vaultProgram.account.vault.fetchNullable(aVault),
-      vaultProgram.account.vault.fetchNullable(bVault),
-    ]);
-
-    let aVaultLpMint = aLpMintPda;
-    let bVaultLpMint = bLpMintPda;
-    let preInstructions: Array<solana.TransactionInstruction> = [];
-
-    if (!aVaultAccount) {
-      const createVaultAIx =
-        await VaultImpl.createPermissionlessVaultInstruction(
-          provider.connection,
-          user.publicKey,
-          tokenInfoA
-        );
-      createVaultAIx && preInstructions.push(createVaultAIx);
-    } else {
-      aVaultLpMint = aVaultAccount.lpMint; // Old vault doesn't have lp mint pda
-    }
-    if (!bVaultAccount) {
-      const createVaultBIx =
-        await VaultImpl.createPermissionlessVaultInstruction(
-          provider.connection,
-          user.publicKey,
-          tokenInfoB
-        );
-      createVaultBIx && preInstructions.push(createVaultBIx);
-    } else {
-      bVaultLpMint = bVaultAccount.lpMint; // Old vault doesn't have lp mint pda
-    }
-    try {
-      console.log(
-        await sendAndConfirmTransaction(
-          provider.connection,
-          new Transaction().add(...preInstructions),
-          [user]
-        )
-      );
-    } catch (e) {}
-
-    const poolPubkey = derivePoolAddress(
-      provider.connection,
-      tokenInfoA,
-      tokenInfoB,
-      false,
-      tradeFeeBps
-    );
-    const [[aVaultLp], [bVaultLp]] = [
-      PublicKey.findProgramAddressSync(
-        [aVault.toBuffer(), poolPubkey.toBuffer()],
-        ammProgram.programId
-      ),
-      PublicKey.findProgramAddressSync(
-        [bVault.toBuffer(), poolPubkey.toBuffer()],
-        ammProgram.programId
-      ),
-    ];
-
-    const [[adminTokenAFee], [adminTokenBFee]] = [
-      PublicKey.findProgramAddressSync(
-        [Buffer.from(SEEDS.FEE), tokenAMint.toBuffer(), poolPubkey.toBuffer()],
-        ammProgram.programId
-      ),
-      PublicKey.findProgramAddressSync(
-        [Buffer.from(SEEDS.FEE), tokenBMint.toBuffer(), poolPubkey.toBuffer()],
-        ammProgram.programId
-      ),
-    ];
-
-    const [lpMint] = PublicKey.findProgramAddressSync(
-      [Buffer.from(SEEDS.LP_MINT), poolPubkey.toBuffer()],
-      ammProgram.programId
-    );
-
-    const [mintMetadata, _mintMetadataBump] = deriveMintMetadata(lpMint);
-
-    const [lockEscrowPK] = deriveLockEscrowPda(
-      poolPubkey,
-      stakingSigner,
-      ammProgram.programId
-    );
-
-    preInstructions = [];
-
-    const payerPoolLp = await getAssociatedTokenAccount(lpMint, stakingSigner);
-
-    const escrowAta = await getAssociatedTokenAccount(lpMint, lockEscrowPK);
 
     const fetchedChanSwap =
       await this.client.memechanProgram.account.chanSwap.fetch(chanSwap);
@@ -1509,26 +1416,75 @@ export class BoundPoolClient {
       SWAP_FEE_VAULT_OWNER
     );
 
+    const aldrinAmmProgram = new PublicKey(
+      "CURVGoZn8zycx6FXwwevgBTB2gVvdbGTEpvMJDbgs2t4"
+    );
+
+    const feeOwner = new PublicKey(
+      "D7FkvSLw8rq8Ydh43tBViSQuST2sBczEStbWudFhR6L"
+    );
+
+    const ammPoolAuthority = new PublicKey(
+      "BqSGA2WdiQXA2cC1EdGDnVD615A4nYEAq49K3fz2hNBo"
+    );
+
+    const ammCurve = Keypair.generate();
+    const ammPool = Keypair.generate();
+
+    const poolSigner = findProgramAddress(
+      [ammPool.publicKey.toBuffer()],
+      aldrinAmmProgram
+    );
+
+    const ammBaseTokenVault = await getAssociatedTokenAddress(
+      tokenAMint,
+      poolSigner.publicKey,
+      true
+    );
+    const ammFeeBaseAccount = await getAssociatedTokenAddress(
+      tokenAMint,
+      feeOwner,
+      true
+    );
+
+    const ammQuoteTokenVault = await getAssociatedTokenAddress(
+      tokenBMint,
+      poolSigner.publicKey,
+      true
+    );
+    const ammFeeQuoteAccount = await getAssociatedTokenAddress(
+      tokenBMint,
+      feeOwner,
+      true
+    );
+
+    const ammPoolMint = Keypair.generate();
+
+    const lpTokenFreezeVault = await getAssociatedTokenAddress(
+      ammPoolMint.publicKey,
+      poolSigner.publicKey,
+      true
+    );
+    const ammFeePoolTokenAccount = await getAssociatedTokenAddress(
+      ammPoolMint.publicKey,
+      feeOwner,
+      true
+    );
+
     const goLiveInstruction = await this.client.memechanProgram.methods
-      .initChanAmmPool()
+      .initChanAmmPool(poolSigner.nonce)
       .accounts({
-        adminTokenAFee,
-        adminTokenBFee,
-        ammPool: poolPubkey,
-        aTokenVault,
-        aVault,
-        aVaultLp,
-        aVaultLpMint,
-        bTokenVault,
-        bVault,
-        bVaultLp,
-        bVaultLpMint,
-        lpMint,
-        mintMetadata,
-        escrowVault: escrowAta,
-        feeOwner: FEE_OWNER,
-        lockEscrow: lockEscrowPK,
-        payerPoolLp: payerPoolLp,
+        ammCurve: ammCurve.publicKey,
+        ammPool: ammPool.publicKey,
+        ammBaseTokenVault,
+        ammFeeBaseAccount,
+        ammQuoteTokenVault,
+        ammFeeQuoteAccount,
+        ammPoolAuthority,
+        ammPoolMint: ammPoolMint.publicKey,
+        lpTokenFreezeVault,
+        ammFeePoolTokenAccount,
+        ammPoolSigner: poolSigner.publicKey,
         chanMint: tokenBMint,
         memeMint: boundPoolInfo.memeReserve.mint,
 
@@ -1546,23 +1502,82 @@ export class BoundPoolClient {
         signer: user.publicKey,
 
         rent: SYSVAR_RENT_PUBKEY,
-        ataProgram: ATA_PROGRAM_ID,
         tokenProgram: TOKEN_PROGRAM_ID,
         systemProgram: SystemProgram.programId,
-        metadataProgram: METADATA_PROGRAM_ID,
-        ammProgram: ammProgram.programId,
-        vaultProgram: vaultProgram.programId,
+        aldrinAmmProgram,
       })
       .instruction();
 
     transaction.add(
-      await createAssociatedTokenAccountIdempotentInstruction(
+      SystemProgram.createAccount({
+        newAccountPubkey: ammCurve.publicKey,
+        lamports: await provider.connection.getMinimumBalanceForRentExemption(
+          9
+        ),
+        space: 9,
+        fromPubkey: user.publicKey,
+        programId: aldrinAmmProgram,
+      }),
+      SystemProgram.createAccount({
+        newAccountPubkey: ammPool.publicKey,
+        lamports: await provider.connection.getMinimumBalanceForRentExemption(
+          474
+        ),
+        space: 474,
+        fromPubkey: user.publicKey,
+        programId: aldrinAmmProgram,
+      }),
+      SystemProgram.createAccount({
+        newAccountPubkey: ammPoolMint.publicKey,
+        lamports: await provider.connection.getMinimumBalanceForRentExemption(
+          MINT_SIZE
+        ),
+        space: MINT_SIZE,
+        fromPubkey: user.publicKey,
+        programId: TOKEN_PROGRAM_ID,
+      }),
+
+      createAssociatedTokenAccountInstruction(
         user.publicKey,
-        swapFeeVault,
-        SWAP_FEE_VAULT_OWNER,
-        QUOTE_MINT,
-        TOKEN_PROGRAM_ID,
-        ASSOCIATED_TOKEN_PROGRAM_ID
+        ammBaseTokenVault,
+        poolSigner.publicKey,
+        tokenAMint
+      ),
+      createAssociatedTokenAccountInstruction(
+        user.publicKey,
+        ammFeeBaseAccount,
+        feeOwner,
+        tokenAMint
+      ),
+      createAssociatedTokenAccountInstruction(
+        user.publicKey,
+        ammQuoteTokenVault,
+        poolSigner.publicKey,
+        tokenBMint
+      ),
+      createAssociatedTokenAccountIdempotentInstruction(
+        user.publicKey,
+        ammFeeQuoteAccount,
+        feeOwner,
+        tokenBMint
+      ),
+      createInitializeMintInstruction(
+        ammPoolMint.publicKey,
+        9,
+        poolSigner.publicKey,
+        null
+      ),
+      createAssociatedTokenAccountInstruction(
+        user.publicKey,
+        lpTokenFreezeVault,
+        poolSigner.publicKey,
+        ammPoolMint.publicKey
+      ),
+      createAssociatedTokenAccountInstruction(
+        user.publicKey,
+        ammFeePoolTokenAccount,
+        feeOwner,
+        ammPoolMint.publicKey
       )
     );
 
@@ -1585,7 +1600,6 @@ export class BoundPoolClient {
         ASSOCIATED_PROGRAM_ID,
         memechan.programId,
         TargetConfig.findTargetConfigPda(QUOTE_MINT, memechan.programId),
-        poolPubkey,
         user.publicKey,
         FEE_OWNER,
         swapFeeVault,
@@ -1597,6 +1611,17 @@ export class BoundPoolClient {
         new PublicKey(CHAN_TOKEN_INFO.address),
         ChanSwapWrapper.chanSwapId(),
         ChanSwapWrapper.chanSwapSigner(),
+        ammCurve.publicKey,
+        ammPool.publicKey,
+        ammBaseTokenVault,
+        ammFeeBaseAccount,
+        ammQuoteTokenVault,
+        ammFeeQuoteAccount,
+        ammPoolAuthority,
+        ammPoolMint.publicKey,
+        lpTokenFreezeVault,
+        ammFeePoolTokenAccount,
+        poolSigner.publicKey,
       ],
     });
 
@@ -1605,7 +1630,7 @@ export class BoundPoolClient {
       adminSigner,
     ]);
 
-    await sleep(1000);
+    await sleep(2000);
 
     const lutAddr = getLUTPDA({
       authority: admin,
@@ -1626,7 +1651,18 @@ export class BoundPoolClient {
 
     const transactionV0 = new VersionedTransaction(txMessage);
 
-    transactionV0.sign([user]);
+    console.log(
+      "u",
+      user.publicKey,
+      "ac",
+      ammCurve.publicKey,
+      "ap",
+      ammPool.publicKey,
+      "apm",
+      ammPoolMint.publicKey
+    );
+
+    transactionV0.sign([user, ammCurve, ammPool, ammPoolMint]);
 
     return {
       goLiveTransaction: transactionV0,
