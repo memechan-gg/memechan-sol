@@ -158,7 +158,7 @@ impl<'info> InitChanAmmPool<'info> {
         let cpi = aldrin_amm::cpi::accounts::Initialize {
             pool: self.amm_pool.to_account_info(),
             pool_signer: self.amm_pool_signer.to_account_info(),
-            pool_authority: self.staking_pool_signer_pda.to_account_info(),
+            pool_authority: self.amm_pool_authority.to_account_info(),
             fee_base_account: self.amm_fee_base_account.to_account_info(),
             fee_quote_account: self.amm_fee_quote_account.to_account_info(),
             initializer: self.staking_pool_signer_pda.to_account_info(),

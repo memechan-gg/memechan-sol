@@ -142,6 +142,9 @@ import {
   transfer,
   createInitializeMintInstruction,
   MINT_SIZE,
+  createInitializeAccountInstruction,
+  createSetAuthorityInstruction,
+  AuthorityType,
 } from "../../../node_modules/@solana/spl-token";
 
 export class BoundPoolClient {
@@ -1465,10 +1468,53 @@ export class BoundPoolClient {
       poolSigner.publicKey,
       true
     );
-    const ammFeePoolTokenAccount = await getAssociatedTokenAddress(
-      ammPoolMint.publicKey,
-      feeOwner,
-      true
+    const ammFeePoolTokenAccount = Keypair.generate();
+
+    await provider.connection.sendTransaction(
+      new Transaction().add(
+        createAssociatedTokenAccountIdempotentInstruction(
+          user.publicKey,
+          swapFeeVault,
+          SWAP_FEE_VAULT_OWNER,
+          QUOTE_MINT
+        ),
+        SystemProgram.createAccount({
+          newAccountPubkey: ammPoolMint.publicKey,
+          lamports: await provider.connection.getMinimumBalanceForRentExemption(
+            MINT_SIZE
+          ),
+          space: MINT_SIZE,
+          fromPubkey: user.publicKey,
+          programId: TOKEN_PROGRAM_ID,
+        }),
+        createInitializeMintInstruction(
+          ammPoolMint.publicKey,
+          9,
+          poolSigner.publicKey,
+          null
+        ),
+        ...(await getCreateTokenAccountInstructions(
+          provider.connection,
+          user.publicKey,
+          ammPoolMint.publicKey,
+          user.publicKey,
+          ammFeePoolTokenAccount
+        )),
+        createSetAuthorityInstruction(
+          ammFeePoolTokenAccount.publicKey,
+          user.publicKey,
+          AuthorityType.CloseAccount,
+          poolSigner.publicKey
+        ),
+        createSetAuthorityInstruction(
+          ammFeePoolTokenAccount.publicKey,
+          user.publicKey,
+          AuthorityType.AccountOwner,
+          feeOwner
+        )
+      ),
+
+      [user, ammPoolMint, ammFeePoolTokenAccount]
     );
 
     const goLiveInstruction = await this.client.memechanProgram.methods
@@ -1483,7 +1529,7 @@ export class BoundPoolClient {
         ammPoolAuthority,
         ammPoolMint: ammPoolMint.publicKey,
         lpTokenFreezeVault,
-        ammFeePoolTokenAccount,
+        ammFeePoolTokenAccount: ammFeePoolTokenAccount.publicKey,
         ammPoolSigner: poolSigner.publicKey,
         chanMint: tokenBMint,
         memeMint: boundPoolInfo.memeReserve.mint,
@@ -1527,15 +1573,6 @@ export class BoundPoolClient {
         fromPubkey: user.publicKey,
         programId: aldrinAmmProgram,
       }),
-      SystemProgram.createAccount({
-        newAccountPubkey: ammPoolMint.publicKey,
-        lamports: await provider.connection.getMinimumBalanceForRentExemption(
-          MINT_SIZE
-        ),
-        space: MINT_SIZE,
-        fromPubkey: user.publicKey,
-        programId: TOKEN_PROGRAM_ID,
-      }),
 
       createAssociatedTokenAccountInstruction(
         user.publicKey,
@@ -1561,22 +1598,10 @@ export class BoundPoolClient {
         feeOwner,
         tokenBMint
       ),
-      createInitializeMintInstruction(
-        ammPoolMint.publicKey,
-        9,
-        poolSigner.publicKey,
-        null
-      ),
       createAssociatedTokenAccountInstruction(
         user.publicKey,
         lpTokenFreezeVault,
         poolSigner.publicKey,
-        ammPoolMint.publicKey
-      ),
-      createAssociatedTokenAccountInstruction(
-        user.publicKey,
-        ammFeePoolTokenAccount,
-        feeOwner,
         ammPoolMint.publicKey
       )
     );
@@ -1620,7 +1645,7 @@ export class BoundPoolClient {
         ammPoolAuthority,
         ammPoolMint.publicKey,
         lpTokenFreezeVault,
-        ammFeePoolTokenAccount,
+        ammFeePoolTokenAccount.publicKey,
         poolSigner.publicKey,
       ],
     });
@@ -1659,10 +1684,12 @@ export class BoundPoolClient {
       "ap",
       ammPool.publicKey,
       "apm",
-      ammPoolMint.publicKey
+      ammPoolMint.publicKey,
+      "afpt",
+      ammFeePoolTokenAccount
     );
 
-    transactionV0.sign([user, ammCurve, ammPool, ammPoolMint]);
+    transactionV0.sign([user, ammCurve, ammPool]);
 
     return {
       goLiveTransaction: transactionV0,
