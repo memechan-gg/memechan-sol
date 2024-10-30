@@ -7,8 +7,11 @@ pub const LAUNCH_FEE: u64 = 50_000_000; // 5%
 pub const COMMS_FEE: u64 = 50_000_000; // 5%
 pub const FEE_PRECISION: u64 = 1_000_000_000;
 
-pub const REFERRER_POINTS_NUMERATOR: u64 = 25_000;
+pub const REFERRER_POINTS_NUMERATOR: u64 = 25_000; // 25%
 pub const REFERRER_POINTS_DENOMINATOR: u64 = 100_000;
+
+pub const REFERRER_QUOTE_FEE_NUMERATOR: u64 = 250_000; // 2.5%
+pub const REFERRER_QUOTE_FEE_DENOMINATOR: u64 = 10_000_000;
 
 #[derive(AnchorDeserialize, AnchorSerialize, Copy, Clone, Debug, Eq, PartialEq, Default)]
 pub struct Fees {

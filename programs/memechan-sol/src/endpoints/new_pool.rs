@@ -92,7 +92,12 @@ impl<'info> NewPool<'info> {
     }
 }
 
-pub fn handle(ctx: Context<NewPool>, airdropped_tokens: u64, vesting_period: i64) -> Result<()> {
+pub fn handle(
+    ctx: Context<NewPool>,
+    airdropped_tokens: u64,
+    vesting_period: i64,
+    referrer_tokens: u64,
+) -> Result<()> {
     let accs = ctx.accounts;
 
     if accs.meme_mint.supply != 0 {
@@ -181,6 +186,7 @@ pub fn handle(ctx: Context<NewPool>, airdropped_tokens: u64, vesting_period: i64
     pool.creator_addr = accs.sender.key();
     pool.airdropped_tokens = airdropped_tokens;
     pool.vesting_period = vesting_period;
+    pool.referrer_tokens = referrer_tokens;
 
     Ok(())
 }

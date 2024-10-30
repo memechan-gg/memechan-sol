@@ -15,8 +15,8 @@ use super::{fees::Fees, Reserve, SwapAmount};
 pub struct BoundPool {
     pub meme_reserve: Reserve,
     pub quote_reserve: Reserve,
-    pub admin_fees_meme: u64,
-    pub admin_fees_quote: u64,
+    pub protocol_fees_meme: u64,
+    pub protocol_fees_quote: u64,
     pub fee_vault_quote: Pubkey,
     pub creator_addr: Pubkey,
     pub fees: Fees,
@@ -24,6 +24,9 @@ pub struct BoundPool {
     pub airdropped_tokens: u64,
     pub locked: bool,
     pub vesting_period: i64,
+    pub referrer_tokens: u64,
+    pub refs_total: u64,
+    pub padding: [u8; 13],
 }
 
 impl BoundPool {
@@ -41,9 +44,12 @@ impl BoundPool {
         let creator_addr = 32;
         let fees = mem::size_of::<Fees>();
         let config = mem::size_of::<Config>();
-        let locked = 1;
         let airdropped_tokens = 8;
-        let padding = 128;
+        let locked = 1;
+        let vesting_period = 8;
+        let referrer_tokens = 8;
+        let refs_total = 8;
+        let padding = 112;
 
         discriminant
             + meme_reserve
@@ -54,8 +60,11 @@ impl BoundPool {
             + creator_addr
             + fees
             + config
-            + locked
             + airdropped_tokens
+            + locked
+            + vesting_period
+            + referrer_tokens
+            + refs_total
             + padding
     }
 }
@@ -126,8 +135,8 @@ impl BoundPool {
         Ok(SwapAmount {
             amount_in: net_delta_s,
             amount_out: net_delta_m,
-            admin_fee_in,
-            admin_fee_out,
+            protocol_fee_in: admin_fee_in,
+            protocol_fee_out: admin_fee_out,
         })
     }
 
@@ -160,8 +169,8 @@ impl BoundPool {
         Ok(SwapAmount {
             amount_in: net_delta_m,
             amount_out: net_delta_s,
-            admin_fee_in,
-            admin_fee_out,
+            protocol_fee_in: admin_fee_in,
+            protocol_fee_out: admin_fee_out,
         })
     }
 
@@ -1322,11 +1331,11 @@ mod tests {
                 for _i in 0..gamma_s as u64 / step_i {
                     let swap = pool.buy_meme_swap_amounts(step_i, 1).unwrap();
 
-                    pool.admin_fees_quote += swap.admin_fee_in;
-                    pool.admin_fees_meme += swap.admin_fee_out;
+                    pool.protocol_fees_quote += swap.protocol_fee_in;
+                    pool.protocol_fees_meme += swap.protocol_fee_out;
 
                     pool.quote_reserve.tokens += swap.amount_in;
-                    pool.meme_reserve.tokens -= swap.amount_out + swap.admin_fee_out;
+                    pool.meme_reserve.tokens -= swap.amount_out + swap.protocol_fee_out;
                 }
             }
         }

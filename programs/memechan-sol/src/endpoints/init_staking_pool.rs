@@ -187,12 +187,16 @@ pub fn handle<'info>(ctx: Context<'_, '_, '_, 'info, InitStakingPool<'info>>) ->
     msg!("0");
     let meme_ticket = &mut accs.meme_ticket;
 
-    meme_ticket.setup(accs.pool.key(), LP_FEE_KEY.key(), accs.pool.admin_fees_meme);
+    meme_ticket.setup(
+        accs.pool.key(),
+        LP_FEE_KEY.key(),
+        accs.pool.protocol_fees_meme,
+    );
 
-    if accs.pool.admin_fees_quote != 0 {
+    if accs.pool.protocol_fees_quote != 0 {
         token::transfer(
             accs.send_admin_fee_sol().with_signer(bp_signer_seeds),
-            accs.pool.admin_fees_quote,
+            accs.pool.protocol_fees_quote,
         )
         .unwrap();
     };

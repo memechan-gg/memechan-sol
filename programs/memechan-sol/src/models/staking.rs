@@ -20,6 +20,8 @@ pub struct StakingPool {
     pub fees_z_total: u64,
     pub to_airdrop: u64,
     pub is_active: bool,
+    pub to_referrers: u64,
+    pub padding: [u8; 14],
 }
 
 impl StakingPool {
@@ -41,8 +43,10 @@ impl StakingPool {
         let fees_x_total = 8;
         let fees_y_total = 8;
         let fees_z_total = 8;
+        let to_airdrop = 8;
         let is_active = 8;
-        let padding = 128;
+        let to_referrers = 8;
+        let padding = 112;
 
         discriminant
             + pool
@@ -58,7 +62,9 @@ impl StakingPool {
             + fees_x_total
             + fees_y_total
             + fees_z_total
+            + to_airdrop
             + is_active
+            + to_referrers
             + padding
     }
 }

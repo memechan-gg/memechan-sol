@@ -1,8 +1,12 @@
 use crate::err::AmmError;
 use crate::libraries::MulDiv;
 use crate::models::bound::BoundPool;
-use crate::models::fees::{REFERRER_POINTS_DENOMINATOR, REFERRER_POINTS_NUMERATOR};
+use crate::models::fees::{
+    REFERRER_POINTS_DENOMINATOR, REFERRER_POINTS_NUMERATOR, REFERRER_QUOTE_FEE_DENOMINATOR,
+    REFERRER_QUOTE_FEE_NUMERATOR,
+};
 use crate::models::points_epoch::PointsEpoch;
+use crate::models::presale_referral::PresaleReferral;
 use crate::models::staked_lp::MemeTicket;
 use crate::models::user_points::UserPoints;
 use anchor_lang::prelude::*;
@@ -45,7 +49,7 @@ pub struct SwapCoinY<'info> {
     #[account(mut)]
     global_ref: Option<Account<'info, TokenAccount>>,
     #[account(mut)]
-    local_ref: Option<Account<'info, TokenAccount>>,
+    presale_ref: Option<Account<'info, PresaleReferral>>,
     #[account(mut)]
     owner: Signer<'info>,
     /// CHECK: pda signer
@@ -60,6 +64,20 @@ impl<'info> SwapCoinY<'info> {
         let cpi_accounts = Transfer {
             from: self.user_sol.to_account_info(),
             to: self.quote_vault.to_account_info(),
+            authority: self.owner.to_account_info(),
+        };
+
+        let cpi_program = self.token_program.to_account_info();
+        CpiContext::new(cpi_program, cpi_accounts)
+    }
+
+    fn send_referrer_tokens(
+        &self,
+        ref_acc: AccountInfo<'info>,
+    ) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
+        let cpi_accounts = Transfer {
+            from: self.user_sol.to_account_info(),
+            to: ref_acc,
             authority: self.owner.to_account_info(),
         };
 
@@ -90,20 +108,21 @@ pub fn handle(
 
     token::transfer(
         accs.send_user_tokens(),
-        swap_amount.amount_in + swap_amount.admin_fee_in,
+        swap_amount.amount_in + swap_amount.protocol_fee_in,
     )
     .unwrap();
 
     let available_points_amt = accs.points_epoch.points_total - accs.points_epoch.points_given;
 
     let points = get_swap_points(
-        swap_amount.amount_in + swap_amount.admin_fee_in,
+        swap_amount.amount_in + swap_amount.protocol_fee_in,
         &accs.points_epoch,
     );
     let clamped_points = min(available_points_amt, points);
 
     if clamped_points > 0 {
         accs.user_points.points += clamped_points;
+        accs.points_epoch.points_given += clamped_points;
 
         if let Some(referrer_points) = &mut accs.referrer_points {
             let ref_points = clamped_points
@@ -112,21 +131,43 @@ pub fn handle(
             if ref_points > 0 {
                 let ref_points = min(available_points_amt - clamped_points, ref_points);
                 referrer_points.points += ref_points;
+                accs.points_epoch.points_given += ref_points;
             }
+        }
+    }
+
+    let mut protocol_fee_quote = swap_amount.protocol_fee_in;
+    let protocol_fee_meme = swap_amount.protocol_fee_out;
+    if let Some(referrer_acc) = &accs.global_ref {
+        let referrer_fee_share = protocol_fee_quote
+            .mul_div_floor(REFERRER_QUOTE_FEE_NUMERATOR, REFERRER_QUOTE_FEE_DENOMINATOR)
+            .unwrap();
+        protocol_fee_quote = protocol_fee_quote - referrer_fee_share;
+        if referrer_fee_share > 0 {
+            token::transfer(
+                accs.send_referrer_tokens(referrer_acc.to_account_info()),
+                referrer_fee_share,
+            )
+            .unwrap();
         }
     }
 
     let pool = &mut accs.pool;
 
-    pool.admin_fees_quote += swap_amount.admin_fee_in;
-    pool.admin_fees_meme += swap_amount.admin_fee_out;
+    pool.protocol_fees_quote += protocol_fee_quote;
+    pool.protocol_fees_meme += protocol_fee_meme;
 
     pool.quote_reserve.tokens += swap_amount.amount_in;
-    pool.meme_reserve.tokens -= swap_amount.amount_out + swap_amount.admin_fee_out;
+    pool.meme_reserve.tokens -= swap_amount.amount_out + protocol_fee_meme;
 
     if pool.meme_reserve.tokens == 0 {
         pool.locked = true;
     };
+
+    if let Some(presale_ref) = &mut accs.presale_ref {
+        presale_ref.amount += swap_amount.amount_in;
+        pool.refs_total += swap_amount.amount_in;
+    }
 
     let swap_amount_out = swap_amount.amount_out;
 

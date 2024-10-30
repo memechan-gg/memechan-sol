@@ -3,6 +3,7 @@ pub mod chan_swap;
 pub mod fee_distribution;
 pub mod fees;
 pub mod points_epoch;
+pub mod presale_referral;
 pub mod staked_lp;
 pub mod staking;
 pub mod target_config;
@@ -35,6 +36,6 @@ pub struct Reserve {
 pub struct SwapAmount {
     pub amount_in: u64,
     pub amount_out: u64,
-    pub admin_fee_in: u64,
-    pub admin_fee_out: u64,
+    pub protocol_fee_in: u64,
+    pub protocol_fee_out: u64,
 }
