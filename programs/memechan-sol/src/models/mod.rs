@@ -6,6 +6,7 @@ pub mod points_epoch;
 pub mod staked_lp;
 pub mod staking;
 pub mod target_config;
+pub mod user_points;
 
 use anchor_lang::prelude::*;
 

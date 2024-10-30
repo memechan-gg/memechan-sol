@@ -44,6 +44,11 @@ pub struct InitChanAmmPool<'info> {
     )]
     /// Staking Pool Chan vault
     pub staking_chan_vault: Box<Account<'info, TokenAccount>>,
+    #[account(
+        mut,
+        constraint = staking_lp_vault.owner == staking_pool_signer_pda.key()
+    )]
+    pub staking_lp_vault: Box<Account<'info, TokenAccount>>,
     /// Mint Account for Meme
     #[account(
         constraint = staking_meme_vault.mint == meme_mint.key()
@@ -100,6 +105,7 @@ pub struct InitChanAmmPool<'info> {
 
     // Sysvars
     pub rent: Sysvar<'info, Rent>,
+    pub clock: Sysvar<'info, Clock>,
     // Programs
     pub aldrin_amm_program: Program<'info, AldrinAmm>,
     pub token_program: Program<'info, Token>,
@@ -174,6 +180,26 @@ impl<'info> InitChanAmmPool<'info> {
         let cpi_ctx = CpiContext::new_with_signer(program, cpi, seeds);
         aldrin_amm::cpi::initialize(cpi_ctx, signer_nonce, 0)
     }
+
+    fn add_liquidity(&self, meme_supply: u64, chan_supply: u64, seeds: &[&[&[u8]]]) -> Result<()> {
+        let program = self.aldrin_amm_program.to_account_info();
+        let cpi = aldrin_amm::cpi::accounts::CreateBasket {
+            pool: self.amm_pool.to_account_info(),
+            pool_signer: self.amm_pool_signer.to_account_info(),
+            clock: self.clock.to_account_info(),
+            user_base_token_account: self.staking_meme_vault.to_account_info(),
+            user_quote_token_account: self.staking_chan_vault.to_account_info(),
+            user_pool_token_account: self.staking_lp_vault.to_account_info(),
+            wallet_authority: self.staking_pool_signer_pda.to_account_info(),
+            pool_mint: self.amm_pool_mint.to_account_info(),
+            base_token_vault: self.amm_base_token_vault.to_account_info(),
+            quote_token_vault: self.amm_quote_token_vault.to_account_info(),
+            token_program: self.token_program.to_account_info(),
+            rent: self.rent.to_account_info(),
+        };
+        let cpi_ctx = CpiContext::new_with_signer(program, cpi, seeds);
+        aldrin_amm::cpi::create_basket(cpi_ctx, 100_000_000_000, meme_supply, chan_supply)
+    }
 }
 
 pub fn handle(ctx: Context<InitChanAmmPool>, signer_nonce: u8) -> Result<()> {
@@ -210,32 +236,15 @@ pub fn handle(ctx: Context<InitChanAmmPool>, signer_nonce: u8) -> Result<()> {
     let chan_supply = accs.staking_chan_vault.amount;
 
     msg!("3");
-    // 3. Initialize pool & Add liquidity to the pool
-    let trade_fee_bps = 100u64;
+    // 3. Initialize pool
     accs.create_pool(staking_signer_seeds, signer_nonce)?;
 
-    // msg!("4");
-    // // 4. Create lock
-    // accs.create_lock_escrow(staking_signer_seeds)?;
+    msg!("4");
+    // 4. Add liquidity to the pool
+    accs.add_liquidity(meme_supply, chan_supply, staking_signer_seeds)?;
 
-    // msg!("5.1");
-    // // 5.1 Create escrow ata
-    // accs.create_escrow_vault()?;
-
-    // msg!("5.2");
-    // // 5.2 Lock tokens
-    //
-    // let lp_amount = {
-    //     let account_data = accs.payer_pool_lp.try_borrow_data()?;
-    //     let mut account_data_slice: &[u8] = &account_data;
-    //     let token_acc = TokenAccount::try_deserialize(&mut account_data_slice)?;
-    //     token_acc.amount
-    // };
-    // msg!("5.3");
-    // accs.lock(lp_amount, staking_signer_seeds)?;
-
-    msg!("6");
-    // 6. Setup staking
+    msg!("4");
+    // 4. Setup staking
     // Add LP vault and mint to staking pool
     accs.staking.chan_amm_pool = accs.amm_pool.key();
     accs.staking.is_active = true;

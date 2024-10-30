@@ -138,13 +138,28 @@ pub mod memechan_sol {
         close_ticket::handle(ctx)
     }
 
+    pub fn new_user_points(ctx: Context<NewUserPoints>) -> Result<()> {
+        new_user_points::handle(ctx)
+    }
+
+    pub fn receive_ponts(ctx: Context<ReceivePoints>) -> Result<()> {
+        receive_points::handle(ctx)
+    }
+
     pub fn change_points_epoch(
         ctx: Context<ChangePointsEpoch>,
         epoch_number: u64,
+        points_total: u64,
         points_per_sol_num: u64,
         points_per_sol_denom: u64,
     ) -> Result<()> {
-        change_points_epoch::handle(ctx, epoch_number, points_per_sol_num, points_per_sol_denom)
+        change_points_epoch::handle(
+            ctx,
+            epoch_number,
+            points_total,
+            points_per_sol_num,
+            points_per_sol_denom,
+        )
     }
 
     pub fn withdraw_admin_fee(ctx: Context<WithdrawAdminFee>) -> Result<()> {

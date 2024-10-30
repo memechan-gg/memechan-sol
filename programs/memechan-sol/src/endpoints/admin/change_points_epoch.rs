@@ -23,6 +23,7 @@ pub struct ChangePointsEpoch<'info> {
 pub fn handle<'info>(
     ctx: Context<ChangePointsEpoch<'info>>,
     epoch_number: u64,
+    points_total: u64,
     points_per_sol_num: u64,
     points_per_sol_denom: u64,
 ) -> Result<()> {
@@ -30,6 +31,8 @@ pub fn handle<'info>(
 
     let epoch = &mut accs.points_epoch;
     epoch.epoch_number = epoch_number;
+    epoch.points_total = points_total;
+    epoch.points_given = 0;
     epoch.points_per_sol_num = points_per_sol_num;
     epoch.points_per_sol_denom = points_per_sol_denom;
 
