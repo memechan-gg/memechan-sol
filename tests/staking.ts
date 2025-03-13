@@ -12,6 +12,7 @@ import {
   Transaction,
   sendAndConfirmTransaction,
   TransactionInstruction,
+  ComputeBudgetProgram,
 } from "@solana/web3.js";
 import { QUOTE_MINT, payer, provider } from "./helpers";
 import { AmmPool } from "./pool";
@@ -35,7 +36,7 @@ import {
   memechan,
 } from "./sol-sdk/config/config";
 import { MemechanSol } from "../target/types/memechan_sol";
-import { LP_FEE_VAULT_OWNER } from "./common";
+import { LP_FEE_VAULT_OWNER, TH_FEE_VAULT_OWNER } from "./common";
 import { MEMO_PROGRAM_ID } from "@raydium-io/raydium-sdk";
 
 export type Staking = IdlAccounts<MemechanSol>["stakingPool"];
@@ -228,6 +229,24 @@ export class StakingWrapper {
         true
       )
     ).address;
+    const memeThFeeVault = (
+      await getOrCreateAssociatedTokenAccount(
+        provider.connection,
+        payer,
+        tokenAMint,
+        TH_FEE_VAULT_OWNER,
+        true
+      )
+    ).address;
+    const quoteThFeeVault = (
+      await getOrCreateAssociatedTokenAccount(
+        provider.connection,
+        payer,
+        tokenBMint,
+        TH_FEE_VAULT_OWNER,
+        true
+      )
+    ).address;
 
     const quoteVault =
       tokenInfoB.address === CHAN_TOKEN_INFO.address
@@ -239,6 +258,8 @@ export class StakingWrapper {
       .accounts({
         memeFeeVault,
         quoteFeeVault,
+        memeThFeeVault,
+        quoteThFeeVault,
         ammPool: ammPool.id,
         aTokenVault,
         aVault,
@@ -264,6 +285,9 @@ export class StakingWrapper {
         tokenProgram: TOKEN_PROGRAM_ID,
         memoProgram: MEMO_PROGRAM_ID,
       })
+      .preInstructions([
+        ComputeBudgetProgram.setComputeUnitLimit({ units: 300_000 }),
+      ])
       .signers([payer])
       .rpc({ skipPreflight: true });
   }

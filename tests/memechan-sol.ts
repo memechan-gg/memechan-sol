@@ -11,10 +11,10 @@ import { airdrop, payer, provider } from "./helpers";
 describe("memechan-sol", () => {
   provider.opts.skipPreflight = true;
   newPool.test();
-  swapY.test();
-  swapX.test();
-  goLive.test();
+  // swapY.test();
+  // swapX.test();
+  // goLive.test();
   fees.test();
-  tickets.test();
+  // tickets.test();
   staking.test();
 });

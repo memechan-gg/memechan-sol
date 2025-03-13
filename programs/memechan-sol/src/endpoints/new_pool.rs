@@ -1,7 +1,4 @@
-use crate::consts::{
-    BP_FEE_KEY, DEFAULT_MAX_M, DEFAULT_MAX_M_LP, DEFAULT_PRICE_FACTOR_DENOMINATOR,
-    DEFAULT_PRICE_FACTOR_NUMERATOR, MAX_AIRDROPPED_TOKENS, MAX_LINEAR, MAX_MEME_TOKENS, MIN_LINEAR,
-};
+use crate::consts::{BP_FEE_KEY, DEFAULT_MAX_M, DEFAULT_MAX_M_LP, DEFAULT_PRICE_FACTOR_DENOMINATOR, DEFAULT_PRICE_FACTOR_NUMERATOR, MAX_AIRDROPPED_TOKENS, MAX_LINEAR, MAX_MEME_TOKENS, MAX_TH_FEE_BPS, MIN_LINEAR};
 use crate::err;
 use crate::err::AmmError;
 use crate::models::bound::{compute_alpha_abs, compute_beta, BoundPool, Config, Decimals};
@@ -92,7 +89,7 @@ impl<'info> NewPool<'info> {
     }
 }
 
-pub fn handle(ctx: Context<NewPool>, airdropped_tokens: u64, vesting_period: i64) -> Result<()> {
+pub fn handle(ctx: Context<NewPool>, airdropped_tokens: u64, vesting_period: i64, top_holder_fees_bps: u64) -> Result<()> {
     let accs = ctx.accounts;
 
     if accs.meme_mint.supply != 0 {
@@ -105,6 +102,10 @@ pub fn handle(ctx: Context<NewPool>, airdropped_tokens: u64, vesting_period: i64
 
     if MIN_LINEAR > vesting_period || vesting_period > MAX_LINEAR {
         return Err(error!(AmmError::InvalidVestingPeriod));
+    }
+
+    if top_holder_fees_bps > MAX_TH_FEE_BPS {
+        return Err(error!(AmmError::InvalidTHFeeBps))
     }
 
     let seeds = &[
@@ -181,6 +182,7 @@ pub fn handle(ctx: Context<NewPool>, airdropped_tokens: u64, vesting_period: i64
     pool.creator_addr = accs.sender.key();
     pool.airdropped_tokens = airdropped_tokens;
     pool.vesting_period = vesting_period;
+    pool.top_holder_fees_bps = top_holder_fees_bps;
 
     Ok(())
 }
